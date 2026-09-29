@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 18: Generalized Linear Models &amp; Generative Learning | Basics of Data Science</title>
+  <meta name="description" content="MIT OCW style lecture notes on Generalized Linear Models (GLMs), Exponential Dispersion Family, Softmax regression derivation, and Generative vs Discriminative learning with Gaussian Discriminant Analysis (GDA), LDA, and QDA.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2318%20-%20generalized%20linear%20models%20and%20generative%20learning.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 18 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 18: Generalized Linear Models &amp; Generative Learning</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Nov 30, 2026</div>
+        <div class="note-meta-item"><strong>Readings:</strong> PML-Intro Ch. 5; ESL Ch. 4; Bishop PRML Ch. 2 &amp; 4</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-probabilistic-foundation">1. Probabilistic Foundations: Regression &amp; Classification under Maximum Likelihood</a></li>
+        <li><a href="#sec-exponential-family">2. The Exponential Family of Distributions</a></li>
+        <li><a href="#sec-glm-construction">3. Constructing Generalized Linear Models (GLMs)</a></li>
+        <li><a href="#sec-softmax-glm">4. Softmax Regression: The Multinomial GLM</a></li>
+        <li><a href="#sec-generative-vs-discriminative">5. Discriminative vs. Generative Learning Paradigms</a></li>
+        <li><a href="#sec-gda">6. Gaussian Discriminant Analysis (GDA)</a></li>
+        <li><a href="#sec-gda-vs-logistic">7. GDA vs. Logistic Regression: Theoretical Comparison &amp; Synthesis</a></li>
+        <li><a href="#sec-lda-vs-qda">8. Linear vs. Quadratic Discriminant Analysis (LDA vs. QDA)</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-probabilistic-foundation">1. Probabilistic Foundations: Regression &amp; Classification under Maximum Likelihood</h2>
+      <p>
+        In previous lectures, Ordinary Least Squares (OLS) was motivated geometrically by minimizing Euclidean residual distances \(\|X\theta - y\|_2^2\), and Logistic Regression was motivated by minimizing cross-entropy. A profound statistical insight unifies both through <strong>Maximum Likelihood Estimation (MLE)</strong>.
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Probabilistic Linear Regression: Gaussian Noise Model</span>
+        <p>
+          Assume the observed target \(y^{(i)}\) equals an underlying linear signal plus an unobserved additive error:
+          \[
+            y^{(i)} = \theta^T x^{(i)} + \varepsilon^{(i)}, \quad i = 1, \dots, m
+          \]
+          where errors are independent and identically distributed (i.i.d.) Gaussian random variables:
+          \[
+            \varepsilon^{(i)} \overset{\text{i.i.d.}}{\sim} \mathcal{N}\left(0, \sigma^2\right) \implies p\left(\varepsilon^{(i)}\right) = \frac{1}{\sqrt{2\pi}\sigma} \exp\left( -\frac{(\varepsilon^{(i)})^2}{2\sigma^2} \right)
+          \]
+          Consequently, the conditional distribution of \(y^{(i)}\) given \(x^{(i)}\) parameterized by \(\theta\) is:
+          \[
+            p\left(y^{(i)} \mid x^{(i)}; \theta\right) = \frac{1}{\sqrt{2\pi}\sigma} \exp\left( -\frac{\left(y^{(i)} - \theta^T x^{(i)}\right)^2}{2\sigma^2} \right)
+          \]
+          For a dataset \(\underline{y} = [y^{(1)}, \dots, y^{(m)}]^T\) with design matrix \(\underline{X}\), the joint likelihood is:
+          \[
+            L(\theta) = P_\theta(\underline{y} \mid \underline{X}) = \prod_{i=1}^m p\left(y^{(i)} \mid x^{(i)}; \theta\right)
+          \]
+          Taking the natural logarithm yields the log-likelihood \(\ell(\theta) = \ln L(\theta)\):
+          \[
+            \ell(\theta) = \sum_{i=1}^m \ln\left( \frac{1}{\sqrt{2\pi}\sigma} \exp\left( -\frac{\left(y^{(i)} - \theta^T x^{(i)}\right)^2}{2\sigma^2} \right) \right) = m \ln\left(\frac{1}{\sqrt{2\pi}\sigma}\right) - \frac{1}{2\sigma^2} \sum_{i=1}^m \left(y^{(i)} - \theta^T x^{(i)}\right)^2
+          \]
+          Maximizing \(\ell(\theta)\) with respect to \(\theta\) is mathematically identical to minimizing the sum of squared errors:
+          \[
+            \max_\theta \ell(\theta) \iff \min_\theta \frac{1}{2} \sum_{i=1}^m \left(y^{(i)} - \theta^T x^{(i)}\right)^2 = \min_\theta J(\theta)
+          \]
+          <div class="note-callout">
+            <strong>Key Annotation from Slide 2:</strong>
+            <em>"Equivalent to \(J(\theta)\) in Ordinary Least Squares &mdash; \(\sigma\) plays no role in estimating \(\theta\)!"</em>
+            <br>
+            The measurement variance \(\sigma^2\) scales the log-likelihood globally as a constant factor; it has strictly <strong>zero influence</strong> on the location of the optimal parameter vector \(\theta^*\)!
+          </div>
+        </p>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Probabilistic Logistic Regression: Bernoulli Model</span>
+        <p>
+          For binary classification \(y \in \{0, 1\}\), assume \(y \mid x \sim \text{Bernoulli}(\phi)\) with \(\phi = h_\theta(x) = \sigma(\theta^T x) = \frac{1}{1 + e^{-\theta^T x}}\):
+          \[
+            p(y \mid x; \theta) = (h_\theta(x))^y (1 - h_\theta(x))^{1 - y}
+          \]
+          The joint log-likelihood over \(m\) independent training points is:
+          \[
+            \ell(\theta) = \sum_{i=1}^m \left[ y^{(i)} \ln\left(h_\theta(x^{(i)})\right) + (1 - y^{(i)}) \ln\left(1 - h_\theta(x^{(i)})\right) \right]
+          \]
+          Maximizing \(\ell(\theta)\) via MLE is the exact negative dual of minimizing Binary Cross-Entropy (Log-Loss).
+        </p>
+      </div>
+
+      <!-- Section 2 -->
+      <h2 id="sec-exponential-family">2. The Exponential Family of Distributions</h2>
+      <p>
+        Gaussian regression and Bernoulli classification appear fundamentally different, yet both are manifestations of a single mathematical structure: the <strong>Exponential Family</strong>.
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Why the Exponential Family? (Slide 6 Foundations)</span>
+        <p>
+          The exponential family occupies a uniquely privileged status across statistics and machine learning for five profound theoretical reasons:
+        </p>
+        <ol>
+          <li><strong>Maximum Entropy:</strong> By the Principle of Maximum Entropy, the exponential family is the unique family of distributions that maximizes Shannon entropy subject to specified moment constraints (e.g., fixed mean and variance).</li>
+          <li><strong>Core of GLMs:</strong> It forms the statistical backbone for constructing Generalized Linear Models.</li>
+          <li><strong>Core of Variational Inference:</strong> It underpins mean-field approximations and modern Bayesian neural networks.</li>
+          <li><strong>Finite Sufficient Statistics:</strong> By the Pitman-Koopman-Darmois Theorem, under standard regularity conditions, the exponential family is the <em>only</em> family of distributions possessing non-trivial, finite-dimensional sufficient statistics regardless of sample size \(m\).</li>
+          <li><strong>Universal Conjugate Priors:</strong> Every exponential family likelihood \(p(y \mid x; \theta)\) admits a natural conjugate prior \(p(\theta)\), ensuring that the Bayesian posterior \(p(\theta \mid y, x)\) remains within the exact same parametric family!</li>
+        </ol>
+      </div>
+
+      <div class="def-box">
+        <span class="box-label">Definition 2.1 (Canonical Exponential Family Form)</span>
+        A class of distributions belongs to the exponential family if its probability density (or mass) function can be written as:
+        \[
+          p(y; \eta) = b(y) \exp\left( \eta^T T(y) - a(\eta) \right)
+        \]
+        where:
+        <ul>
+          <li>\(\eta\) is the <strong>natural parameter</strong> (or canonical parameter).</li>
+          <li>\(T(y)\) is the <strong>sufficient statistic</strong> (frequently \(T(y) = y\)).</li>
+          <li>\(a(\eta)\) is the <strong>log-partition function</strong> (or cumulant function).</li>
+          <li>\(e^{-a(\eta)}\) acts as the <strong>normalization factor</strong> ensuring that \(\int p(y; \eta) dy = 1\) (or \(\sum p(y; \eta) = 1\)).</li>
+          <li>\(b(y)\) is the <strong>base measure</strong>.</li>
+        </ul>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Derivation 2.1: Bernoulli as an Exponential Family Member</span>
+        <p>
+          Let \(y \in \{0, 1\}\) with \(p(y = 1) = \phi\). Writing the mass function into exponentiated form:
+          \[
+            p(y; \phi) = \phi^y (1 - \phi)^{1 - y} = \exp\left( y \ln \phi + (1 - y) \ln(1 - \phi) \right) = \exp\left( \ln\left(\frac{\phi}{1 - \phi}\right) y + \ln(1 - \phi) \right)
+          \]
+          Equating this to \(b(y) \exp(\eta^T T(y) - a(\eta))\):
+          \[
+            \eta = \ln\left(\frac{\phi}{1 - \phi}\right) \quad (\text{The Log-Odds / Logit})
+          \]
+          Inverting to express the distribution mean \(\phi\) in terms of the natural parameter \(\eta\):
+          \[
+            e^\eta = \frac{\phi}{1 - \phi} \implies \phi(1 + e^\eta) = e^\eta \implies \phi = \frac{e^\eta}{1 + e^\eta} = \frac{1}{1 + e^{-\eta}} \quad (\text{The Sigmoid!})
+          \]
+          Furthermore:
+          \[
+            T(y) = y, \quad b(y) = 1, \quad a(\eta) = -\ln(1 - \phi) = \ln(1 + e^\eta)
+          \]
+        </p>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Derivation 2.2: Gaussian as an Exponential Family Member</span>
+        <p>
+          Let \(y \sim \mathcal{N}(\mu, \sigma^2)\). Setting \(\sigma^2 = 1\) (since measurement scale does not alter \(\theta^*\)):
+          \[
+            p(y; \mu) = \frac{1}{\sqrt{2\pi}} \exp\left( -\frac{1}{2}(y - \mu)^2 \right) = \frac{1}{\sqrt{2\pi}} \exp\left(-\frac{1}{2}y^2\right) \cdot \exp\left( \mu y - \frac{1}{2}\mu^2 \right)
+          \]
+          Matching with canonical form:
+          \[
+            \eta = \mu, \quad T(y) = y, \quad a(\eta) = \frac{\mu^2}{2} = \frac{\eta^2}{2}, \quad b(y) = \frac{1}{\sqrt{2\pi}} \exp\left(-\frac{y^2}{2}\right)
+          \]
+          <div class="note-callout">
+            <strong>Remark (Non-unit Variance):</strong>
+            <em>"If \(\sigma^2 \ne 1\), \(\eta\) is a 2D parameter vector \(\eta = \begin{bmatrix} \mu/\sigma^2 \\ -1/(2\sigma^2) \end{bmatrix}\) and the log-partition function incorporates \(\sigma\) as well."</em>
+          </div>
+        </p>
+      </div>
+
+      <div class="note-callout">
+        <strong>Summary of Notable Exponential Family Distributions:</strong>
+        <p>
+          <em>"Categorical, Poisson (for count data), Gamma and Exponential (for continuous non-negative intervals), Beta, and Dirichlet (for distributions over probability parameters, e.g. prior over \(\phi\) in \(\text{Ber}(\phi)\)) all belong to the exponential family and serve crucial modeling functions."</em>
+        </p>
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-glm-construction">3. Constructing Generalized Linear Models (GLMs)</h2>
+      <p>
+        Suppose we wish to model real-world phenomena where targets are neither continuous unbounded real numbers (Gaussian) nor binary (Bernoulli). For instance, counting the <strong>number of customers \(y\) entering a store</strong> or <strong>hourly pageviews on a website</strong> based on marketing features \(x\) (promotions, advertising spend, weather, day-of-week). Count data is strictly non-negative integers \(y \in \{0, 1, 2, \dots\}\) with variance often scaling with the mean &mdash; a canonical application of the <strong>Poisson distribution</strong>.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">The Three Fundamental Postulates of GLMs</span>
+        To derive a Generalized Linear Model for any target \(y\) given input features \(x\), we adopt three unifying assumptions:
+        <ol>
+          <li><strong>Conditional Distribution Assumption:</strong> Given \(x\) and model parameters \(\theta\), the conditional distribution of \(y\) belongs to the Exponential Family with natural parameter \(\eta\):
+            \[
+              y \mid x; \theta \sim \text{ExpFamily}(\eta)
+            \]
+          </li>
+          <li><strong>Prediction Goal:</strong> Given \(x\), our goal is to predict the expected value of the sufficient statistic \(T(y)\). In almost all standard models \(T(y) = y\), so our hypothesis satisfies:
+            \[
+              h(x) = \mathbb{E}[T(y) \mid x] = \mathbb{E}[y \mid x]
+            \]
+          </li>
+          <li><strong>Linear Natural Parameter:</strong> The natural parameter \(\eta\) is related linearly to the input vector \(x\):
+            \[
+              \eta = \theta^T x \quad \left(\text{or } \eta_i = \theta_i^T x \text{ if } \eta \text{ is vector-valued}\right)
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Canonical Response &amp; Link Functions</span>
+        <p>
+          Let \(g(\eta) = \mathbb{E}[T(y); \eta]\) express the expected sufficient statistic as a function of the natural parameter \(\eta\).
+        </p>
+        <ul>
+          <li><strong>Canonical Response Function:</strong> The function \(g(\eta)\) mapping natural parameters to the expected value: \(h_\theta(x) = g(\eta) = g(\theta^T x)\).</li>
+          <li><strong>Canonical Link Function:</strong> The inverse mapping \(g^{-1}\) connecting the expected value to the linear predictor: \(g^{-1}(\mathbb{E}[y \mid x]) = \theta^T x\).</li>
+        </ul>
+        <table class="academic-table" style="margin-top: 1rem;">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Distribution</th>
+              <th>Natural Parameter \(\eta\)</th>
+              <th>Link Function \(g^{-1}(\mu)\)</th>
+              <th>Response Function \(g(\eta) = h_\theta(x)\)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>OLS Linear Regression</strong></td>
+              <td>Gaussian \(\mathcal{N}(\mu, \sigma^2)\)</td>
+              <td>\(\eta = \mu\)</td>
+              <td>Identity: \(\mu = \eta\)</td>
+              <td>\(h_\theta(x) = \theta^T x\)</td>
+            </tr>
+            <tr>
+              <td><strong>Logistic Regression</strong></td>
+              <td>Bernoulli \((\phi)\)</td>
+              <td>\(\eta = \ln\frac{\phi}{1-\phi}\)</td>
+              <td>Logit: \(\ln\frac{\phi}{1-\phi}\)</td>
+              <td>\(h_\theta(x) = \frac{1}{1 + e^{-\theta^T x}}\)</td>
+            </tr>
+            <tr>
+              <td><strong>Poisson Regression</strong></td>
+              <td>Poisson \((\lambda)\)</td>
+              <td>\(\eta = \ln \lambda\)</td>
+              <td>Log: \(\ln \lambda\)</td>
+              <td>\(h_\theta(x) = e^{\theta^T x}\)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-softmax-glm">4. Softmax Regression: The Multinomial GLM</h2>
+      <p>
+        Consider a multiclass classification problem where the response variable can take on any of \(k\) discrete categorical labels: \(y \in \{1, 2, \dots, k\}\) (e.g., classifying email into <em>Spam</em>, <em>Personal</em>, or <em>Work-related</em>).
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Step-by-Step GLM Derivation of Softmax Regression</span>
+        <p>
+          <strong>Step 1: Minimal Parameterization:</strong> A categorical distribution over \(k\) outcomes has \(k\) probabilities \(\phi_1, \dots, \phi_k\). Because \(\sum_{i=1}^k \phi_i = 1\), specifying \(k\) parameters is redundant. We parameterize using \(k - 1\) independent parameters \(\phi_1, \dots, \phi_{k-1}\), with:
+          \[
+            \phi_k = 1 - \sum_{i=1}^{k-1} \phi_i
+          \]
+          <strong>Step 2: Sufficient Statistic Vector:</strong> Define \(T(y) \in \mathbb{R}^{k-1}\) as a one-hot indicator:
+          \[
+            T(1) = \begin{bmatrix} 1 \\ 0 \\ \vdots \\ 0 \end{bmatrix}, \quad T(2) = \begin{bmatrix} 0 \\ 1 \\ \vdots \\ 0 \end{bmatrix}, \quad \dots, \quad T(k-1) = \begin{bmatrix} 0 \\ 0 \\ \vdots \\ 1 \end{bmatrix}, \quad T(k) = \begin{bmatrix} 0 \\ 0 \\ \vdots \\ 0 \end{bmatrix}
+          \]
+          In index notation, \((T(y))_i = \mathbf{1}\{y = i\}\) for \(i = 1, \dots, k-1\). Note that \(\mathbf{1}\{y = k\} = 1 - \sum_{i=1}^{k-1} (T(y))_i\).
+        </p>
+        <p>
+          <strong>Step 3: Exponential Family Form:</strong>
+          \[
+            p(y; \phi) = \phi_1^{\mathbf{1}\{y=1\}} \phi_2^{\mathbf{1}\{y=2\}} \cdots \phi_k^{\mathbf{1}\{y=k\}} = \exp\left( \sum_{i=1}^{k-1} (T(y))_i \ln\phi_i + \left(1 - \sum_{i=1}^{k-1}(T(y))_i\right) \ln\phi_k \right)
+          \]
+          Regrouping terms:
+          \[
+            p(y; \phi) = \exp\left( \sum_{i=1}^{k-1} (T(y))_i \ln\left(\frac{\phi_i}{\phi_k}\right) + \ln\phi_k \right) = b(y)\exp\left(\eta^T T(y) - a(\eta)\right)
+          \]
+          where:
+          \[
+            \eta_i = \ln\left(\frac{\phi_i}{\phi_k}\right) \quad (i = 1, \dots, k-1), \quad a(\eta) = -\ln\phi_k, \quad b(y) = 1
+          \]
+          For notational elegance, define \(\eta_k = \ln(\phi_k/\phi_k) = 0\).
+        </p>
+        <p>
+          <strong>Step 4: Inverting the Link Function to Obtain Softmax:</strong>
+          \[
+            e^{\eta_i} = \frac{\phi_i}{\phi_k} \implies \phi_i = \phi_k e^{\eta_i}
+          \]
+          Summing over all \(k\) classes:
+          \[
+            \sum_{i=1}^k \phi_i = \phi_k \sum_{i=1}^k e^{\eta_i} = 1 \implies \phi_k = \frac{1}{\sum_{j=1}^k e^{\eta_j}}
+          \]
+          Substituting \(\phi_k\) back into the expression for \(\phi_i\) yields the canonical response function:
+          \[
+            \phi_i = \frac{e^{\eta_i}}{\sum_{j=1}^k e^{\eta_j}} \quad (\text{The Softmax Function!})
+          \]
+          <strong>Step 5: Linear Natural Parameter Assumption:</strong> Relate \(\eta_i = \theta_i^T x\) for \(i = 1, \dots, k-1\) with \(\theta_k = \mathbf{0}\). The class-conditional probability is:
+          \[
+            p(y = i \mid x; \theta) = \frac{e^{\theta_i^T x}}{\sum_{j=1}^k e^{\theta_j^T x}}
+          \]
+        </p>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Softmax Training via Maximum Likelihood</span>
+        Given \(m\) training examples \(\{(x^{(i)}, y^{(i)})\}_{i=1}^m\), the log-likelihood is:
+        \[
+          \ell(\theta) = \sum_{i=1}^m \ln p\left(y^{(i)} \mid x^{(i)}; \theta\right) = \sum_{i=1}^m \ln \prod_{l=1}^k \left( \frac{e^{\theta_l^T x^{(i)}}}{\sum_{j=1}^k e^{\theta_j^T x^{(i)}}} \right)^{\mathbf{1}\{y^{(i)} = l\}} = \sum_{i=1}^m \sum_{l=1}^k \mathbf{1}\{y^{(i)} = l\} \ln\left( \frac{e^{\theta_l^T x^{(i)}}}{\sum_{j=1}^k e^{\theta_j^T x^{(i)}}} \right)
+        \]
+        This objective is concave and globally maximized using Gradient Ascent or Multivariate Newton's Method (IRLS).
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-generative-vs-discriminative">5. Discriminative vs. Generative Learning Paradigms</h2>
+      <p>
+        All algorithms explored so far (Linear, Logistic, Softmax Regression) are <strong>Discriminative</strong>: they model the conditional distribution \(p(y \mid x)\) directly, mapping features directly to class assignments.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">The Core Methodological Dichotomy</span>
+        <ul>
+          <li><strong>Discriminative Algorithms:</strong> Model \(p(y \mid x)\) directly. They focus exclusively on learning the geometry of the decision boundary separating classes, without expending computational effort learning what features \(x\) look like.</li>
+          <li><strong>Generative Algorithms:</strong> Model the class-conditional feature distribution \(p(x \mid y)\) (e.g., what do tumor scans look like given benign vs malignant?) and the prior class distribution \(p(y)\).
+            Prediction is performed by inverting via <strong>Bayes' Theorem</strong>:
+            \[
+              p(y = c \mid x; \theta) = \frac{p(x \mid y = c; \theta) p(y = c; \theta)}{\sum_{c'} p(x \mid y = c'; \theta) p(y = c'; \theta)}
+            \]
+            To assign a hard class label:
+            \[
+              \hat{y} = \arg\max_y p(y \mid x) = \arg\max_y p(x \mid y) p(y)
+            \]
+          </li>
+        </ul>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Why Do We Need Generative Models When We Have Logistic Regression? (Slide 32)</span>
+        <p>
+          The lecture highlights three specific engineering and mathematical justifications:
+        </p>
+        <ol>
+          <li><strong>Instability under Clean Separation:</strong> When classes are substantially or perfectly separable, the parameter estimates for logistic regression are surprisingly unstable &mdash; weights diverge to \(\pm \infty\), destabilizing numerical optimization. Generative models possess closed-form, stable solutions regardless of separation!</li>
+          <li><strong>Small Sample Efficiency:</strong> If the distribution of predictors \(x\) is approximately Gaussian in each class and the sample size \(m\) is small, generative models make more efficient use of data and achieve significantly higher test accuracy than logistic regression.</li>
+          <li><strong>Natural Multi-Class Modularity:</strong> Generative models fit each class density \(p(x \mid y = c)\) independently. Adding a new class \(k+1\) simply requires fitting its own density without having to retrain the existing classes!</li>
+        </ol>
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-gda">6. Gaussian Discriminant Analysis (GDA)</h2>
+      <p>
+        When input features \(x \in \mathbb{R}^n\) are continuous random variables, the canonical generative model is <strong>Gaussian Discriminant Analysis</strong>.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Multivariate Gaussian Distribution Review</span>
+        \[
+          p(x; \mu, \Sigma) = \frac{1}{(2\pi)^{n/2} |\Sigma|^{1/2}} \exp\left( -\frac{1}{2}(x - \mu)^T \Sigma^{-1} (x - \mu) \right)
+        \]
+        where \(\mu = \mathbb{E}[x] \in \mathbb{R}^n\) is the mean vector and \(\Sigma = \mathbb{E}[(x - \mu)(x - \mu)^T] \in \mathbb{R}^{n \times n}\) is the covariance matrix.
+        <div class="note-callout">
+          <strong>Handwritten Linear Algebra Properties (Slide 58):</strong>
+          <br>
+          <em>"Hermitian / Symmetric matrix: \(A^H = A \implies (A^*)^T = A\). For real matrices: \(A^T = A\).
+          <br>
+          Positive Definite (PD): \(\forall z \ne \mathbf{0}, (z^*)^T A z > 0 \implies A \text{ is Positive Definite (PD)}\).
+          <br>
+          Positive Semi-Definite (PSD): \(\forall z, z^T A z \ge 0 \implies A \text{ is Positive Semi-Definite (PSD)}\)."</em>
+        </div>
+      </div>
+
+      <div class="def-box">
+        <span class="box-label">Definition 6.1 (The GDA Model)</span>
+        For a binary classification task \(y \in \{0, 1\}\):
+        \[
+          y \sim \text{Bernoulli}(\phi) = \phi^y (1 - \phi)^{1 - y}
+        \]
+        \[
+          x \mid y = 0 \sim \mathcal{N}(\mu_0, \Sigma)
+        \]
+        \[
+          x \mid y = 1 \sim \mathcal{N}(\mu_1, \Sigma)
+        \]
+        Crucially, both classes share the identical covariance matrix \(\Sigma\), but possess distinct mean vectors \(\mu_0\) and \(\mu_1\).
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 6.1 (Analytical Maximum Likelihood for GDA)</span>
+        Given training dataset \(\{(x^{(i)}, y^{(i)})\}_{i=1}^m\), the joint log-likelihood is:
+        \[
+          \ell(\phi, \mu_0, \mu_1, \Sigma) = \sum_{i=1}^m \ln p\left(x^{(i)}, y^{(i)}; \phi, \mu_0, \mu_1, \Sigma\right) = \sum_{i=1}^m \ln \left[ p\left(x^{(i)} \mid y^{(i)}; \mu_0, \mu_1, \Sigma\right) p\left(y^{(i)}; \phi\right) \right]
+        \]
+        Maximizing analytically yields exact, non-iterative, closed-form formulas:
+        \[
+          \phi = \frac{1}{m} \sum_{i=1}^m \mathbf{1}\{y^{(i)} = 1\}
+        \]
+        \[
+          \mu_0 = \frac{\sum_{i=1}^m \mathbf{1}\{y^{(i)} = 0\} x^{(i)}}{\sum_{i=1}^m \mathbf{1}\{y^{(i)} = 0\}}, \quad \mu_1 = \frac{\sum_{i=1}^m \mathbf{1}\{y^{(i)} = 1\} x^{(i)}}{\sum_{i=1}^m \mathbf{1}\{y^{(i)} = 1\}}
+        \]
+        \[
+          \Sigma = \frac{1}{m} \sum_{i=1}^m \left(x^{(i)} - \mu_{y^{(i)}}\right) \left(x^{(i)} - \mu_{y^{(i)}}\right)^T
+        \]
+      </div>
+
+      <!-- Section 7 -->
+      <h2 id="sec-gda-vs-logistic">7. GDA vs. Logistic Regression: Theoretical Comparison &amp; Synthesis</h2>
+      <p>
+        If we evaluate the posterior probability \(p(y = 1 \mid x)\) under the fitted GDA parameters:
+        \[
+          p(y = 1 \mid x) = \frac{p(x \mid y=1)p(y=1)}{p(x \mid y=1)p(y=1) + p(x \mid y=0)p(y=0)} = \frac{1}{1 + \exp\left(-\left(\theta^T x + \theta_0\right)\right)} = \sigma(\theta^T x)
+        \]
+        where:
+        \[
+          \theta = \Sigma^{-1}(\mu_1 - \mu_0), \quad \theta_0 = \frac{1}{2}\mu_0^T \Sigma^{-1} \mu_0 - \frac{1}{2}\mu_1^T \Sigma^{-1} \mu_1 + \ln\left(\frac{\phi}{1 - \phi}\right)
+        \]
+        <strong>GDA implies that the posterior class probability is strictly a logistic sigmoid!</strong>
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">The Core Synthesis: Slide 53 Handwritten Theorem</span>
+        <p>
+          A foundational theoretical result governs the relationship between generative and discriminative classifiers:
+        </p>
+        <div class="note-callout">
+          <em>"If \(p(x \mid y)\) is multivariate Gaussian with shared covariance \(\Sigma\) for classes 0 and 1 \(\implies p(y \mid x)\) is logistic: \(\frac{1}{1 + e^{-\theta^T x}}\).
+          <br><br>
+          <strong>The converse does not hold:</strong> If \(p(y \mid x)\) is logistic, \(p(x \mid y)\) is not necessarily Gaussian!
+          <br><br>
+          For example:
+          \[
+            p(x \mid y = 0) \sim \text{Poisson}(\lambda_0), \quad p(x \mid y = 1) \sim \text{Poisson}(\lambda_1) \implies p(y \mid x) = \frac{1}{1 + e^{-\theta^T x}}
+          \]
+          \(\implies\) Logistic Regression performs robustly for Poisson data (and many other non-Gaussian distributions) as well."</em>
+        </div>
+        <p>
+          This establishes the classic <strong>Robustness vs. Asymptotic Efficiency Tradeoff</strong> (Ng &amp; Jordan, NeurIPS 2001):
+        </p>
+        <ul>
+          <li><strong>GDA (Strong Modeling Assumption):</strong> GDA assumes \(x \mid y\) is multivariate normal. When this assumption is true (or near true), GDA is <strong>asymptotically efficient</strong> &mdash; it reaches its minimum generalization error with significantly fewer training examples than logistic regression.</li>
+          <li><strong>Logistic Regression (Weak Modeling Assumption):</strong> Logistic regression assumes only that \(\ln\frac{p(y=1 \mid x)}{p(y=0 \mid x)}\) is linear. It makes zero assumptions about whether \(x\) is Gaussian, Poisson, or discrete. It is remarkably robust to distributional misspecification, outperforming GDA when normality fails.</li>
+        </ul>
+      </div>
+
+      <!-- Section 8 -->
+      <h2 id="sec-lda-vs-qda">8. Linear vs. Quadratic Discriminant Analysis (LDA vs. QDA)</h2>
+      <p>
+        What happens if the two classes do not share the exact same covariance matrix? (Slide 54).
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">LDA vs. QDA Decision Boundaries</span>
+        <ul>
+          <li>
+            <strong>Linear Discriminant Analysis (LDA): \(\Sigma_0 = \Sigma_1 = \Sigma\)</strong>
+            <br>
+            Because the quadratic forms \(x^T \Sigma^{-1} x\) appear with equal coefficient in both class exponents, they cancel out identically in the log-odds ratio:
+            \[
+              \ln\frac{p(y=1 \mid x)}{p(y=0 \mid x)} = x^T \Sigma^{-1}(\mu_1 - \mu_0) + \text{const} = 0
+            \]
+            The resulting decision boundary is a strictly <strong>flat hyperplane (linear boundary)</strong>.
+          </li>
+          <li>
+            <strong>Quadratic Discriminant Analysis (QDA): \(\Sigma_0 \ne \Sigma_1\)</strong>
+            <br>
+            When each class possesses its own distinct covariance matrix \(\Sigma_0 \ne \Sigma_1\), the quadratic terms do not cancel:
+            \[
+              \ln\frac{p(y=1 \mid x)}{p(y=0 \mid x)} = -\frac{1}{2} x^T \left(\Sigma_1^{-1} - \Sigma_0^{-1}\right) x + x^T \left(\Sigma_1^{-1}\mu_1 - \Sigma_0^{-1}\mu_0\right) + \text{const} = 0
+            \]
+            The decision boundary is a <strong>quadratic surface</strong> (parabola, hyperbola, or ellipse).
+          </li>
+        </ul>
+        <p>
+          <em>Bias-Variance Tradeoff:</em> QDA estimates two separate \(n \times n\) covariance matrices, requiring \(\mathcal{O}(n^2)\) parameters per class. When \(n\) is large and \(m\) is small, QDA easily overfits, making LDA the preferred, more constrained choice. When data is abundant and class dispersions differ sharply, QDA captures non-linear curved separations that LDA cannot.
+        </p>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-17.html">&larr; Lecture 17: Regularization: Ridge &amp; Lasso</a>
+      <a href="./lecture-20.html">Lecture 20: Naive Bayes &amp; Neural Networks &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

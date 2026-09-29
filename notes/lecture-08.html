@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 08: Fisher Simplifications &amp; Limit Theorems | Basics of Data Science</title>
+  <meta name="description" content="MIT OCW style lecture notes on Fisher Information computational identities, Markov's inequality, Chebyshev's inequality, convergence in probability, and the Weak Law of Large Numbers.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <div style="display: flex; gap: 8px;">
+        <a href="../lecture%20slides/lecture%238.1%20-%20fisher%20information%20simplifications.pdf" target="_blank" rel="noopener" class="note-slide-link">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+          <span>Slide 8.1 (PDF)</span>
+        </a>
+        <a href="../lecture%20slides/lecture%238.2%20-%20convergence%20in%20probability%20and%20wlln.pdf" target="_blank" rel="noopener" class="note-slide-link">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+          <span>Slide 8.2 (PDF)</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 08: Fisher Information Simplifications &amp; Convergence in Probability</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Nov 16, 2026</div>
+        <div class="note-meta-item"><strong>Instructor:</strong> Prof. Sayeh Mirzaee</div>
+        <div class="note-meta-item"><strong>Readings:</strong> FDS Ch. 3; SFDS Ch. 2; PML-Intro Ch. 4</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-fisher-identities">1. Computational Identities of Fisher Information</a></li>
+        <li><a href="#sec-second-derivative-proof">2. Proof of the Second-Derivative Identity (Second Bartlett Identity)</a></li>
+        <li><a href="#sec-iid-additivity">3. Additivity of Fisher Information for i.i.d. Samples</a></li>
+        <li><a href="#sec-exponential-crlb">4. Detailed Application: Exponential Distribution CRLB</a></li>
+        <li><a href="#sec-calc-motivation">5. From Deterministic Calculus Limits to Random Variable Sequences</a></li>
+        <li><a href="#sec-markov-chebyshev">6. Concentration Inequalities: Generalized Markov &amp; Chebyshev</a></li>
+        <li><a href="#sec-wlln">7. Convergence in Probability &amp; The Weak Law of Large Numbers (WLLN)</a></li>
+        <li><a href="#sec-wlln-examples">8. Applications: Empirical Averages of Exponential and Gamma</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-fisher-identities">1. Computational Identities of Fisher Information</h2>
+      <p>
+        Evaluating Fisher Information directly from its original definition:
+        \[
+          I_n(\theta) = \text{Var}\left(\frac{\partial}{\partial\theta}\ln f(\mathbf{X}; \theta)\right) = E\left[\left(\frac{\partial}{\partial\theta}\ln f(\mathbf{X}; \theta)\right)^2\right]
+        \]
+        frequently requires calculating difficult multidimensional integrals involving squared derivatives. Fortunately, three foundational identities dramatically simplify this computation.
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 1.1 (The Three Canonical Fisher Identities)</span>
+        Under standard regularity conditions (differentiability under the integral sign and support independent of \(\theta\)):
+        <ol>
+          <li><strong>First Bartlett Identity (Zero Expected Score):</strong>
+            \[
+              E\left[\frac{\partial}{\partial\theta}\ln f(X; \theta)\right] = 0
+            \]
+          </li>
+          <li><strong>Second Bartlett Identity (Second-Derivative Identity):</strong>
+            \[
+              I_1(\theta) = -E\left[\frac{\partial^2}{\partial\theta^2}\ln f(X; \theta)\right]
+            \]
+          </li>
+          <li><strong>Additivity under Independence:</strong>
+            If \(X_1, \dots, X_n\) are independent and identically distributed (i.i.d.), then:
+            \[
+              I_n(\theta) = n I_1(\theta)
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 2 -->
+      <h2 id="sec-second-derivative-proof">2. Proof of the Second-Derivative Identity (Second Bartlett Identity)</h2>
+
+      <div class="proof-box">
+        <span class="box-label">Proof of the Second Bartlett Identity</span>
+        Start from the total probability integral condition:
+        \[
+          \int f(x; \theta) \, dx = 1
+        \]
+        Differentiating both sides with respect to \(\theta\) yields the first identity:
+        \[
+          \frac{\partial}{\partial\theta} \int f(x; \theta) \, dx = \int \frac{\partial f(x; \theta)}{\partial\theta} \, dx = \int \left(\frac{\partial}{\partial\theta}\ln f(x; \theta)\right) f(x; \theta) \, dx = E\left[\frac{\partial}{\partial\theta}\ln f(X; \theta)\right] = 0
+        \]
+        Now, differentiate both sides of this expectation integral once more with respect to \(\theta\):
+        \[
+          \frac{\partial}{\partial\theta} \int \left(\frac{\partial}{\partial\theta}\ln f(x; \theta)\right) f(x; \theta) \, dx = 0
+        \]
+        Applying the product rule under the integral sign:
+        \[
+          \int \left[ \left(\frac{\partial^2}{\partial\theta^2}\ln f(x; \theta)\right) f(x; \theta) + \left(\frac{\partial}{\partial\theta}\ln f(x; \theta)\right) \left(\frac{\partial}{\partial\theta} f(x; \theta)\right) \right] dx = 0
+        \]
+        Recall from calculus that \(\frac{\partial}{\partial\theta}f(x; \theta) = f(x; \theta) \frac{\partial}{\partial\theta}\ln f(x; \theta)\). Substituting this into the second term:
+        \[
+          \int \left(\frac{\partial^2}{\partial\theta^2}\ln f(x; \theta)\right) f(x; \theta) \, dx + \int \left(\frac{\partial}{\partial\theta}\ln f(x; \theta)\right)^2 f(x; \theta) \, dx = 0
+        \]
+        Converting both integrals to expectations:
+        \[
+          E\left[\frac{\partial^2}{\partial\theta^2}\ln f(X; \theta)\right] + E\left[\left(\frac{\partial}{\partial\theta}\ln f(X; \theta)\right)^2\right] = 0
+        \]
+        Rearranging terms establishes the result:
+        \[
+          I_1(\theta) = E\left[\left(\frac{\partial}{\partial\theta}\ln f(X; \theta)\right)^2\right] = -E\left[\frac{\partial^2}{\partial\theta^2}\ln f(X; \theta)\right] \quad \blacksquare
+        \]
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-iid-additivity">3. Additivity of Fisher Information for i.i.d. Samples</h2>
+      <p>
+        The slides present two distinct, highly illuminating proofs that \(I_n(\theta) = n I_1(\theta)\).
+      </p>
+
+      <div class="proof-box">
+        <span class="box-label">Proof Method 1: Via Score Summation and Independence (Slide 8.1)</span>
+        For i.i.d. samples \(\mathbf{X} = (X_1, \dots, X_n)\), the joint log-likelihood is:
+        \[
+          \ln f(\mathbf{X}; \theta) = \sum_{i=1}^n \ln f(X_i; \theta) \implies \frac{\partial}{\partial\theta}\ln f(\mathbf{X}; \theta) = \sum_{i=1}^n \frac{\partial}{\partial\theta}\ln f(X_i; \theta)
+        \]
+        Squaring this sum expands into diagonal and off-diagonal cross terms:
+        \[
+          I_n(\theta) = E\left[\left(\sum_{i=1}^n \frac{\partial}{\partial\theta}\ln f(X_i; \theta)\right)^2\right] = \sum_{i=1}^n \sum_{j=1}^n E\left[ \left(\frac{\partial}{\partial\theta}\ln f(X_i; \theta)\right) \left(\frac{\partial}{\partial\theta}\ln f(X_j; \theta)\right) \right]
+        \]
+        We evaluate the expectation in two cases:
+        <ul>
+          <li><strong>Diagonal terms (\(i = j\)):</strong>
+            \[
+              E\left[\left(\frac{\partial}{\partial\theta}\ln f(X_i; \theta)\right)^2\right] = I_1(\theta)
+            \]
+            There are \(n\) such diagonal terms.
+          </li>
+          <li><strong>Off-diagonal terms (\(i \neq j\)):</strong> By mutual independence of \(X_i\) and \(X_j\), the expectation factors into the product of expectations:
+            \[
+              E\left[ \left(\frac{\partial}{\partial\theta}\ln f(X_i; \theta)\right) \left(\frac{\partial}{\partial\theta}\ln f(X_j; \theta)\right) \right] = E\left[\frac{\partial}{\partial\theta}\ln f(X_i; \theta)\right] \cdot E\left[\frac{\partial}{\partial\theta}\ln f(X_j; \theta)\right] = 0 \cdot 0 = 0
+            \]
+            by the First Bartlett Identity!
+          </li>
+        </ul>
+        Summing all \(n^2\) terms:
+        \[
+          I_n(\theta) = \sum_{i=1}^n I_1(\theta) + \sum_{i \neq j} 0 = n I_1(\theta) \quad \blacksquare
+        \]
+      </div>
+
+      <div class="proof-box">
+        <span class="box-label">Proof Method 2: Via Linearity of Second Derivatives</span>
+        Differentiating the joint log-likelihood twice:
+        \[
+          \frac{\partial^2}{\partial\theta^2}\ln f(\mathbf{X}; \theta) = \sum_{i=1}^n \frac{\partial^2}{\partial\theta^2}\ln f(X_i; \theta)
+        \]
+        Taking expectations on both sides and applying linearity:
+        \[
+          I_n(\theta) = -E\left[\sum_{i=1}^n \frac{\partial^2}{\partial\theta^2}\ln f(X_i; \theta)\right] = \sum_{i=1}^n \left(-E\left[\frac{\partial^2}{\partial\theta^2}\ln f(X_i; \theta)\right]\right) = \sum_{i=1}^n I_1(\theta) = n I_1(\theta) \quad \blacksquare
+        \]
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-exponential-crlb">4. Detailed Application: Exponential Distribution CRLB</h2>
+
+      <div class="ex-box">
+        <span class="box-label">Example 4.1 (CRLB for Exponential Parameters)</span>
+        Let \(X_1, \dots, X_n \overset{\text{i.i.d.}}{\sim} \text{Exponential}(\lambda)\), with PDF \(f(x; \lambda) = \lambda e^{-\lambda x}\) for \(x > 0\).
+        <p><strong>Step 1: Compute single-observation Fisher Information via Second Derivative:</strong></p>
+        \[
+          \ln f(x; \lambda) = \ln \lambda - \lambda x \implies \frac{\partial}{\partial\lambda}\ln f = \frac{1}{\lambda} - x \implies \frac{\partial^2}{\partial\lambda^2}\ln f = -\frac{1}{\lambda^2}
+        \]
+        Notice that \(\frac{\partial^2}{\partial\lambda^2}\ln f\) is constant with respect to \(x\). Therefore:
+        \[
+          I_1(\lambda) = -E\left[-\frac{1}{\lambda^2}\right] = \frac{1}{\lambda^2}
+        \]
+        <strong>Step 2: Total Fisher Information for sample size \(n\):</strong>
+        \[
+          I_n(\lambda) = n I_1(\lambda) = \frac{n}{\lambda^2}
+        \]
+        <strong>Step 3: CRLB for estimating \(\tau(\lambda) = \lambda\) directly:</strong>
+        Since \(\tau'(\lambda) = 1\):
+        \[
+          \text{CRLB}(\lambda) = \frac{1}{I_n(\lambda)} = \frac{\lambda^2}{n}
+        \]
+        <strong>Step 4: CRLB for estimating the survival/reliability function \(\tau(\lambda) = e^{-\lambda}\) (reliability at \(t = 1\)):</strong>
+        \[
+          \tau'(\lambda) = \frac{d}{d\lambda}e^{-\lambda} = -e^{-\lambda} \implies [\tau'(\lambda)]^2 = e^{-2\lambda}
+        \]
+        \[
+          \text{CRLB}(\tau(\lambda)) = \frac{[\tau'(\lambda)]^2}{I_n(\lambda)} = \frac{e^{-2\lambda}}{n/\lambda^2} = \frac{\lambda^2 e^{-2\lambda}}{n}
+        \]
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-calc-motivation">5. From Deterministic Calculus Limits to Random Variable Sequences</h2>
+      <p>
+        In classical single-variable calculus, we study the convergence of deterministic sequences of real numbers \(\{a_n\}_{n=1}^\infty\). For example:
+        \[
+          \lim_{n \to \infty} \frac{1}{n} = 0, \quad \lim_{n \to \infty} \frac{2n^2 + 3}{3n^3 - 7} = 0, \quad \lim_{n \to \infty} \frac{2n^2 + 3}{3n^2 - 7} = \frac{2}{3}, \quad \lim_{n \to \infty} \frac{n - 1}{n} = 1
+        \]
+        The formal definition states that \(a_n \to L\) if for every \(\varepsilon > 0\), there exists an integer \(N\) such that \(|a_n - L| < \varepsilon\) for all \(n \ge N\).
+      </p>
+      <p>
+        However, in data science and statistics, we work with a sequence of <strong>random variables</strong> \(X_1, X_2, \dots, X_n\) (such as sample means \(\bar{X}_n\)). What does it mean to ask:
+        \[
+          \lim_{n \to \infty} X_n = ?
+        \]
+        Each \(X_n\) is not a single number, but a function defined on a sample space \(\Omega \to \mathbb{R}\). For any finite \(n\), \(X_n\) produces random values that fluctuate from experiment to experiment. We cannot simply require \(|X_n - X| < \varepsilon\) deterministically for all outcomes.
+      </p>
+      <p>
+        Instead, we assess convergence through the lens of <strong>probability</strong>: we require that the total probability mass of outcomes where \(X_n\) deviates from its target by more than \(\varepsilon\) shrinks to zero as \(n\) approaches infinity.
+      </p>
+
+      <!-- Section 6 -->
+      <h2 id="sec-markov-chebyshev">6. Concentration Inequalities: Generalized Markov &amp; Chebyshev</h2>
+      <p>
+        To prove that probabilities of deviations vanish, we need upper bounds on tail probabilities that require minimal assumptions about the underlying distribution.
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 6.1 (Generalized Markov's Inequality)</span>
+        Let \(X\) be any random variable, and let \(g(x) \ge 0\) be a non-negative function. Then for any positive constant \(c > 0\):
+        \[
+          P(g(X) \ge c) \le \frac{E[g(X)]}{c}
+        \]
+      </div>
+
+      <div class="proof-box">
+        <span class="box-label">Proof of Generalized Markov's Inequality</span>
+        The expected value \(E[g(X)]\) can be written as an integral over the real line partitioned into two disjoint sets, \(\{x: g(x) \ge c\}\) and \(\{x: g(x) < c\}\):
+        \[
+          E[g(X)] = \int_{-\infty}^{\infty} g(x) f_X(x) \, dx = \int_{\{x: g(x) \ge c\}} g(x) f_X(x) \, dx + \int_{\{x: g(x) < c\}} g(x) f_X(x) \, dx
+        \]
+        Since \(g(x) \ge 0\) and \(f_X(x) \ge 0\), the second integral is non-negative:
+        \[
+          \int_{\{x: g(x) < c\}} g(x) f_X(x) \, dx \ge 0
+        \]
+        Moreover, on the set \(\{x: g(x) \ge c\}\), the function satisfies \(g(x) \ge c\). Therefore:
+        \[
+          E[g(X)] \ge \int_{\{x: g(x) \ge c\}} g(x) f_X(x) \, dx \ge \int_{\{x: g(x) \ge c\}} c f_X(x) \, dx = c \int_{\{x: g(x) \ge c\}} f_X(x) \, dx
+        \]
+        The remaining integral is exactly the probability of the event \(\{g(X) \ge c\}\):
+        \[
+          E[g(X)] \ge c \cdot P(g(X) \ge c) \implies P(g(X) \ge c) \le \frac{E[g(X)]}{c} \quad \blacksquare
+        \]
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 6.2 (Chebyshev's Inequality)</span>
+        Let \(X\) be any random variable with mean \(\mu = E[X]\) and finite variance \(\sigma^2 = \text{Var}(X) < \infty\). Then for any \(\varepsilon > 0\):
+        \[
+          P(|X - \mu| \ge \varepsilon) \le \frac{\sigma^2}{\varepsilon^2}
+        \]
+        Equivalently, setting \(\varepsilon = k\sigma\) for \(k > 0\):
+        \[
+          P(|X - \mu| \ge k\sigma) \le \frac{1}{k^2}
+        \]
+      </div>
+
+      <div class="proof-box">
+        <span class="box-label">Proof of Chebyshev's Inequality</span>
+        Observe that the event \(\{|X - \mu| \ge \varepsilon\}\) is algebraically identical to \(\{(X - \mu)^2 \ge \varepsilon^2\}\).
+        Choose the non-negative function \(g(x) = (x - \mu)^2\) and constant \(c = \varepsilon^2\) in Markov's Inequality:
+        \[
+          P(|X - \mu| \ge \varepsilon) = P\left((X - \mu)^2 \ge \varepsilon^2\right) \le \frac{E[(X - \mu)^2]}{\varepsilon^2} = \frac{\text{Var}(X)}{\varepsilon^2} = \frac{\sigma^2}{\varepsilon^2}
+        \]
+        Substituting \(\varepsilon = k\sigma\) yields:
+        \[
+          P(|X - \mu| \ge k\sigma) \le \frac{\sigma^2}{(k\sigma)^2} = \frac{1}{k^2} \quad \blacksquare
+        \]
+      </div>
+
+      <!-- Section 7 -->
+      <h2 id="sec-wlln">7. Convergence in Probability &amp; The Weak Law of Large Numbers (WLLN)</h2>
+
+      <div class="def-box">
+        <span class="box-label">Definition 7.1 (Convergence in Probability)</span>
+        A sequence of random variables \(X_1, X_2, \dots\) converges in probability to a random variable \(X\) (written \(X_n \overset{P}{\longrightarrow} X\)), if for every \(\varepsilon > 0\):
+        \[
+          \lim_{n \to \infty} P(|X_n - X| \ge \varepsilon) = 0 \quad \left(\text{or equivalently, } \lim_{n \to \infty} P(|X_n - X| < \varepsilon) = 1\right)
+        \]
+        <em>Note:</em> The target \(X\) can be a degenerate random variable that equals a deterministic constant \(c\) with probability 1 (i.e., \(P(X = c) = 1\)), in which case we write \(X_n \overset{P}{\longrightarrow} c\).
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 7.2 (The Weak Law of Large Numbers - WLLN)</span>
+        Let \(X_1, X_2, \dots, X_n\) be independent and identically distributed (i.i.d.) random variables with finite expectation \(E[X_i] = \mu\) and finite variance \(\text{Var}(X_i) = \sigma^2 < \infty\).
+        Then the sample average \(\bar{X}_n = \frac{1}{n}\sum_{i=1}^n X_i\) converges in probability to the population mean \(\mu\):
+        \[
+          \bar{X}_n \overset{P}{\longrightarrow} \mu \quad \text{as } n \to \infty
+        \]
+      </div>
+
+      <div class="proof-box">
+        <span class="box-label">Proof of WLLN (Slide 8.2)</span>
+        Recall the fundamental properties of the sample mean:
+        \[
+          E[\bar{X}_n] = \mu, \quad \text{Var}(\bar{X}_n) = \sigma_{\bar{X}}^2 = \frac{\sigma^2}{n} \implies \sigma_{\bar{X}} = \frac{\sigma}{\sqrt{n}}
+        \]
+        Apply Chebyshev's inequality to the random variable \(\bar{X}_n\) with tolerance \(\varepsilon > 0\):
+        \[
+          P(|\bar{X}_n - \mu| \ge \varepsilon) \le \frac{\text{Var}(\bar{X}_n)}{\varepsilon^2} = \frac{\sigma^2}{n \varepsilon^2}
+        \]
+        Alternatively, using the standard deviation formulation with \(k \sigma_{\bar{X}} = \varepsilon \implies k = \frac{\varepsilon\sqrt{n}}{\sigma}\):
+        \[
+          P(|\bar{X}_n - \mu| \ge \varepsilon) = P\left(|\bar{X}_n - \mu| \ge \left(\frac{\varepsilon\sqrt{n}}{\sigma}\right)\sigma_{\bar{X}}\right) \le \frac{1}{k^2} = \frac{\sigma^2}{n \varepsilon^2}
+        \]
+        Taking the limit as \(n \to \infty\) for any fixed, arbitrary \(\varepsilon > 0\):
+        \[
+          0 \le \lim_{n \to \infty} P(|\bar{X}_n - \mu| \ge \varepsilon) \le \lim_{n \to \infty} \frac{\sigma^2}{n \varepsilon^2} = 0
+        \]
+        By the squeeze theorem:
+        \[
+          \lim_{n \to \infty} P(|\bar{X}_n - \mu| \ge \varepsilon) = 0 \implies \bar{X}_n \overset{P}{\longrightarrow} \mu \quad \blacksquare
+        \]
+      </div>
+
+      <!-- Section 8 -->
+      <h2 id="sec-wlln-examples">8. Applications: Empirical Averages of Exponential and Gamma</h2>
+
+      <div class="ex-box">
+        <span class="box-label">Example 8.1 (Sample Mean of Exponential Distribution)</span>
+        Suppose \(X_1, \dots, X_n \overset{\text{i.i.d.}}{\sim} \text{Exponential}(\lambda)\).
+        The population moments are:
+        \[
+          E[X_i] = \frac{1}{\lambda}, \quad \text{Var}(X_i) = \frac{1}{\lambda^2} < \infty
+        \]
+        Since both moments are finite, Theorem 7.2 immediately applies:
+        \[
+          \bar{X}_n = \frac{1}{n}\sum_{i=1}^n X_i \overset{P}{\longrightarrow} \frac{1}{\lambda}
+        \]
+        The empirical average converges in probability to the theoretical mean life time \(1/\lambda\).
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Example 8.2 (Sample Mean of Gamma Distribution)</span>
+        Suppose \(X_1, \dots, X_n \overset{\text{i.i.d.}}{\sim} \text{Gamma}(\alpha, \beta)\) with PDF \(f(x) = \frac{\beta^\alpha}{\Gamma(\alpha)} x^{\alpha - 1} e^{-\beta x}\) for \(x > 0\).
+        The population mean and variance are:
+        \[
+          E[X_i] = \frac{\alpha}{\beta}, \quad \text{Var}(X_i) = \frac{\alpha}{\beta^2} < \infty
+        \]
+        Applying the Weak Law of Large Numbers:
+        \[
+          \bar{X}_n = \frac{1}{n}\sum_{i=1}^n X_i \overset{P}{\longrightarrow} \frac{\alpha}{\beta}
+        \]
+        This guarantees that no matter how complex the sampling variability, empirical averages of gamma variables will concentrate tightly around \(\alpha/\beta\) as \(n\) grows large.
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-07.html">&larr; Lecture 07: Estimator Quality &amp; CRLB</a>
+      <a href="./lecture-09.html">Lecture 09: Convergence in Distribution &amp; CLT &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

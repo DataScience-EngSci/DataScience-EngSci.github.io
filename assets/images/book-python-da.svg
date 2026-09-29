@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 440" width="100%" height="100%">
+  <defs>
+    <linearGradient id="white-cover" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f8fafc"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Cover Background -->
+  <rect width="320" height="440" rx="8" fill="url(#white-cover)" stroke="#e2e8f0" stroke-width="1.5"/>
+
+  <!-- Spine groove -->
+  <line x1="22" y1="0" x2="22" y2="440" stroke="#000" stroke-opacity="0.08" stroke-width="2"/>
+  <line x1="24" y1="0" x2="24" y2="440" stroke="#fff" stroke-opacity="0.8" stroke-width="1"/>
+
+  <!-- Top band (O'Reilly style) -->
+  <rect x="0" y="0" width="320" height="12" rx="0" fill="#990000"/>
+
+  <!-- Brand logo -->
+  <text x="40" y="45" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="14" font-weight="900" fill="#990000" letter-spacing="1">O'REILLY</text>
+
+  <!-- Title -->
+  <text x="40" y="105" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', Georgia, serif" font-size="28" font-weight="800" fill="#0f172a" letter-spacing="-0.5">Python for</text>
+  <text x="40" y="138" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', Georgia, serif" font-size="28" font-weight="800" fill="#0f172a" letter-spacing="-0.5">Data Analysis</text>
+
+  <!-- Subtitle -->
+  <text x="40" y="172" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="12" fill="#475569" font-weight="500">Data Wrangling with pandas, NumPy,</text>
+  <text x="40" y="188" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="12" fill="#475569" font-weight="500">and Jupyter</text>
+
+  <!-- Edition Badge -->
+  <rect x="40" y="206" width="84" height="20" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="48" y="220" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="9.5" font-weight="700" fill="#334155" letter-spacing="0.5">3RD EDITION</text>
+
+  <!-- Illustration: Agave / Geometric Pattern (O'Reilly woodcut vibe) -->
+  <g transform="translate(60, 240)">
+    <rect width="200" height="110" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <!-- Python & Data Art -->
+    <path d="M 20 85 C 40 20, 80 15, 100 65 C 120 100, 160 85, 180 30" fill="none" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 20 55 C 60 70, 90 90, 120 40 C 140 10, 170 30, 180 80" fill="none" stroke="#990000" stroke-width="2.5" stroke-dasharray="4 4" stroke-linecap="round"/>
+    <circle cx="100" cy="65" r="5" fill="#0284c7"/>
+    <circle cx="120" cy="40" r="5" fill="#990000"/>
+    <circle cx="65" cy="48" r="3" fill="#64748b"/>
+    <circle cx="150" cy="58" r="3" fill="#64748b"/>
+  </g>
+
+  <!-- Author -->
+  <text x="40" y="405" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="15" font-weight="600" fill="#0f172a">Wes McKinney</text>
+  <text x="40" y="420" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="10" font-weight="400" fill="#64748b">Creator of the Python pandas project</text>
+</svg>

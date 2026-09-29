@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basics of Data Science | University of Tehran</title>
+  <meta name="description" content="Basics of Data Science — Department of Engineering Science, University of Tehran.">
+
+  <!-- Apple & OpenGraph Meta -->
+  <meta name="apple-mobile-web-app-title" content="Data Science UT">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <link rel="stylesheet" href="./css/main.css">
+  <link rel="icon" type="image/png" href="./assets/images/ut-logo.png">
+
+  <!-- KaTeX for math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Bar with Official University of Tehran Logo -->
+  <header class="site-header" role="banner">
+    <div class="container nav-inner">
+      <a href="#" class="brand" aria-label="University of Tehran - Basics of Data Science">
+        <img src="./assets/images/ut-logo.png" alt="University of Tehran Logo" class="ut-logo-img" width="34" height="34">
+        <div class="brand-text-group">
+          <span class="brand-title">Basics of Data Science</span>
+          <span class="brand-subtitle">University of Tehran</span>
+        </div>
+      </a>
+
+      <!-- Navigation Links -->
+      <nav role="navigation" aria-label="Course Sections">
+        <ul class="nav-links" id="nav-links">
+          <li><a href="#overview" class="nav-link active">Overview</a></li>
+          <li><a href="#calendar" class="nav-link">Calendar</a></li>
+          <li><a href="#lectures" class="nav-link">Lectures</a></li>
+          <li><a href="#homeworks" class="nav-link">Homeworks &amp; Projects</a></li>
+          <li><a href="#references" class="nav-link">References</a></li>
+        </ul>
+      </nav>
+
+      <!-- Action Controls -->
+      <div class="nav-actions">
+        <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle between Light and Dark mode" title="Toggle Theme">
+          <span id="theme-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+        </button>
+
+        <button id="mobile-nav-toggle" class="mobile-nav-toggle" aria-expanded="false" aria-label="Toggle mobile menu">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <header class="hero" role="region" aria-label="Course Header">
+    <div class="container">
+      <div class="hero-institution-badge">
+        <span>Department of Engineering Science</span>
+        <span>&bull;</span>
+        <span>University of Tehran</span>
+        <span>&bull;</span>
+        <span>Academic Year 2026–2027</span>
+      </div>
+
+      <h1 class="hero-title">Basics of Data Science</h1>
+      <p class="hero-lead">
+        A rigorous academic foundation in exploratory data analysis, statistical inference, 
+        machine learning algorithms, and deep neural architectures.
+      </p>
+
+      <!-- Faculty & Logistics Strip (Class 8 of Engineering Science, Obfuscated Email) -->
+      <div class="hero-faculty-bar">
+        <div class="faculty-item">
+          <span class="faculty-label">Instructor</span>
+          <span class="faculty-value">Sayeh Mirzaee</span>
+          <span class="email-obfuscated">s.mirzaei[at]ut[dot]ac[dot]ir</span>
+        </div>
+
+        <div class="faculty-item">
+          <span class="faculty-label">Department</span>
+          <span class="faculty-value">Engineering Science</span>
+          <span style="font-size: 0.8rem; color: var(--text-tertiary);">University of Tehran</span>
+        </div>
+
+        <div class="faculty-item">
+          <span class="faculty-label">Lectures</span>
+          <span class="faculty-value">Sundays &amp; Tuesdays &bull; 9:00 – 10:30 AM</span>
+          <span style="font-size: 0.8rem; color: var(--text-tertiary);">Class 8 of Engineering Science</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main role="main">
+
+    <!-- ====================================================================
+         SECTION 1: OVERVIEW & POLICIES
+         Left: Single Column Syllabus Topics
+         Right: Academic Integrity, Grading, Prerequisites (Replacing Late Policy)
+         ==================================================================== -->
+    <section id="overview" class="section" aria-labelledby="heading-overview">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow">Academic Framework</span>
+          <h2 id="heading-overview" class="section-title">Course Overview &amp; Policies</h2>
+          <p class="section-desc">
+            Syllabus sequence, prerequisite foundations, grading criteria, and academic integrity regulations.
+          </p>
+        </div>
+
+        <div class="overview-editorial-grid">
+          <!-- Left Column: Single-Column Syllabus Topics List -->
+          <div class="editorial-col">
+            <div>
+              <h3 class="editorial-block-title">Syllabus Topics</h3>
+              <p class="editorial-text">Topics covered in chronological sequence across the semester:</p>
+
+              <ul class="syllabus-single-column-list" aria-label="Course Syllabus Topics">
+                <li><span>Data Science lifecycle</span></li>
+                <li><span>Types of data</span></li>
+                <li><span>Statistical Inference</span></li>
+                <li><span>Machine learning</span></li>
+                <li><span>Supervised learning (Regression / Classification)</span></li>
+                <li><span>Probabilistic learning</span></li>
+                <li><span>Generative models</span></li>
+                <li><span>Bayesian models</span></li>
+                <li><span>Neural networks</span></li>
+                <li><span>Evaluation metrics</span></li>
+                <li><span>Kernel methods</span></li>
+                <li><span>Unsupervised learning</span></li>
+                <li><span>Dimensionality Reduction</span></li>
+                <li><span>Clustering</span></li>
+                <li><span>Deep learning (CNN &bull; RNN &bull; NLP &bull; GNN)</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Right Column: Academic Integrity, Grading, Prerequisites -->
+          <div class="editorial-col">
+            <div>
+              <h3 class="editorial-block-title">Academic Integrity &amp; Generative AI Policy</h3>
+              <p class="editorial-text">
+                The academic use of generative AI tools is permitted as supplementary study aids; however, submitted assignments must reflect the student's individual intellectual mastery. Each homework assignment is accompanied by an individual oral or written verification quiz.
+              </p>
+              <div class="minimal-note">
+                <strong>Evaluation Rule:</strong> \(\text{Final HW Grade} = \text{Assignment Score} \times \text{Quiz Coefficient}\). 
+                Students are required to defend their theoretical derivations and explain all algorithmic code implementations during the scheduled evaluation quizzes.
+              </div>
+            </div>
+
+            <div>
+              <h3 class="editorial-block-title">Grading &amp; Assessment Scheme</h3>
+              <table class="grading-table" aria-label="Course grading criteria">
+                <tbody>
+                  <tr>
+                    <td>Theoretical Problem Sets (HW)</td>
+                    <td>25%</td>
+                  </tr>
+                  <tr>
+                    <td>Computer Assignments &amp; Labs (CA)</td>
+                    <td>25%</td>
+                  </tr>
+                  <tr>
+                    <td>Quizzes &amp; Midterm Examination</td>
+                    <td>20%</td>
+                  </tr>
+                  <tr>
+                    <td>Capstone Data Science Project</td>
+                    <td>25%</td>
+                  </tr>
+                  <tr>
+                    <td>Academic Participation &amp; Engagement</td>
+                    <td>5%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Prerequisites (Moved to right column in place of late submissions) -->
+            <div>
+              <h3 class="editorial-block-title">Prerequisites &amp; Academic Preparation</h3>
+              <p class="editorial-text">
+                Formal undergraduate preparation in <strong>Probability &amp; Mathematical Statistics</strong>, <strong>Linear Algebra</strong>, and programming proficiency in <strong>Python</strong> (scientific computing stack including NumPy, SciPy, and Matplotlib).
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 2: CALENDAR (Scrollable Landscape Grid, Class 8)
+         ==================================================================== -->
+    <section id="calendar" class="section" aria-labelledby="heading-calendar">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow">Timeline</span>
+          <h2 id="heading-calendar" class="section-title">Course Schedule &amp; Calendar</h2>
+          <p class="section-desc">
+            Chronological schedule of lectures, quizzes, and project milestones held in Class 8 of Engineering Science (9:00 – 10:30 AM).
+          </p>
+        </div>
+
+        <!-- Calendar Toolbar -->
+        <div class="calendar-toolbar">
+          <div class="calendar-legend-flow">
+            <span><span class="cal-legend-dot lecture"></span>Lecture</span>
+            <span><span class="cal-legend-dot quiz"></span>Quiz / Exam</span>
+            <span><span class="cal-legend-dot milestone"></span>Milestone</span>
+            <span><span class="cal-legend-dot break"></span>Recess</span>
+          </div>
+
+          <div class="calendar-nav-buttons">
+            <button id="cal-scroll-left" class="cal-arrow-btn" aria-label="Scroll earlier in timeline" title="Scroll earlier">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button id="cal-scroll-right" class="cal-arrow-btn" aria-label="Scroll later in timeline" title="Scroll later">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Scrollable Landscape Track -->
+        <div class="timeline-track-container" id="calendar-track" role="region" aria-label="Horizontal course timeline" tabindex="0">
+          <div class="timeline-flex-row">
+
+            <!-- Item 1 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 01</span>
+                  <span class="timeline-pill lecture">Lecture 01</span>
+                </div>
+                <div class="timeline-date">Sun, Sep 28 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Introduction &amp; DS Lifecycle</h4>
+                <p class="timeline-desc">What is Data Science, Big Data 4Vs, lifecycle stages, and data types (categorical vs numerical).</p>
+              </div>
+              <a href="#lec-01" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 2 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 01</span>
+                  <span class="timeline-pill lecture">Lecture 02</span>
+                </div>
+                <div class="timeline-date">Tue, Sep 30 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Probability Review (Part 1)</h4>
+                <p class="timeline-desc">Sample space, axioms, conditional probability, Bayes' rule, and random variables.</p>
+              </div>
+              <a href="#lec-02" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 3 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 02</span>
+                  <span class="timeline-pill lecture">Lecture 03</span>
+                </div>
+                <div class="timeline-date">Sun, Oct 05 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Probability Review (Part 2)</h4>
+                <p class="timeline-desc">Joint/conditional distributions, marginals, independence, expectation, variance, and covariance.</p>
+              </div>
+              <a href="#lec-03" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 4 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 02</span>
+                  <span class="timeline-pill lecture">Lecture 04</span>
+                </div>
+                <div class="timeline-date">Tue, Oct 07 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Sampling Methods &amp; Bias</h4>
+                <p class="timeline-desc">Simple random sampling, stratified, cluster, systematic sampling, and sampling bias.</p>
+              </div>
+              <a href="#lec-04" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 5: Quiz 1 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 03</span>
+                  <span class="timeline-pill quiz">HW 01 Quiz</span>
+                </div>
+                <div class="timeline-date">Sun, Oct 12 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">HW 1 Verification Quiz</h4>
+                <p class="timeline-desc">In-class quiz for HW 1 (1.0 coefficient multiplier on homework grade).</p>
+              </div>
+              <span style="font-size: 0.78rem; color: var(--text-tertiary); margin-top: auto;">Class 8</span>
+            </div>
+
+            <!-- Item 6 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 03</span>
+                  <span class="timeline-pill lecture">Lecture 05</span>
+                </div>
+                <div class="timeline-date">Tue, Oct 14 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Point Estimation &amp; MLE</h4>
+                <p class="timeline-desc">Estimator vs estimate, unbiasedness, likelihood functions, and MLE derivations (Bernoulli &amp; Exponential).</p>
+              </div>
+              <a href="#lec-05" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 7 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 04</span>
+                  <span class="timeline-pill lecture">Lecture 06</span>
+                </div>
+                <div class="timeline-date">Sun, Oct 19 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Continuous MLE &amp; Invariance</h4>
+                <p class="timeline-desc">Normal &amp; Uniform MLE, indicator supports, order statistics, and MLE invariance property.</p>
+              </div>
+              <a href="#lec-06" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 8 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 04</span>
+                  <span class="timeline-pill lecture">Lecture 07</span>
+                </div>
+                <div class="timeline-date">Tue, Oct 21 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">MSE &amp; Cram&eacute;r-Rao Bound</h4>
+                <p class="timeline-desc">MSE decomposition (Var + Bias&sup2;), relative efficiency, Fisher Information, and CRLB proof.</p>
+              </div>
+              <a href="#lec-07" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 9 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 05</span>
+                  <span class="timeline-pill lecture">Lecture 08</span>
+                </div>
+                <div class="timeline-date">Sun, Oct 26 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Fisher Simplifications &amp; WLLN</h4>
+                <p class="timeline-desc">Fisher 2nd derivative identities, Markov &amp; Chebyshev inequalities, and Weak Law of Large Numbers.</p>
+              </div>
+              <a href="#lec-08" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 10 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 05</span>
+                  <span class="timeline-pill lecture">Lecture 09</span>
+                </div>
+                <div class="timeline-date">Tue, Oct 28 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Central Limit Theorem</h4>
+                <p class="timeline-desc">Convergence in distribution, normal distributions, standard normal CDF, and Central Limit Theorem (CLT).</p>
+              </div>
+              <a href="#lec-09" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 11 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 06</span>
+                  <span class="timeline-pill lecture">Lecture 10</span>
+                </div>
+                <div class="timeline-date">Sun, Nov 02 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Asymptotic Properties of MLE</h4>
+                <p class="timeline-desc">Consistency, asymptotic normality &amp; efficiency, regularity conditions, and Continuous Mapping Theorem.</p>
+              </div>
+              <a href="#lec-10" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 12 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 06</span>
+                  <span class="timeline-pill lecture">Lecture 11</span>
+                </div>
+                <div class="timeline-date">Tue, Nov 04 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Confidence Intervals &amp; Student's t</h4>
+                <p class="timeline-desc">Pivotal quantities, large-sample intervals via CLT/Slutsky, Chi-squared, and Student's t-distribution.</p>
+              </div>
+              <a href="#lec-11" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 13: Milestone -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 06</span>
+                  <span class="timeline-pill milestone">Milestone</span>
+                </div>
+                <div class="timeline-date">Thu, Nov 06 &bull; 23:59 PM</div>
+                <h4 class="timeline-title">Project Proposal Due</h4>
+                <p class="timeline-desc">Dataset selection, analytical problem statement, and baseline methodology plan.</p>
+              </div>
+              <a href="#homeworks" class="timeline-action-link">Project Specs &rarr;</a>
+            </div>
+
+            <!-- Item 14 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 07</span>
+                  <span class="timeline-pill lecture">Lecture 12</span>
+                </div>
+                <div class="timeline-date">Sun, Nov 09 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Two-Sample Inference &amp; Proportions</h4>
+                <p class="timeline-desc">Difference of means (pooled and Welch t), single proportion intervals, and A/B testing difference of proportions.</p>
+              </div>
+              <a href="#lec-12" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 15 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 07</span>
+                  <span class="timeline-pill lecture">Lecture 13</span>
+                </div>
+                <div class="timeline-date">Tue, Nov 11 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Foundations of AI &amp; Agents</h4>
+                <p class="timeline-desc">Rational agent paradigm, PEAS environment specifications, agent architectures, and learning agents.</p>
+              </div>
+              <a href="#lec-13" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 16 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 08</span>
+                  <span class="timeline-pill lecture">Lecture 14</span>
+                </div>
+                <div class="timeline-date">Sun, Nov 16 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Supervised Learning &amp; Metrics</h4>
+                <p class="timeline-desc">Regression vs. classification, empirical risk minimization, Iris dataset, cross-validation, and metrics.</p>
+              </div>
+              <a href="#lec-14" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 17 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 08</span>
+                  <span class="timeline-pill lecture">Lecture 15</span>
+                </div>
+                <div class="timeline-date">Tue, Nov 18 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Linear Regression &amp; Optimization</h4>
+                <p class="timeline-desc">OLS cost function, batch gradient descent derivation, vectorization, and closed-form Normal Equations.</p>
+              </div>
+              <a href="#lec-15" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 18 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 09</span>
+                  <span class="timeline-pill lecture">Lecture 16</span>
+                </div>
+                <div class="timeline-date">Sun, Nov 23 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Logistic Regression &amp; Classification</h4>
+                <p class="timeline-desc">Sigmoid activation, logit and odds ratio, binary cross-entropy loss, decision boundaries, and gradient descent.</p>
+              </div>
+              <a href="#lec-16" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 19 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 09</span>
+                  <span class="timeline-pill lecture">Lecture 17</span>
+                </div>
+                <div class="timeline-date">Tue, Nov 25 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Regularization: Ridge &amp; Lasso</h4>
+                <p class="timeline-desc">Bias-variance tradeoff, L2 Ridge regression weight decay, L1 Lasso feature sparsity, and Elastic Net.</p>
+              </div>
+              <a href="#lec-17" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 20 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 10</span>
+                  <span class="timeline-pill lecture">Lecture 18</span>
+                </div>
+                <div class="timeline-date">Sun, Nov 30 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">GLMs &amp; Generative Learning</h4>
+                <p class="timeline-desc">Generalized Linear Models, exponential family, Softmax regression, and Gaussian Discriminant Analysis (GDA).</p>
+              </div>
+              <a href="#lec-18" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 21: Midterm Exam -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 10</span>
+                  <span class="timeline-pill quiz">Midterm Exam</span>
+                </div>
+                <div class="timeline-date">Tue, Dec 02 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Midterm Examination</h4>
+                <p class="timeline-desc">Comprehensive exam covering Lectures 01 through 18 in Class 8 of Engineering Science.</p>
+              </div>
+              <a href="#overview" class="timeline-action-link">Course Overview &rarr;</a>
+            </div>
+
+            <!-- Item 22 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 11</span>
+                  <span class="timeline-pill lecture">Lecture 20</span>
+                </div>
+                <div class="timeline-date">Sun, Dec 07 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Naive Bayes &amp; Neural Nets</h4>
+                <p class="timeline-desc">Naive Bayes conditional independence, Laplace smoothing, text classification, and neuron model foundations.</p>
+              </div>
+              <a href="#lec-20" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 23 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 11</span>
+                  <span class="timeline-pill lecture">Lecture 21</span>
+                </div>
+                <div class="timeline-date">Tue, Dec 09 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Deep Networks &amp; Backprop</h4>
+                <p class="timeline-desc">Forward propagation, backpropagation chain rule derivation, weight initialization, and gradient checking.</p>
+              </div>
+              <a href="#lec-21" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 24 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 12</span>
+                  <span class="timeline-pill lecture">Lecture 22</span>
+                </div>
+                <div class="timeline-date">Sun, Dec 14 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">ML Diagnostics &amp; Advice</h4>
+                <p class="timeline-desc">Evaluating hypotheses, bias vs variance diagnostics, learning curves, and skewed class metrics (F1 score).</p>
+              </div>
+              <a href="#lec-22" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 25 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 12</span>
+                  <span class="timeline-pill lecture">Lecture 23</span>
+                </div>
+                <div class="timeline-date">Tue, Dec 16 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Kernel Methods &amp; The Kernel Trick</h4>
+                <p class="timeline-desc">Feature maps, dual representations, polynomial &amp; Gaussian RBF kernels, and Mercer's theorem.</p>
+              </div>
+              <a href="#lec-23" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 26 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 13</span>
+                  <span class="timeline-pill lecture">Lecture 24</span>
+                </div>
+                <div class="timeline-date">Sun, Dec 21 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Support Vector Machines</h4>
+                <p class="timeline-desc">Functional &amp; geometric margins, optimal margin classifier, Lagrange duality, and soft-margin SVM.</p>
+              </div>
+              <a href="#lec-24" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 27 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 13</span>
+                  <span class="timeline-pill lecture">Lecture 25</span>
+                </div>
+                <div class="timeline-date">Tue, Dec 23 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">SVM Duality &amp; K-Means</h4>
+                <p class="timeline-desc">Hinge loss synthesis, unsupervised learning introduction, K-Means clustering algorithm, and distortion convergence.</p>
+              </div>
+              <a href="#lec-25" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 28 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 14</span>
+                  <span class="timeline-pill lecture">Lecture 26</span>
+                </div>
+                <div class="timeline-date">Sun, Dec 28 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Gaussian Mixtures &amp; EM</h4>
+                <p class="timeline-desc">Latent variable mixture models, soft clustering, Expectation-Maximization (EM) algorithm, and ELBO.</p>
+              </div>
+              <a href="#lec-26" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 29 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 14</span>
+                  <span class="timeline-pill lecture">Lecture 27</span>
+                </div>
+                <div class="timeline-date">Tue, Dec 30 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">PCA &amp; Dimensionality Reduction</h4>
+                <p class="timeline-desc">Principal Component Analysis (PCA), covariance eigensystems, reconstruction error, SVD, and Fisher's LDA.</p>
+              </div>
+              <a href="#lec-27" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 30 -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 15</span>
+                  <span class="timeline-pill lecture">Lecture 28</span>
+                </div>
+                <div class="timeline-date">Sun, Jan 04 &bull; 9:00 – 10:30 AM</div>
+                <h4 class="timeline-title">Independent Component Analysis</h4>
+                <p class="timeline-desc">The cocktail party problem, non-Gaussianity requirement, change of variables density, and natural gradient ascent.</p>
+              </div>
+              <a href="#lec-28" class="timeline-action-link">View Lecture &darr;</a>
+            </div>
+
+            <!-- Item 31: Milestone -->
+            <div class="timeline-item">
+              <div>
+                <div class="timeline-date-head">
+                  <span class="timeline-week">Week 15</span>
+                  <span class="timeline-pill milestone">Milestone</span>
+                </div>
+                <div class="timeline-date">Tue, Jan 06 &bull; 9:00 AM</div>
+                <h4 class="timeline-title">Final Project Presentations</h4>
+                <p class="timeline-desc">Capstone project presentations, final codebase submissions, and technical report evaluations.</p>
+              </div>
+              <a href="#homeworks" class="timeline-action-link">Project Specs &rarr;</a>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 3: LECTURES (Named: lecture#1 - introduction, etc.)
+         ==================================================================== -->
+    <section id="lectures" class="section" aria-labelledby="heading-lectures">
+      <div class="container">
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <span class="section-eyebrow">Curriculum</span>
+            <h2 id="heading-lectures" class="section-title">Course Lectures &amp; Materials</h2>
+            <p class="section-desc">
+              Structured lectures covering the complete syllabus. Each lecture provides an interactive online note 
+              and direct link to presentation slides.
+            </p>
+          </div>
+          <!-- Direct Link to Slides Folder -->
+          <a href="./lecture%20slides/index.html" target="_blank" rel="noopener" class="pill-action" title="Browse presentation slides directory">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            <span>Open Slides Folder</span>
+          </a>
+        </div>
+
+        <!-- Chapter 1: Data Science Lifecycle & Probability Foundations -->
+        <div class="lectures-chapter">
+          <div class="chapter-title-row">
+            <h3 class="chapter-heading">Chapter 01: Data Science Lifecycle &amp; Probability Foundations</h3>
+            <span class="chapter-sub">Lectures 01 – 03</span>
+          </div>
+
+          <!-- Lecture 01 -->
+          <div class="lecture-row" id="lec-01">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 01</span>
+              <span class="lec-date-text">Sep 28, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Introduction to Data Science &amp; Lifecycle</div>
+              <div class="lec-synopsis-text">What is Data Science, Big Data 4Vs (Volume, Velocity, Variety, Veracity), interdisciplinary skills, lifecycle stages, and types of data (structured vs unstructured, categorical vs numerical).</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-01.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%231%20-%20introduction.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 1</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 02 -->
+          <div class="lecture-row" id="lec-02">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 02</span>
+              <span class="lec-date-text">Sep 30, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Review of Probability Theory (Part 1)</div>
+              <div class="lec-synopsis-text">Sample space, event algebra, probability axioms, conditional probability, Law of Total Probability, Bayes' rule, and discrete vs continuous random variables.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-02.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%232%20-%20probability%20review.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 2</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 03 -->
+          <div class="lecture-row" id="lec-03">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 03</span>
+              <span class="lec-date-text">Oct 05, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Probability Distributions &amp; Expectations (Part 2)</div>
+              <div class="lec-synopsis-text">Probability density and mass functions (PDF, PMF, CDF), joint distributions, marginalization, conditional distributions, statistical independence, expectation, variance, and covariance.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-03.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%233%20-%20probability%20review.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 3</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 2: Sampling & Statistical Estimation -->
+        <div class="lectures-chapter">
+          <div class="chapter-title-row">
+            <h3 class="chapter-heading">Chapter 02: Sampling &amp; Statistical Estimation</h3>
+            <span class="chapter-sub">Lectures 04 – 05</span>
+          </div>
+
+          <!-- Lecture 04 -->
+          <div class="lecture-row" id="lec-04">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 04</span>
+              <span class="lec-date-text">Oct 07, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Sampling Methods &amp; Sampling Bias</div>
+              <div class="lec-synopsis-text">Population vs random sample, simple random sampling, stratified sampling, cluster sampling, systematic sampling, and sources of sampling bias.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-04.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%234%20-%20sampling%20methods.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 4</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 05 -->
+          <div class="lecture-row" id="lec-05">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 05</span>
+              <span class="lec-date-text">Oct 14, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Point Estimation &amp; Maximum Likelihood Estimation (MLE)</div>
+              <div class="lec-synopsis-text">Random samples, point estimators vs estimates, unbiased estimators, variance of estimators, likelihood function, log-likelihood, and MLE derivations for Bernoulli &amp; Exponential models.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-05.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%235.1%20-%20point%20estimation.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 1: Point Estimation">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 5.1</span>
+              </a>
+              <a href="./lecture%20slides/lecture%235.2%20-%20maximum%20likelihood%20estimation.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 2: MLE Intuition">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 5.2</span>
+              </a>
+              <a href="./lecture%20slides/lecture%235.3%20-%20mle%20derivations.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 3: MLE Derivations">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 5.3</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 3: Continuous MLE & Invariance -->
+        <div class="lectures-chapter">
+          <div class="chapter-title-row">
+            <h3 class="chapter-heading">Chapter 03: Continuous Distributions &amp; Invariance Property</h3>
+            <span class="chapter-sub">Lecture 06</span>
+          </div>
+
+          <!-- Lecture 06 -->
+          <div class="lecture-row" id="lec-06">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 06</span>
+              <span class="lec-date-text">Oct 19, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Continuous MLEs &amp; The Invariance Property</div>
+              <div class="lec-synopsis-text">MLE for Normal distribution (mean &amp; variance), sample variance bias, Uniform\((0, \theta)\) MLE with indicator bounds and order statistics \(\max(X_i)\), reparameterization, and invariance of maximum likelihood estimators.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-06.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%236.1%20-%20normal%20and%20uniform%20mle.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 1: Normal &amp; Uniform MLE">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 6.1</span>
+              </a>
+              <a href="./lecture%20slides/lecture%236.2%20-%20invariance%20property%20of%20mles.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 2: Invariance Property">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 6.2</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 4: Estimator Optimality & Information Bounds -->
+        <div class="lectures-chapter">
+          <div class="chapter-title-row">
+            <h3 class="chapter-heading">Chapter 04: Estimator Optimality &amp; Information Bounds</h3>
+            <span class="chapter-sub">Lectures 07 – 08</span>
+          </div>
+
+          <!-- Lecture 07 -->
+          <div class="lecture-row" id="lec-07">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 07</span>
+              <span class="lec-date-text">Oct 21, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">MSE, Efficiency &amp; Cram&eacute;r-Rao Lower Bound</div>
+              <div class="lec-synopsis-text">Mean Squared Error decomposition (\(\text{MSE} = \text{Var} + \text{Bias}^2\)), relative efficiency, Fisher Information definition, Cram&eacute;r-Rao Lower Bound (CRLB) derivation via Cauchy-Schwarz, and Uniformly Minimum Variance Unbiased Estimators (UMVUE).</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-07.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%237.1%20-%20mse%20and%20efficiency.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 1: MSE &amp; Relative Efficiency">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 7.1</span>
+              </a>
+              <a href="./lecture%20slides/lecture%237.2%20-%20cramer-rao%20lower%20bound.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 2: CRLB &amp; UMVUE">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 7.2</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 08 -->
+          <div class="lecture-row" id="lec-08">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 08</span>
+              <span class="lec-date-text">Oct 26, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Fisher Information Simplifications &amp; Weak Law of Large Numbers</div>
+              <div class="lec-synopsis-text">Fisher Information computational simplifications (second derivative identity \(I_n = -E[\partial^2/\partial\theta^2 \ln f]\), i.i.d. additivity), Markov's inequality, Chebyshev's inequality, convergence in probability, and proof of the Weak Law of Large Numbers (WLLN).</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-08.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%238.1%20-%20fisher%20information%20simplifications.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 1: Fisher Simplifications">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 8.1</span>
+              </a>
+              <a href="./lecture%20slides/lecture%238.2%20-%20convergence%20in%20probability%20and%20wlln.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 2: Inequalities &amp; WLLN">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 8.2</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 5: Asymptotic Distributions & Estimator Consistency -->
+        <div class="lectures-chapter">
+          <div class="chapter-title-row">
+            <h3 class="chapter-heading">Chapter 05: Asymptotic Distributions &amp; Estimator Consistency</h3>
+            <span class="chapter-sub">Lectures 09 – 10</span>
+          </div>
+
+          <!-- Lecture 09 -->
+          <div class="lecture-row" id="lec-09">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 09</span>
+              <span class="lec-date-text">Oct 28, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Convergence in Distribution &amp; Central Limit Theorem</div>
+              <div class="lec-synopsis-text">Linear combinations of normal variables, standard normal CDF computation, formal definition of convergence in distribution (\(X_n \xrightarrow{d} X\)), empirical sampling distributions across sample sizes, and the Central Limit Theorem (CLT).</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-09.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%239%20-%20central%20limit%20theorem.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 9</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 10 -->
+          <div class="lecture-row" id="lec-10">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 10</span>
+              <span class="lec-date-text">Nov 02, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Asymptotic Properties of Maximum Likelihood Estimators</div>
+              <div class="lec-synopsis-text">Asymptotic regularity conditions, existence and uniqueness, consistency (\(\hat{\theta}_n \xrightarrow{P} \theta\)), asymptotic unbiasedness, asymptotic efficiency, asymptotic normality, Continuous Mapping Theorem, and Uniform\((0, \theta)\) maximum order statistic consistency.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-10.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2310%20-%20asymptotic%20properties%20of%20mle.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 10</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 6: Statistical Inference & Confidence Intervals -->
+        <div class="lectures-chapter">
+          <div class="chapter-title-row">
+            <h3 class="chapter-heading">Chapter 06: Statistical Inference &amp; Confidence Intervals</h3>
+            <span class="chapter-sub">Lectures 11 – 12</span>
+          </div>
+
+          <!-- Lecture 11 -->
+          <div class="lecture-row" id="lec-11">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 11</span>
+              <span class="lec-date-text">Nov 04, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Confidence Intervals, Large Samples &amp; Student's t-Distribution</div>
+              <div class="lec-synopsis-text">From point estimates to interval estimation, pivotal quantities, exact intervals with known variance, margin of error &amp; sample size planning, large-sample intervals via CLT and Slutsky's theorem, one-sided bounds, Chi-Squared distribution, sample variance distribution, and Student's \(t\)-distribution for small samples.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-11.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2311.1%20-%20introduction%20to%20confidence%20intervals.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 1: Introduction to Confidence Intervals">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 11.1</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2311.2%20-%20large%20sample%20confidence%20intervals.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 2: Large Sample Confidence Intervals">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 11.2</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2311.3%20-%20chi-squared%20and%20t%20distributions.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 3: Chi-Squared &amp; Student's t">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 11.3</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 12 -->
+          <div class="lecture-row" id="lec-12">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 12</span>
+              <span class="lec-date-text">Nov 09, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Two-Sample Confidence Intervals: Difference of Means &amp; Proportions</div>
+              <div class="lec-synopsis-text">Two-sample comparative experiments, difference of means with known variances, pooled \(t\)-procedure for equal unknown variances, Welch-Satterthwaite approximation for unequal variances, paired samples, single proportion Wald and Wilson score intervals, difference of proportions, and A/B testing.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-12.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2312.1%20-%20difference%20of%20means%20known%20variances.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 1: Diff of Means (Known Var)">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 12.1</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2312.2%20-%20difference%20of%20means%20unknown%20variances.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 2: Diff of Means (Unknown Var)">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 12.2</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2312.3%20-%20confidence%20intervals%20for%20proportions.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 3: Intervals for Proportions">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 12.3</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2312.4%20-%20difference%20of%20proportions.pdf" target="_blank" rel="noopener" class="btn-action btn-slide" title="Part 4: Diff of Proportions">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 12.4</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 7: Introduction to Artificial Intelligence & Intelligent Agents -->
+        <div class="lectures-chapter">
+          <div class="chapter-title-row">
+            <h3 class="chapter-heading">Chapter 07: Foundations of Artificial Intelligence</h3>
+            <span class="chapter-sub">Lecture 13</span>
+          </div>
+
+          <!-- Lecture 13 -->
+          <div class="lecture-row" id="lec-13">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 13</span>
+              <span class="lec-date-text">Nov 11, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Foundations of Artificial Intelligence &amp; Intelligent Agents</div>
+              <div class="lec-synopsis-text">Defining AI across human vs. rational dimensions, the rational agent paradigm, formal percept-to-action mappings (\(f: \mathcal{P}^* \to \mathcal{A}\)), PEAS environment specification, environmental properties, agent architectures (reflex, model-based, goal-based, utility-based), learning agent components, and the transition to machine learning.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-13.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2313%20-%20introduction%20to%20artificial%20intelligence.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 13</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 8: Supervised Learning & Regression Models -->
+        <div class="lectures-chapter">
+          <div class="chapter-title-row">
+            <h3 class="chapter-heading">Chapter 08: Supervised Learning &amp; Regression Models</h3>
+            <span class="chapter-sub">Lectures 14 – 17</span>
+          </div>
+
+          <!-- Lecture 14 -->
+          <div class="lecture-row" id="lec-14">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 14</span>
+              <span class="lec-date-text">Nov 16, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Supervised Learning: Regression vs. Classification</div>
+              <div class="lec-synopsis-text">Supervised learning formulation, hypothesis classes, empirical risk minimization, regression vs classification tasks, Fisher's Iris dataset case study, train/val/test splits, data leakage prevention, \(k\)-fold cross-validation, and performance metrics (MSE, RMSE, \(R^2\), Precision, Recall, \(F_1\), ROC-AUC).</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-14.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2314%20-%20supervised%20learning%20regression%20and%20classification.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 14</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 15 -->
+          <div class="lecture-row" id="lec-15">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 15</span>
+              <span class="lec-date-text">Nov 18, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Linear Regression, Cost Functions &amp; Gradient Descent</div>
+              <div class="lec-synopsis-text">Multivariate linear hypothesis (\(h_\theta(x) = \theta^T x\)), Ordinary Least Squares (OLS) Mean Squared Error cost, convexity of error surfaces, batch gradient descent update derivations, vectorized matrix implementation, feature scaling &amp; normalization, closed-form Normal Equations (\(\theta = (X^T X)^{-1} X^T y\)), and complexity comparison.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-15.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2315%20-%20linear%20regression%20and%20gradient%20descent.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 15</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 16 -->
+          <div class="lecture-row" id="lec-16">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 16</span>
+              <span class="lec-date-text">Nov 23, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Logistic Regression &amp; Classification</div>
+              <div class="lec-synopsis-text">Failure of linear regression for classification, sigmoid logistic activation (\(g(z) = \frac{1}{1+e^{-z}}\)), logit &amp; odds ratio, probabilistic classification interpretation, decision boundaries, Bernoulli likelihood &amp; Binary Cross-Entropy loss derivation, convexity, gradient descent derivation, and multiclass One-vs-Rest / Softmax extensions.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-16.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2316%20-%20logistic%20regression%20and%20classification.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 16</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 17 -->
+          <div class="lecture-row" id="lec-17">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 17</span>
+              <span class="lec-date-text">Nov 25, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Regularization &amp; Overfitting: Ridge and Lasso</div>
+              <div class="lec-synopsis-text">Overfitting vs underfitting, the bias-variance tradeoff decomposition (\(\text{MSE} = \text{Bias}^2 + \text{Var} + \sigma^2\)), regularization principle, Ridge regression (\(L_2\) penalty, weight decay, regularized normal equations &amp; guaranteed invertibility), Lasso regression (\(L_1\) penalty, geometric sparsity intuition, feature selection), Elastic Net, and regularization paths.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-17.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2317%20-%20regularization%20ridge%20and%20lasso.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 17</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 9: Generalized Linear Models & Generative Classifiers -->
+        <div class="lectures-chapter">
+          <div class="chapter-title-row">
+            <h3 class="chapter-heading">Chapter 09: Generalized Linear Models &amp; Generative Learning</h3>
+            <span class="chapter-sub">Lectures 18 &amp; 20</span>
+          </div>
+
+          <!-- Lecture 18 -->
+          <div class="lecture-row" id="lec-18">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 18</span>
+              <span class="lec-date-text">Nov 30, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Generalized Linear Models &amp; Generative Learning</div>
+              <div class="lec-synopsis-text">Probabilistic interpretation of regression and classification, the Exponential Family canonical form, constructing GLMs, Softmax regression for multiclass classification, discriminative vs. generative learning, and Gaussian Discriminant Analysis (GDA).</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-18.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2318%20-%20generalized%20linear%20models%20and%20generative%20learning.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 18</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 20 -->
+          <div class="lecture-row" id="lec-20">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 20</span>
+              <span class="lec-date-text">Dec 07, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Naive Bayes Classifiers &amp; Introduction to Neural Networks</div>
+              <div class="lec-synopsis-text">Discrete generative classification, curse of dimensionality, Naive Bayes conditional independence assumption, maximum likelihood parameter estimation, text classification, Laplace smoothing, biological neuron models, and multilayer perceptron architectures.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-20.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2320%20-%20naive%20bayes%20and%20neural%20networks.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 20</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 10: Deep Learning & Neural Networks -->
+        <div class="lectures-chapter">
+          <div class="chapter-title-row">
+            <h3 class="chapter-heading">Chapter 10: Deep Learning &amp; Neural Networks</h3>
+            <span class="chapter-sub">Lecture 21</span>
+          </div>
+
+          <!-- Lecture 21 -->
+          <div class="lecture-row" id="lec-21">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 21</span>
+              <span class="lec-date-text">Dec 09, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Deep Neural Networks &amp; The Backpropagation Algorithm</div>
+              <div class="lec-synopsis-text">Multilayer perceptron architecture, vectorized forward propagation, categorical cross-entropy loss, error vectors (\(\delta^{[l]}\)), rigorous chain-rule derivation of backpropagation, symmetry breaking via Xavier/He weight initialization, and numerical gradient checking.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-21.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2321%20-%20neural%20networks%20and%20backpropagation.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 21</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 11: Machine Learning Diagnostics & Advice -->
+        <div class="lectures-chapter">
+          <div class="chapter-title-row">
+            <h3 class="chapter-heading">Chapter 11: Machine Learning Diagnostics &amp; Advice</h3>
+            <span class="chapter-sub">Lecture 22</span>
+          </div>
+
+          <!-- Lecture 22 -->
+          <div class="lecture-row" id="lec-22">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 22</span>
+              <span class="lec-date-text">Dec 14, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Advice for Applying Machine Learning &amp; Debugging Diagnostics</div>
+              <div class="lec-synopsis-text">Systematic debugging workflows, evaluating hypotheses (train/val/test), diagnosing high bias vs high variance, behavior of regularization hyperparameter \(\lambda\), learning curves as a function of sample size \(m\), and error metrics for skewed classes (Precision, Recall, \(F_1\)-score).</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-22.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2322%20-%20machine%20learning%20diagnostics%20and%20debugging.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 22</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 12: Kernel Methods & Support Vector Machines -->
+        <div class="lectures-chapter">
+          <div class="chapter-title-row">
+            <h3 class="chapter-heading">Chapter 12: Kernel Methods &amp; Support Vector Machines</h3>
+            <span class="chapter-sub">Lectures 23 – 25</span>
+          </div>
+
+          <!-- Lecture 23 -->
+          <div class="lecture-row" id="lec-23">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 23</span>
+              <span class="lec-date-text">Dec 16, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Kernel Methods, Feature Maps &amp; The Kernel Trick</div>
+              <div class="lec-synopsis-text">Non-linear feature mappings (\(\phi(x)\)), dual representation of linear regression, the Kernel Trick (\(K(x, z) = \langle \phi(x), \phi(z) \rangle\)), polynomial and Gaussian RBF kernels, infinite-dimensional feature spaces, Mercer's theorem, and kernels as similarity metrics.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-23.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2323%20-%20kernel%20methods%20and%20the%20kernel%20trick.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 23</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 24 -->
+          <div class="lecture-row" id="lec-24">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 24</span>
+              <span class="lec-date-text">Dec 21, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Support Vector Machines: Maximum Margin &amp; Duality</div>
+              <div class="lec-synopsis-text">Optimal margin classifiers, functional and geometric margins, quadratic programming formulation (\(\min \frac{1}{2}\|w\|^2\)), Lagrange duality, Karush-Kuhn-Tucker (KKT) conditions, support vector sparsity, soft-margin box constraints (\(0 \le \alpha_i \le C\)), and non-linear kernel SVM.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-24.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2324%20-%20support%20vector%20machines.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 24</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 25 -->
+          <div class="lecture-row" id="lec-25">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 25</span>
+              <span class="lec-date-text">Dec 23, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">SVM Duality, Slack Variables &amp; K-Means Clustering</div>
+              <div class="lec-synopsis-text">Hinge loss formulation, multiclass SVM decomposition (One-vs-Rest and One-vs-One), introduction to unsupervised learning, the K-Means clustering algorithm, coordinate descent proof of distortion convergence, local minima, K-Means++, and the Elbow method.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-25.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2325%20-%20svm%20duality%20and%20k-means%20clustering.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 25</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 13: Unsupervised Learning: Mixture Models & Dimensionality Reduction -->
+        <div class="lectures-chapter">
+          <div class="chapter-title-row">
+            <h3 class="chapter-heading">Chapter 13: Mixture Models &amp; Dimensionality Reduction</h3>
+            <span class="chapter-sub">Lectures 26 – 28</span>
+          </div>
+
+          <!-- Lecture 26 -->
+          <div class="lecture-row" id="lec-26">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 26</span>
+              <span class="lec-date-text">Dec 28, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Gaussian Mixture Models &amp; The Expectation-Maximization Algorithm</div>
+              <div class="lec-synopsis-text">Soft probabilistic clustering, latent variable models, failure of direct MLE due to sums inside logarithms, Expectation-Maximization (EM) algorithm derivation (E-step responsibilities, M-step updates), Jensen's inequality, Evidence Lower Bound (ELBO), and monotonic likelihood convergence.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-26.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2326%2627%20-%20gaussian%20mixtures%20em%20and%20pca.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 26&amp;27</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 27 -->
+          <div class="lecture-row" id="lec-27">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 27</span>
+              <span class="lec-date-text">Dec 30, 2026</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Principal Component Analysis (PCA) &amp; Linear Discriminant Analysis (LDA)</div>
+              <div class="lec-synopsis-text">Dimensionality reduction, maximizing projected variance, empirical covariance matrix eigensystem, Singular Value Decomposition (SVD), reconstruction error, explained variance ratio, common PCA fallacies, Fisher's Linear Discriminant Analysis (LDA), and Kernel Discriminant Analysis (KDA).</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-27.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2326%2627%20-%20gaussian%20mixtures%20em%20and%20pca.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 26&amp;27</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Lecture 28 -->
+          <div class="lecture-row" id="lec-28">
+            <div class="lecture-col-date">
+              <span class="lec-id">Lecture 28</span>
+              <span class="lec-date-text">Jan 04, 2027</span>
+            </div>
+            <div class="lecture-col-main">
+              <div class="lec-title-text">Independent Component Analysis (ICA) &amp; Blind Source Separation</div>
+              <div class="lec-synopsis-text">The cocktail party problem, linear mixing and unmixing models, permutation and scaling ambiguities, fundamental non-Gaussianity theorem, multivariable density transformation via Jacobians, heavy-tailed source priors, natural gradient ascent, EEG artifact removal, and unsupervised learning taxonomy.</div>
+            </div>
+            <div class="lecture-col-actions">
+              <a href="./notes/lecture-28.html" class="btn-action btn-note">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Lecture Note</span>
+              </a>
+              <a href="./lecture%20slides/lecture%2328%20-%20independent%20component%20analysis.pdf" target="_blank" rel="noopener" class="btn-action btn-slide">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                <span>Slide 28</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 4: HOMEWORKS & PROJECTS (Open List, No Heavy Boxes)
+         ==================================================================== -->
+    <section id="homeworks" class="section" aria-labelledby="heading-homeworks">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow">Course Assessment</span>
+          <h2 id="heading-homeworks" class="section-title">Assignments &amp; Term Projects</h2>
+          <p class="section-desc">
+            Problem sets unite rigorous theoretical derivations with programmatic implementations in Python. 
+            Individual verification quizzes accompany each submission.
+          </p>
+        </div>
+
+        <div class="hw-table-list">
+          
+          <!-- Assignment 00: Preview -->
+          <div class="hw-row">
+            <div class="hw-num-col">
+              <span class="hw-label">HW 00</span>
+              <span class="hw-status-tag preview">Preview</span>
+            </div>
+            <div class="hw-info-col">
+              <h3>Foundations of Supervised Learning, Regularization &amp; Validation</h3>
+              <p>
+                Comprehensive theoretical problem set: \(k\)-NN expected prediction error decomposition, augmented Ridge regression as OLS, multiclass Softmax log-likelihood concavity, and cross-validation data leakage prevention.
+              </p>
+              <div style="margin-top: 0.35rem; font-size: 0.82rem;">
+                <a href="./assets/docs/hw0-solutions.pdf" target="_blank" rel="noopener" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">
+                  &bull; Complete Solutions Manual &amp; Analytical Proofs (PDF) &rarr;
+                </a>
+              </div>
+            </div>
+            <div class="hw-dates-col">
+              <div class="hw-date-line">Status: <strong>Preview Available</strong></div>
+              <div class="hw-date-line">Scope: <strong>Diagnostic Reference</strong></div>
+            </div>
+            <div class="hw-actions-col">
+              <a href="./assets/docs/hw0-problems.pdf" target="_blank" rel="noopener" class="btn-hw-link" title="Open Homework 0 Problem Set PDF">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>HW (Problem Set PDF)</span>
+              </a>
+              <button type="button" class="btn-hw-link disabled-lock" disabled aria-disabled="true" title="Computer assignment locked in preview mode">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>CA (Locked)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Assignment 01: Locked -->
+          <div class="hw-row is-locked">
+            <div class="hw-num-col">
+              <span class="hw-label">HW 01</span>
+              <span class="hw-status-tag locked">Locked</span>
+            </div>
+            <div class="hw-info-col">
+              <h3>Data Science Lifecycle, Data Types &amp; EDA</h3>
+              <p>Matrix algebra, data hygiene, exploratory analysis, and statistical distributions in Python.</p>
+            </div>
+            <div class="hw-dates-col">
+              <div class="hw-date-line">Releases: <strong>Sep 28, 2026</strong></div>
+              <div class="hw-date-line">Due: <strong>Oct 12, 2026 (23:59)</strong></div>
+            </div>
+            <div class="hw-actions-col">
+              <button type="button" class="btn-hw-link disabled-lock" disabled aria-disabled="true" title="Assignment not released yet">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>HW (Locked)</span>
+              </button>
+              <button type="button" class="btn-hw-link disabled-lock" disabled aria-disabled="true" title="Assignment not released yet">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>CA (Locked)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Assignment 02: Locked -->
+          <div class="hw-row is-locked">
+            <div class="hw-num-col">
+              <span class="hw-label">HW 02</span>
+              <span class="hw-status-tag locked">Locked</span>
+            </div>
+            <div class="hw-info-col">
+              <h3>Statistical Inference &amp; Evaluation Metrics</h3>
+              <p>Hypothesis testing, permutation experiments, bootstrap resampling, ROC curves, and cross-validation.</p>
+            </div>
+            <div class="hw-dates-col">
+              <div class="hw-date-line">Releases: <strong>Oct 12, 2026</strong></div>
+              <div class="hw-date-line">Due: <strong>Oct 26, 2026 (23:59)</strong></div>
+            </div>
+            <div class="hw-actions-col">
+              <button type="button" class="btn-hw-link disabled-lock" disabled aria-disabled="true" title="Assignment not released yet">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>HW (Locked)</span>
+              </button>
+              <button type="button" class="btn-hw-link disabled-lock" disabled aria-disabled="true" title="Assignment not released yet">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>CA (Locked)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Assignment 03: Locked -->
+          <div class="hw-row is-locked">
+            <div class="hw-num-col">
+              <span class="hw-label">HW 03</span>
+              <span class="hw-status-tag locked">Locked</span>
+            </div>
+            <div class="hw-info-col">
+              <h3>Supervised Learning, Regularization &amp; Kernel Methods</h3>
+              <p>Normal equations, Lasso coordinate descent, dual SVM formulation, and Mercer kernels.</p>
+            </div>
+            <div class="hw-dates-col">
+              <div class="hw-date-line">Releases: <strong>Oct 27, 2026</strong></div>
+              <div class="hw-date-line">Due: <strong>Nov 10, 2026 (23:59)</strong></div>
+            </div>
+            <div class="hw-actions-col">
+              <button type="button" class="btn-hw-link disabled-lock" disabled aria-disabled="true" title="Assignment not released yet">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>HW (Locked)</span>
+              </button>
+              <button type="button" class="btn-hw-link disabled-lock" disabled aria-disabled="true" title="Assignment not released yet">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>CA (Locked)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Assignment 04: Locked -->
+          <div class="hw-row is-locked">
+            <div class="hw-num-col">
+              <span class="hw-label">HW 04</span>
+              <span class="hw-status-tag locked">Locked</span>
+            </div>
+            <div class="hw-info-col">
+              <h3>Probabilistic Models, Dimensionality Reduction &amp; Deep Learning</h3>
+              <p>Gaussian mixture estimation, PCA projection, backpropagation on MLPs, and CNN architecture training.</p>
+            </div>
+            <div class="hw-dates-col">
+              <div class="hw-date-line">Releases: <strong>Nov 11, 2026</strong></div>
+              <div class="hw-date-line">Due: <strong>Nov 25, 2026 (23:59)</strong></div>
+            </div>
+            <div class="hw-actions-col">
+              <button type="button" class="btn-hw-link disabled-lock" disabled aria-disabled="true" title="Assignment not released yet">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>HW (Locked)</span>
+              </button>
+              <button type="button" class="btn-hw-link disabled-lock" disabled aria-disabled="true" title="Assignment not released yet">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>CA (Locked)</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 5: REFERENCES (Minimal, No Links, eLearn Notice)
+         ==================================================================== -->
+    <section id="references" class="section" aria-labelledby="heading-references">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow">Academic Literature</span>
+          <h2 id="heading-references" class="section-title">Course Textbooks &amp; References</h2>
+          <p class="section-desc">
+            Primary theoretical foundations and computing manuals referenced throughout the lectures.
+          </p>
+        </div>
+
+        <div class="references-open-grid">
+          
+          <!-- Book 1: Foundations of Data Science (Blum et al.) -->
+          <article class="ref-open-item">
+            <div class="ref-book-visual">
+              <img src="./assets/images/book-fds.jpg" alt="Cover of Foundations of Data Science" loading="lazy" width="115">
+            </div>
+            <div class="ref-book-meta">
+              <span class="ref-book-role">Theory Reference</span>
+              <h3 class="ref-book-title">Foundations of Data Science</h3>
+              <div class="ref-book-authors">Avrim Blum, John Hopcroft, Ravindran Kannan</div>
+              <div class="ref-book-pub">Cambridge University Press (2020)</div>
+              <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.45;">
+                Theoretical foundations of high-dimensional geometry, singular value decomposition, and graph representations.
+              </p>
+            </div>
+          </article>
+
+          <!-- Book 2: An Introduction to Statistical Learning (James et al.) -->
+          <article class="ref-open-item">
+            <div class="ref-book-visual">
+              <img src="./assets/images/book-islr.png" alt="Cover of An Introduction to Statistical Learning" loading="lazy" width="115">
+            </div>
+            <div class="ref-book-meta">
+              <span class="ref-book-role">Applied Statistical Learning</span>
+              <h3 class="ref-book-title">An Introduction to Statistical Learning</h3>
+              <div class="ref-book-authors">Gareth James, Daniela Witten, Trevor Hastie, Robert Tibshirani</div>
+              <div class="ref-book-pub">Springer &bull; Seventh Printing</div>
+              <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.45;">
+                Essential applied textbook covering linear models, regularization, tree methods, and clustering.
+              </p>
+            </div>
+          </article>
+
+          <!-- Book 3: Statistical Foundations of Data Science (Fan et al.) -->
+          <article class="ref-open-item">
+            <div class="ref-book-visual">
+              <img src="./assets/images/book-sfds.jpg" alt="Cover of Statistical Foundations of Data Science" loading="lazy" width="115">
+            </div>
+            <div class="ref-book-meta">
+              <span class="ref-book-role">Mathematical Foundation</span>
+              <h3 class="ref-book-title">Statistical Foundations of Data Science</h3>
+              <div class="ref-book-authors">Jianqing Fan, Runze Li, Cun-Hui Zhang, Hui Zou</div>
+              <div class="ref-book-pub">Chapman &amp; Hall / CRC &bull; Taylor &amp; Francis Group (2020)</div>
+              <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.45;">
+                Mathematical treatment of high-dimensional sparse inference and big data statistical learning.
+              </p>
+            </div>
+          </article>
+
+          <!-- Book 4: Probabilistic Machine Learning: An Introduction (Murphy) -->
+          <article class="ref-open-item">
+            <div class="ref-book-visual">
+              <img src="./assets/images/book-pml-intro.jpg" alt="Cover of Probabilistic Machine Learning: An Introduction" loading="lazy" width="115">
+            </div>
+            <div class="ref-book-meta">
+              <span class="ref-book-role">Probabilistic Learning</span>
+              <h3 class="ref-book-title">Probabilistic Machine Learning: An Introduction</h3>
+              <div class="ref-book-authors">Kevin P. Murphy</div>
+              <div class="ref-book-pub">The MIT Press (2022)</div>
+              <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.45;">
+                Comprehensive introduction to probability models, linear classifiers, neural networks, and inference.
+              </p>
+            </div>
+          </article>
+
+          <!-- Book 5: Probabilistic Machine Learning: Advanced Topics (Murphy) -->
+          <article class="ref-open-item">
+            <div class="ref-book-visual">
+              <img src="./assets/images/book-pml-adv.jpg" alt="Cover of Probabilistic Machine Learning: Advanced Topics" loading="lazy" width="115">
+            </div>
+            <div class="ref-book-meta">
+              <span class="ref-book-role">Advanced Deep &amp; Generative Models</span>
+              <h3 class="ref-book-title">Probabilistic Machine Learning: Advanced Topics</h3>
+              <div class="ref-book-authors">Kevin P. Murphy</div>
+              <div class="ref-book-pub">The MIT Press (2023)</div>
+              <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.45;">
+                Advanced treatment of variational inference, diffusion formulations, and deep generative architectures.
+              </p>
+            </div>
+          </article>
+
+          <!-- Book 6: Foundations of Machine Learning (Mohri et al.) -->
+          <article class="ref-open-item">
+            <div class="ref-book-visual">
+              <img src="./assets/images/book-fml.jpg" alt="Cover of Foundations of Machine Learning" loading="lazy" width="115">
+            </div>
+            <div class="ref-book-meta">
+              <span class="ref-book-role">Learning Theory Companion</span>
+              <h3 class="ref-book-title">Foundations of Machine Learning</h3>
+              <div class="ref-book-authors">Mehryar Mohri, Afshin Rostamizadeh, Ameet Talwalkar</div>
+              <div class="ref-book-pub">The MIT Press &bull; Second Edition (2018)</div>
+              <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.45;">
+                Foundations of statistical learning theory, generalization bounds, Rademacher complexity, and kernel algorithms.
+              </p>
+            </div>
+          </article>
+
+        </div>
+
+        <!-- eLearn Upload Notice (Requested by User) -->
+        <div class="elearn-notice">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span>All textbook chapters and reference readings will be uploaded in <strong>eLearn</strong>.</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-inner">
+      <div class="footer-ut-emblem">
+        <img src="./assets/images/ut-logo.png" alt="University of Tehran Logo" width="32" height="32">
+        <div>
+          <div style="font-weight: 700; color: var(--text-primary);">University of Tehran</div>
+          <div>Department of Engineering Science &bull; Faculty of Engineering</div>
+        </div>
+      </div>
+
+      <div class="footer-links-group">
+        <a href="#overview">Overview</a>
+        <a href="#calendar">Calendar</a>
+        <a href="#lectures">Lectures</a>
+        <a href="#homeworks">Homeworks</a>
+        <a href="#references">References</a>
+        <a href="./lecture%20slides/index.html" target="_blank" rel="noopener">Slides Folder</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./js/main.js"></script>
+</body>
+</html>

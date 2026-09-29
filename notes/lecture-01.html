@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 01: Introduction to Data Science &amp; Lifecycle | Basics of Data Science</title>
+  <meta name="description" content="Detailed lecture notes on what is data science, the Economist definition, 4Vs of big data, core data scientist skills, the empirical data science lifecycle, and the taxonomy of data.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%231%20-%20introduction.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 1 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 01: Introduction to Data Science &amp; The Empirical Lifecycle</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Instructor:</strong> Prof. Sayeh Mirzaee</div>
+        <div class="note-meta-item"><strong>Readings:</strong> FDS Ch. 1; ISLR Ch. 1–2</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-definition">1. What is Data Science? The Convergence of Skills</a></li>
+        <li><a href="#sec-why">2. The Impetus: Massive Data &amp; Inexpensive Compute</a></li>
+        <li><a href="#sec-4vs">3. Big Data: IBM's Four Vs Framework</a></li>
+        <li><a href="#sec-skills">4. Five Key Skills of Successful Data Scientists</a></li>
+        <li><a href="#sec-lifecycle">5. The End-to-End Data Science Lifecycle</a></li>
+        <li><a href="#sec-taxonomy">6. Taxonomy of Data: Types &amp; Measurement Scales</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-definition">1. What is Data Science? The Convergence of Skills</h2>
+      <p>
+        At its core, <strong>data science is using data to answer questions</strong>. Because questions arise in virtually every domain of science, 
+        engineering, commerce, and public policy, data science is inherently a multifaceted, interdisciplinary discipline combining:
+      </p>
+      <ul>
+        <li>Mathematics, statistics, and machine learning theory</li>
+        <li>Computer science, algorithms, and software engineering</li>
+        <li>Data wrangling, cleaning, structuring, and formatting</li>
+        <li>Exploratory data analysis, visualization, and domain storytelling</li>
+      </ul>
+
+      <div class="def-box">
+        <span class="box-label">The Economist Definition of a Data Scientist</span>
+        <p>
+          An <em>Economist</em> Special Report captured this unique synthesis of competencies:
+        </p>
+        <blockquote style="margin: 8px 0; padding-left: 12px; border-left: 3px solid var(--ut-blue, #0284c7); font-style: italic;">
+          &ldquo;A data scientist is someone who combines the skills of software programmer, statistician, and storyteller slash artist to extract the nuggets of gold hidden under mountains of data.&rdquo;
+        </blockquote>
+      </div>
+
+      <!-- Section 2 -->
+      <h2 id="sec-why">2. The Impetus: Massive Data &amp; Inexpensive Compute</h2>
+      <p>
+        Why has data science experienced such explosive growth over the past decade? The discipline arose from the convergence of two independent technological revolutions:
+      </p>
+      <ol>
+        <li><strong>Explosion of Empirical Data:</strong> Sensors, mobile devices, transactional engines, genomics platforms, and internet logs generate vast, unceasing streams of observational data across every human endeavor.</li>
+        <li><strong>Rise of Inexpensive Compute &amp; Storage:</strong> Commodity server clusters, high-capacity memory, modern GPUs, distributed compute frameworks, and cloud architectures made storing and processing petabytes economically feasible.</li>
+      </ol>
+      <p>
+        This &ldquo;perfect storm&rdquo; provides both the raw material (rich datasets) and the machinery (computational tools), creating an urgent scientific need for analysts skilled at translating raw bits into actionable decisions.
+      </p>
+
+      <!-- Section 3 -->
+      <h2 id="sec-4vs">3. Big Data: IBM's Four Vs Framework</h2>
+      <p>
+        The slide deck characterizes the operational challenges of big data through IBM's classic <strong>Four Vs</strong> taxonomy:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">The 4Vs of Big Data</span>
+        <ol>
+          <li>
+            <strong>Volume:</strong> The sheer physical scale of data generated and captured, routinely measured in gigabytes, terabytes, petabytes, and exabytes.
+          </li>
+          <li>
+            <strong>Variety:</strong> The structural diversity of incoming information. Modern datasets mix structured relational tables with unstructured text, environmental telemetry, transactional feeds, social networks, and multimedia audio/video.
+          </li>
+          <li>
+            <strong>Velocity:</strong> The speed at which data is in motion—the frequency and latency requirements of data generation, ingestion, and real-time inference.
+          </li>
+          <li>
+            <strong>Veracity:</strong> The degree of uncertainty, noise, corruption, and incompleteness inherent in empirical data. Veracity demands that a data scientist evaluate: <em>&ldquo;Is this data sufficiently reliable and accurate to support high-stakes decision-making?&rdquo;</em>
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-skills">4. Five Key Skills of Successful Data Scientists</h2>
+      <p>
+        To execute end-to-end data initiatives, practitioners require five complementary skillsets:
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">The Professional Skill Spectrum</span>
+        <ol>
+          <li><strong>Business &amp; Domain Expertise:</strong> Articulating how insights create tangible value across an organization's value chain (marketing, sales, distribution, pricing, risk, finance) and identifying which questions truly matter. Often, analytics experts pair directly with Subject Matter Experts (SMEs).</li>
+          <li><strong>Machine Learning Algorithms:</strong> Identifying the appropriate technique (predictive modeling, clustering, optimization) for a given problem class, tuning hyperparameters, and translating mathematical results into actionable insights using tools like Python, R, SPSS, or KNIME.</li>
+          <li><strong>Software Engineering:</strong> Developing modular, reproducible computational pipelines, modifying existing libraries, and architecting solutions deployable on-premises or in the cloud.</li>
+          <li><strong>Data Storage &amp; Data Engineering:</strong> Mastering relational (SQL) and non-relational (NoSQL) databases, ETL pipelines, web scraping, and distributed big-data stores like Hadoop, Spark, MongoDB, and Elasticsearch.</li>
+          <li><strong>Visual Presentation &amp; Communication:</strong> Translating analytical findings into intuitive visual interfaces (dashboards, charts, animations) that allow non-technical executives to embrace data-driven recommendations.</li>
+        </ol>
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-lifecycle">5. The End-to-End Data Science Lifecycle</h2>
+      <p>
+        Data science projects follow a structured empirical lifecycle:
+      </p>
+
+      <h3>Phase 1: Business Understanding &amp; Problem Definition</h3>
+      <p>
+        Every initiative begins by converting high-level business goals into precise, targetable analytical questions. Questions typically fall into standard archetypes:
+        <em>Comparison, Description, Regression, Classification, Clustering, Anomaly Detection, or Recommendation</em>.
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Slide Case Study: Translating Business Goals (Netflix Example)</span>
+        <p>
+          Commercial organizations focus primarily on business performance rather than raw algorithmic loss functions. Consider a streaming platform like Netflix:
+        </p>
+        \[
+          \begin{aligned}
+            \text{\textbf{Business Objective:}} & \quad \text{Increase corporate revenue by } 5\% \\
+            \Downarrow & \\
+            \text{\textbf{Operational Lever:}} & \quad \text{Increase customer retention rate by } 8\% \\
+            \Downarrow & \\
+            \text{\textbf{Machine Learning Task:}} & \quad \text{Increase recommendation engine prediction accuracy by } 10\%
+          \end{aligned}
+        \]
+        <p>
+          Metrics must always be <strong>SMART</strong>: Specific, Measurable, Achievable, Relevant, and Time-bound.
+        </p>
+      </div>
+
+      <h3>Phase 2: Data Collection</h3>
+      <p>
+        Systematically gathering information: identifying what data is required, where it resides, how to query or scrape it, and establishing storage schemas that support high-throughput retrieval.
+      </p>
+
+      <h3>Phase 3: Data Cleaning &amp; Preprocessing</h3>
+      <p>
+        Empirical datasets are noisy and uncurated. Cleaning addresses duplicates, irrelevant attributes, formatting errors, missing entries, and extreme outliers.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Standardization vs. Normalization</span>
+        <ul>
+          <li><strong>Standardization:</strong> Enforcing a uniform format across all entries. 
+            <br>
+            <em>Slide Example:</em> Reformatting heterogeneous phone number entries (e.g. <code>+989121234567</code>, <code>00989121234567</code>, <code>09121234567</code>, <code>9121234567</code>) into a single canonical international standard.
+          </li>
+          <li><strong>Normalization:</strong> Rescaling numerical values into a common geometric scale (e.g., Min-Max normalization mapping values into \([0, 1]\), or \(z\)-score standardization to zero mean and unit variance).
+          </li>
+        </ul>
+      </div>
+
+      <h3>Phase 4: Feature Engineering</h3>
+      <p>
+        Using domain knowledge to transform raw measurements into informative predictor variables.
+      </p>
+      <ul>
+        <li><strong>Feature Selection:</strong> Removing redundant or noisy features via:
+          <ul>
+            <li><em>Filter Methods:</em> Ranking features by statistical metrics (correlation, mutual information) independently of model training.</li>
+            <li><em>Wrapper Methods:</em> Treating selection as a combinatorial search problem (forward stepwise, backward elimination) evaluated by model cross-validation.</li>
+            <li><em>Embedded Methods:</em> Performing selection directly inside model optimization (e.g. Lasso \(\ell_1\) regularization).</li>
+          </ul>
+        </li>
+        <li><strong>Feature Construction:</strong> Creating novel composite features (ratios, interaction terms, temporal aggregations) that expose the underlying physical structure.</li>
+      </ul>
+
+      <h3>Phase 5 &amp; 6: Predictive Modeling, Evaluation &amp; Deployment</h3>
+      <p>
+        Training supervised or unsupervised models, tuning hyperparameters, benchmarking on validation sets, and exposing models to stakeholders via dashboards and real-time APIs.
+      </p>
+
+      <!-- Section 6 -->
+      <h2 id="sec-taxonomy">6. Taxonomy of Data: Types &amp; Measurement Scales</h2>
+      <p>
+        The lecture formalizes the definition of <strong>data</strong> based on authoritative sources:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Formal Definitions of Data</span>
+        <ul>
+          <li><em>Cambridge English Dictionary:</em> &ldquo;Information, especially facts or numbers, collected to be examined and considered and used to help decision-making.&rdquo;</li>
+          <li><em>Wikipedia:</em> &ldquo;A set of values of qualitative or quantitative variables.&rdquo;</li>
+        </ul>
+        <p>
+          Here, the <strong>set</strong> corresponds to the underlying statistical <em>population</em>, while the <strong>variables</strong> are the measured attributes.
+        </p>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Hierarchical Taxonomy of Data Types</span>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 8px;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--ut-border, #e2e8f0); text-align: left;">
+              <th style="padding: 6px;">Superclass</th>
+              <th style="padding: 6px;">Category</th>
+              <th style="padding: 6px;">Mathematical Nature</th>
+              <th style="padding: 6px;">Slide Examples</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--ut-border, #e2e8f0);">
+              <td rowspan="3" style="padding: 6px; vertical-align: top;"><strong>Categorical (Qualitative)</strong></td>
+              <td style="padding: 6px;"><strong>Nominal</strong></td>
+              <td style="padding: 6px;">Unordered categories; no inherent ranking.</td>
+              <td style="padding: 6px;">Gender, blood group, country of origin.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--ut-border, #e2e8f0);">
+              <td style="padding: 6px;"><strong>Ordinal</strong></td>
+              <td style="padding: 6px;">Ordered categories with meaningful sequence; intervals between ranks are non-uniform.</td>
+              <td style="padding: 6px;">Academic grading sequence (A, B, C), customer satisfaction tiers.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--ut-border, #e2e8f0);">
+              <td style="padding: 6px;"><strong>Binary</strong></td>
+              <td style="padding: 6px;">Special categorical case with exactly two mutually exclusive states.</td>
+              <td style="padding: 6px;">Pass/Fail, Yes/No, Defective/Functional.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--ut-border, #e2e8f0);">
+              <td rowspan="2" style="padding: 6px; vertical-align: top;"><strong>Numerical (Quantitative)</strong></td>
+              <td style="padding: 6px;"><strong>Discrete</strong></td>
+              <td style="padding: 6px;">Values obtained by counting; discrete integer support.</td>
+              <td style="padding: 6px;">Number of students in a class, days in a week.</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px;"><strong>Continuous</strong></td>
+              <td style="padding: 6px;">Values obtained by physical measurement; can assume any real value within an interval.</td>
+              <td style="padding: 6px;">Height, weight, house prices, temperature.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Looking Ahead: From Foundations to Probability</span>
+        <p>
+          With the lifecycle, Big Data framework, and data taxonomy clearly defined, 
+          <strong>Lecture 02</strong> and <strong>Lecture 03</strong> construct the mathematical engine that powers all inference: 
+          the axiomatic foundations of probability theory and multivariate random variables.
+        </p>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <span></span>
+      <a href="./lecture-02.html">Lecture 02: Review of Probability Theory (Part 1) &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 15: Feature Engineering, Optimization Dynamics &amp; Introduction to Logistic Regression | Basics of Data Science</title>
+  <meta name="description" content="Comprehensive MIT OCW / CS231n-style lecture notes on Feature Engineering, Polynomial Regression, Batch vs Stochastic vs Mini-Batch Gradient Descent, Newton's Method &amp; Fisher Scoring, Logistic Regression, Decision Boundaries, and Cross-Entropy Loss.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2315%20-%20linear%20regression%20and%20gradient%20descent.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 15 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 15: Feature Engineering, Optimization Dynamics &amp; Introduction to Logistic Regression</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Semester:</strong> Fall 2026</div>
+        <div class="note-meta-item"><strong>Instructor:</strong> University of Tehran</div>
+        <div class="note-meta-item"><strong>Primary Deck:</strong> Lecture #15 (28 Slides)</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-feature-engineering">1. Feature Engineering &amp; Polynomial Regression</a></li>
+        <li><a href="#sec-gd-variants">2. First-Order Optimization: Batch, Stochastic &amp; Mini-Batch Gradient Descent</a></li>
+        <li><a href="#sec-newtons-method">3. Second-Order Optimization: Newton's Method, Hessian Matrix &amp; Fisher Scoring</a></li>
+        <li><a href="#sec-intro-classification">4. Foundations of Classification &amp; Failure of Linear Regression</a></li>
+        <li><a href="#sec-logistic-hypothesis">5. The Logistic Regression Hypothesis &amp; Sigmoid Activation</a></li>
+        <li><a href="#sec-logistic-unit">6. The Logistic Unit &amp; Linear Decision Boundaries</a></li>
+        <li><a href="#sec-cross-entropy">7. The Cross-Entropy Cost Function &amp; Convex Optimization</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-feature-engineering">1. Feature Engineering &amp; Polynomial Regression</h2>
+      <p>
+        In linear regression, our hypothesis was formulated as a linear combination of given raw measurements. However, the true underlying physical or economic phenomena governing real-world data are rarely strictly linear. By performing <strong>feature engineering</strong> and <strong>basis expansions</strong>, linear models can capture intricate non-linear relationships without altering the underlying convex linear optimization machinery.
+      </p>
+
+      <h3>A. Domain Knowledge &amp; Feature Synthesis: Housing Frontage and Depth (Slide 1)</h3>
+      <p>
+        Consider predicting the price of a residential property where the raw features recorded by an assessor are:
+      </p>
+      <ul>
+        <li>\(x_1 = \text{frontage}\) (width of the lot facing the street, in meters)</li>
+        <li>\(x_2 = \text{depth}\) (depth of the lot from the street to the rear boundary, in meters)</li>
+      </ul>
+      <p>
+        If we fit an ordinary linear hypothesis:
+        \[
+          h_\theta(x) = \theta_0 + \theta_1 \cdot \text{frontage} + \theta_2 \cdot \text{depth}
+        \]
+        the model treats frontage and depth as independent additive contributors to price. However, real-estate appraisal dictates that land value depends predominantly on the total surface area. By defining a synthesized domain feature:
+        \[
+          x = \text{Area} = \text{frontage} \times \text{depth}
+        \]
+        we can reparameterize the hypothesis with a single, highly predictive feature:
+        \[
+          h_\theta(x) = \theta_0 + \theta_1 x = \theta_0 + \theta_1 (\text{land area})
+        \]
+        This dramatic simplification eliminates multicollinearity and directly reflects the physical geometry of land valuation.
+      </p>
+
+      <h3>B. Polynomial Regression: Quadratic vs. Cubic Models (Slides 2&ndash;3)</h3>
+      <p>
+        When a single feature \(x = \text{size}\) exhibits diminishing or non-linear returns, we can apply <strong>Polynomial Regression</strong>:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 1.1 (Polynomial Basis Expansion)</span>
+        Polynomial regression maps a scalar feature \(x \in \mathbb{R}\) into a \(k\)-dimensional non-linear feature space:
+        \[
+          \phi(x) = \begin{bmatrix} 1 \\ x \\ x^2 \\ \vdots \\ x^k \end{bmatrix} \in \mathbb{R}^{k+1}
+        \]
+        The hypothesis remains strictly linear in the parameters \(\theta\):
+        \[
+          h_\theta(x) = \theta_0 + \theta_1 x + \theta_2 x^2 + \dots + \theta_k x^k = \theta^T \phi(x)
+        \]
+      </div>
+
+      <p>
+        To model housing prices where price increases with size but tends to plateau for very large properties, we consider two polynomial hypotheses:
+      </p>
+      <ol>
+        <li>
+          <strong>Quadratic Hypothesis:</strong>
+          \[
+            h_\theta(x) = \theta_0 + \theta_1 (\text{size}) + \theta_2 (\text{size})^2
+          \]
+          Setting \(x_1 = \text{size}\) and \(x_2 = (\text{size})^2\), this fits a parabolic curve. However, because a parabola is symmetric, if \(\theta_2 < 0\), the curve eventually turns downward at large sizes:
+          \[
+            \lim_{x \to \infty} h_\theta(x) = -\infty
+          \]
+          This creates an unrealistic physical contradiction: a house with \(10{,}000\,\text{m}^2\) would be predicted to cost less than a house with \(200\,\text{m}^2\) (the "parabolic collapse" shown by the blue dashed trajectory in Slide 3).
+        </li>
+        <li>
+          <strong>Cubic Hypothesis:</strong>
+          \[
+            h_\theta(x) = \theta_0 + \theta_1 (\text{size}) + \theta_2 (\text{size})^2 + \theta_3 (\text{size})^3
+          \]
+          where \(x_1 = \text{size}\), \(x_2 = (\text{size})^2\), and \(x_3 = (\text{size})^3\). A cubic polynomial has an inflection point, allowing the curve to flatten out over intermediate home sizes without suffering the catastrophic downward collapse of a quadratic parabola.
+        </li>
+      </ol>
+
+      <div class="thm-box">
+        <span class="box-label">Important Practical Rule: Exploding Feature Scales (Slide 3)</span>
+        Crucially, introducing higher-degree polynomial features causes exponential scale divergence:
+        \[
+          \begin{aligned}
+            x_1 = \text{size} &\in [1, 10^3] \\
+            x_2 = (\text{size})^2 &\in [1, 10^6] \\
+            x_3 = (\text{size})^3 &\in [1, 10^9]
+          \end{aligned}
+        \]
+        If gradient descent is executed without feature scaling on these raw polynomials, the contours of the cost function \(J(\theta)\) will be extraordinarily eccentric, elongated ellipsoids. The gradient descent steps will oscillate violently in the \(\theta_3\) direction while making virtually zero progress along \(\theta_1\). 
+        <br><br>
+        <strong>Mandatory Rule:</strong> Whenever polynomial basis expansion is applied, <em>feature scaling (Z-score standardization or min-max normalization) is strictly mandatory</em> before invoking gradient-based optimizers.
+      </div>
+
+      <h3>C. The Square Root Alternative: Monotonically Saturating Curves (Slide 4)</h3>
+      <p>
+        Rather than risking the oscillatory behavior of high-order polynomials, domain knowledge can suggest concave monotonic transformations. In Slide 4, the instructor introduces the square root feature:
+        \[
+          h_\theta(x) = \theta_0 + \theta_1 (\text{size}) + \theta_2 \sqrt{\text{size}}
+        \]
+        Defining \(x_1 = \text{size}\) and \(x_2 = \sqrt{\text{size}}\), the function \(\sqrt{x}\) has a positive first derivative and a negative second derivative for all \(x > 0\):
+        \[
+          \frac{d}{dx}\sqrt{x} = \frac{1}{2\sqrt{x}} > 0, \quad \frac{d^2}{dx^2}\sqrt{x} = -\frac{1}{4x^{3/2}} < 0
+        \]
+        This guarantees that the predicted price increases monotonically with size while naturally flattening out (diminishing marginal returns) without ever turning downward.
+      </p>
+
+      <!-- Section 2 -->
+      <h2 id="sec-gd-variants">2. First-Order Optimization: Batch, Stochastic &amp; Mini-Batch Gradient Descent</h2>
+      <p>
+        Having established the linear model, we turn to the optimization of the parameter vector \(\theta = [\theta_0, \theta_1, \dots, \theta_n]^T \in \mathbb{R}^{n+1}\) (frequently denoted in deep learning as bias \(b = \theta_0\) and weights \(W = [\theta_1, \dots, \theta_n]^T\)).
+      </p>
+
+      <h3>A. Taxonomy of Gradient Descent Variants (Slides 5&ndash;7)</h3>
+      <p>
+        Let the total dataset contain \(m\) training examples stacked column-wise or row-wise:
+        \[
+          X = \begin{bmatrix} x^{(1)} & x^{(2)} & \dots & x^{(m)} \end{bmatrix} \in \mathbb{R}^{n \times m}
+        \]
+        The frequency with which parameter updates are computed divides first-order optimization into three classical regimes:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 2.1 (The Three Regimes of Gradient Descent)</span>
+        Let \(B\) denote the batch size (number of training points evaluated per parameter update step):
+        <ol>
+          <li>
+            <strong>Batch Gradient Descent (BGD, \(B = m\)):</strong>
+            Evaluates the full training corpus before taking a single step:
+            \[
+              \theta := \theta - \alpha \frac{1}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) x^{(i)}
+            \]
+            <em>Properties:</em> Deterministic, strictly follows the exact gradient \(\nabla J(\theta)\), and guarantees monotonic convergence to the global minimum on convex surfaces. However, each step requires \(\mathcal{O}(m \cdot n)\) operations, rendering it prohibitively slow or impossible when the dataset exceeds RAM capacity.
+          </li>
+          <li>
+            <strong>Stochastic Gradient Descent (SGD, \(B = 1\)):</strong>
+            Evaluates a single training example \((x^{(i)}, y^{(i)})\) and updates parameters immediately:
+            \[
+              \theta := \theta - \alpha \left(h_\theta(x^{(i)}) - y^{(i)}\right) x^{(i)}
+            \]
+            <em>Properties:</em> Instantaneous updates; requires only \(\mathcal{O}(n)\) work per step. However, the stochastic gradient \(\nabla J_i(\theta)\) is a noisy, high-variance estimator of the true gradient. It exhibits erratic zig-zag trajectories and fails to leverage SIMD vectorization and GPU tensor cores.
+          </li>
+          <li>
+            <strong>Mini-Batch Gradient Descent (MBGD, \(1 < B < m\)):</strong>
+            Partitions the \(m\) examples into \(m_B = \lceil m / B \rceil\) batches of size \(B\) (typically powers of two: \(B \in \{32, 64, 128, 256, 512\}\)):
+            \[
+              \theta := \theta - \alpha \frac{1}{B} \sum_{i \in \text{Batch } t} \left(h_\theta(x^{(i)}) - y^{(i)}\right) x^{(i)}
+            \]
+            <em>Properties:</em> Striking the optimal trade-off, mini-batch gradient descent exploits parallel BLAS matrix multiplication while updating parameters multiple times per epoch.
+          </li>
+        </ol>
+      </div>
+
+      <h3>B. Computational Resource vs. Epoch Trade-offs (Slide 7)</h3>
+      <p>
+        Slide 7 illustrates the fundamental dual relationship between computational cost per epoch and the number of epochs required for convergence:
+      </p>
+      <ul>
+        <li><strong>Computational resource per epoch:</strong> Grows linearly from SGD to Batch GD because Batch GD must process all \(m\) datapoints in every single step.</li>
+        <li><strong>Epochs required to find optimal \(W, b\):</strong> Decreases dramatically from Batch GD to Mini-Batch/SGD. Because Batch GD only updates parameters once per pass through the data, it may require hundreds of complete passes. Mini-batch GD performs \(m / B\) updates per pass, converging in far fewer total epochs.</li>
+      </ul>
+
+      <h3>C. Learning Curve Diagnostics: Why Mini-Batch Loss is Non-Monotonic (Slide 8)</h3>
+      <p>
+        In monitoring the progression of training, plotting the cost function \(J\) against iterations reveals profound behavioral differences:
+      </p>
+      <div class="ex-box">
+        <span class="box-label">Diagnostic Analysis: The Mini-Batch "Bump" Phenomenon (Slide 8)</span>
+        While Batch GD produces a strictly smooth, monotonically decreasing loss curve:
+        \[
+          J_{\text{Batch}}^{(t+1)} \le J_{\text{Batch}}^{(t)} \quad (\text{for properly chosen } \alpha)
+        \]
+        the mini-batch loss curve exhibits high-frequency oscillations and temporary upward spikes.
+        <br><br>
+        <strong>Handwritten Instructor Note:</strong>
+        <p style="font-family: inherit; font-size: 1.05rem; color: #1e3a8a; font-weight: bold; margin: 0.5rem 0;">
+          * Learning fold \(X^{\{2\}}\) might be harder than \(X^{\{1\}} \implies J^{\{2\}} > J^{\{1\}}\)
+        </p>
+        <em>Physical Interpretation:</em> Each mini-batch \(X^{\{t\}}\) represents a distinct, randomly drawn subsample of the data manifold. If Batch 1 contains typical, easily separable examples, \(J^{\{1\}}\) will be low. If Batch 2 happens to contain atypical instances, edge cases, or noisy observations, evaluating the model on \(X^{\{2\}}\) will yield a higher loss \(J^{\{2\}} > J^{\{1\}}\), even though the overall parameter trajectory is improving globally across the full dataset distribution.
+      </div>
+
+      <h3>D. Geometric Contour Trajectories (Slide 9)</h3>
+      <p>
+        Visualizing the optimization trajectories across elliptical loss contours:
+      </p>
+      <ul>
+        <li><strong>Batch GD (Slide 9, Left):</strong> Traverses a smooth, deterministic path perpendicular to the contour lines, slowly curving toward the minimum.</li>
+        <li><strong>Stochastic GD (Slide 9, Right):</strong> Follows a jagged, erratic Brownian-like walk, continuously overshooting and oscillating around the minimum without settling exactly into the center unless the learning rate is scheduled to decay to zero.</li>
+        <li><strong>Mini-Batch GD (Slide 9, Green Trajectory):</strong> For \(1 < m_B < m\), achieves the <em>"Fastest Learning"</em>. It dampens the high-frequency stochastic variance of SGD while navigating the parameter space far faster than Batch GD.</li>
+      </ul>
+
+      <!-- Section 3 -->
+      <h2 id="sec-newtons-method">3. Second-Order Optimization: Newton's Method, Hessian Matrix &amp; Fisher Scoring</h2>
+      <p>
+        First-order methods rely solely on the gradient vector \(\nabla J(\theta)\), which provides only a linear approximation of the local surface. By incorporating curvature information via second-order derivatives, <strong>Newton's Method</strong> enables quadratic convergence near the optimum.
+      </p>
+
+      <h3>A. Univariate Newton-Raphson: Root Finding to Optimization (Slide 11)</h3>
+      <p>
+        Newton's classic method was designed to find the roots (zeros) of a differentiable function \(f(x) = 0\). Given an initial guess \(x_0\), we approximate \(f(x)\) around \(x_t\) by its first-order Taylor expansion:
+        \[
+          f(x) \approx f(x_t) + f'(x_t)(x - x_t)
+        \]
+        Setting the linear approximation to zero and solving for \(x = x_{t+1}\):
+        \[
+          0 = f(x_t) + f'(x_t)(x_{t+1} - x_t) \implies x_{t+1} = x_t - \frac{f(x_t)}{f'(x_t)}
+        \]
+        In optimization, our goal is to find the minimum of an objective function \(J(\theta)\). By Fermat's theorem, an unconstrained optimum occurs where the derivative vanishes:
+        \[
+          J'(\theta) = 0
+        \]
+        Applying Newton's root-finding algorithm to the derivative function \(f(\theta) = J'(\theta)\), the second derivative \(J''(\theta)\) naturally takes the place of \(f'(\theta)\):
+        \[
+          \theta_{t+1} = \theta_t - \frac{J'(\theta_t)}{J''(\theta_t)}
+        \]
+        This is <strong>Univariate Newton Optimization</strong>.
+      </p>
+
+      <h3>B. Multivariate Newton-Raphson &amp; The Hessian Matrix (Slide 11)</h3>
+      <p>
+        When \(\theta = [\theta_0, \theta_1, \dots, \theta_n]^T \in \mathbb{R}^{n+1}\) is a multivariate vector, the first derivative is replaced by the gradient vector \(\nabla_\theta J(\theta) \in \mathbb{R}^{n+1}\), and the second derivative is replaced by the matrix of second partial derivatives:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 3.1 (The Hessian Matrix)</span>
+        The Hessian \(H \in \mathbb{R}^{(n+1) \times (n+1)}\) is the symmetric matrix containing all second-order partial derivatives of \(J(\theta)\):
+        \[
+          H_{ij} = \frac{\partial^2 J(\theta)}{\partial \theta_i \partial \theta_j}, \quad 
+          H = \begin{bmatrix}
+            \frac{\partial^2 J}{\partial \theta_0^2} & \frac{\partial^2 J}{\partial \theta_0 \partial \theta_1} & \dots & \frac{\partial^2 J}{\partial \theta_0 \partial \theta_n} \\
+            \frac{\partial^2 J}{\partial \theta_1 \partial \theta_0} & \frac{\partial^2 J}{\partial \theta_1^2} & \dots & \frac{\partial^2 J}{\partial \theta_1 \partial \theta_n} \\
+            \vdots & \vdots & \ddots & \vdots \\
+            \frac{\partial^2 J}{\partial \theta_n \partial \theta_0} & \frac{\partial^2 J}{\partial \theta_n \partial \theta_1} & \dots & \frac{\partial^2 J}{\partial \theta_n^2}
+          \end{bmatrix}
+        \]
+      </div>
+
+      <p>
+        The multivariate <strong>Newton-Raphson parameter update</strong> is formulated as:
+        \[
+          \theta := \theta - H^{-1} \nabla_\theta J(\theta)
+        \]
+        Geometrically, Newton's method constructs a local quadratic osculating paraboloid around the current parameter estimate \(\theta_t\) using the second-order Taylor series:
+        \[
+          J(\theta_t + \Delta\theta) \approx J(\theta_t) + \nabla J(\theta_t)^T \Delta\theta + \frac{1}{2} \Delta\theta^T H \Delta\theta
+        \]
+        and jumps directly to the analytical vertex of this paraboloid in a single step by setting \(\nabla_{\Delta\theta} [ \dots ] = 0\).
+      </p>
+
+      <h3>C. Newton's Method vs. Gradient Descent: Trade-offs &amp; Fisher Scoring (Slides 12&ndash;13)</h3>
+      <p>
+        Slide 12 summarizes the profound computational tension between first-order and second-order methods:
+      </p>
+
+      <div class="note-callout">
+        <span class="box-label">Handwritten Instructor Notes (Slide 12)</span>
+        <p style="font-family: inherit; font-size: 1.05rem; color: #1e3a8a; line-height: 1.8;">
+          &bull; The convergence rate of Newton-Raphson is quadratic and substantially faster than Gradient Descent.<br>
+          &bull; However, inverting the Hessian \(H_{(n+1) \times (n+1)}^{-1}\) incurs high computational cost for large \(n\) (\(\mathcal{O}(n^3)\)).<br>
+          &bull; When Newton-Raphson is applied to solve Logistic Regression \(\leftarrow\) <strong>Fisher Scoring</strong>
+        </p>
+      </div>
+
+      <p>
+        The trade-offs can be analyzed along three key dimensions:
+      </p>
+      <ol>
+        <li>
+          <strong>Rate of Convergence:</strong> Newton's method exhibits <em>quadratic convergence</em> (\(\|\theta_{t+1} - \theta^*\| \le C \|\theta_t - \theta^*\|^2\)) when initialized sufficiently close to a strictly convex optimum. The number of correct decimal places doubles at every iteration. In contrast, Gradient Descent exhibits linear convergence.
+        </li>
+        <li>
+          <strong>Computational Complexity per Iteration:</strong> Computing the Hessian requires calculating \(\mathcal{O}(n^2)\) second derivatives across \(m\) samples (\(\mathcal{O}(m n^2)\)), and inverting the \((n+1) \times (n+1)\) Hessian matrix costs \(\mathcal{O}(n^3)\). When \(n = 100{,}000\) (common in modern computer vision and NLP), inverting \(H\) is physically intractable.
+        </li>
+        <li>
+          <strong>Curvilinear Contour Geometry (Slide 13):</strong> Gradient descent (red line) steps perpendicular to local contours and slowly winds through narrow curved valleys. Newton's method (green line) uses the Hessian curvature tensor to re-scale the coordinate system (affine invariance), cutting directly across the curvature toward the global minimum.
+        </li>
+        <li>
+          <strong>Connection to Fisher Scoring &amp; IRLS:</strong> When Newton-Raphson is applied to maximize the log-likelihood of generalized linear models (such as Logistic Regression), the Hessian matrix turns out to depend directly on the predicted probabilities:
+          \[
+            H = -X^T W X
+          \]
+          where \(W\) is a diagonal weight matrix with entries \(W_{ii} = h_\theta(x^{(i)})(1 - h_\theta(x^{(i)}))\). Because the Hessian is negative definite everywhere, Newton's method is extraordinarily effective and is known in statistics as <strong>Fisher Scoring</strong> or <strong>Iteratively Reweighted Least Squares (IRLS)</strong>.
+        </li>
+      </ol>
+
+      <!-- Section 4 -->
+      <h2 id="sec-intro-classification">4. Foundations of Classification &amp; Failure of Linear Regression</h2>
+      <p>
+        We now transition from predicting continuous numerical values (regression) to predicting qualitative categorical labels (classification).
+      </p>
+
+      <h3>A. Problem Formulation &amp; Canonical Examples (Slides 14&ndash;16)</h3>
+      <p>
+        In binary classification, the dependent target variable takes discrete values:
+        \[
+          y \in \{0, 1\}
+        \]
+        where \(y = 0\) is termed the <em>negative class</em> and \(y = 1\) is termed the <em>positive class</em>.
+      </p>
+      <ul>
+        <li><strong>Email Spam Detection:</strong> \(x = \text{email features}\), \(y = 1\) (Spam), \(y = 0\) (Not Spam).</li>
+        <li><strong>Financial Fraud Detection:</strong> \(x = \text{transaction metadata}\), \(y = 1\) (Fraudulent), \(y = 0\) (Legitimate).</li>
+        <li><strong>Medical Diagnostics:</strong> \(x = \text{tumor biopsy measurements}\), \(y = 1\) (Malignant), \(y = 0\) (Benign).</li>
+      </ul>
+
+      <h3>B. Why Ordinary Linear Regression Fails for Classification (Slide 17)</h3>
+      <p>
+        A tempting heuristic is to fit a standard linear regression model \(h_\theta(x) = \theta^T x\) to the binary targets \(y \in \{0, 1\}\), and apply a threshold at \(0.5\):
+        \[
+          \hat{y} = \begin{cases} 1 & \text{if } h_\theta(x) \ge 0.5 \\ 0 & \text{if } h_\theta(x) < 0.5 \end{cases}
+        \]
+        This naive approach fails catastrophically for two fundamental reasons:
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">The Two Structural Failures of Linear Regression for Classification</span>
+        <ol>
+          <li>
+            <strong>Extreme Sensitivity to Outliers (Slide 17):</strong>
+            Suppose we have benign tumors clustered at small sizes (\(y=0\)) and malignant tumors at moderate sizes (\(y=1\)). The linear threshold perfectly separates them. 
+            <br>
+            Now, introduce a single additional training point representing a very large malignant tumor (an extreme outlier with \(x = 50\)). Because Ordinary Least Squares penalizes squared errors \((h_\theta(x) - y)^2\), the regression line rotates significantly clockwise to reduce the massive squared residual for this far-right point. 
+            <br>
+            This rotation shifts the intercept and moves the decision boundary where \(h_\theta(x) = 0.5\) far to the right, causing several clearly malignant intermediate tumors to be misclassified as benign (\(y = 0\)).
+          </li>
+          <li>
+            <strong>Unbounded and Meaningless Values:</strong>
+            The linear function \(h_\theta(x) = \theta^T x\) has range \((-\infty, +\infty)\). For large input features, it predicts \(h_\theta(x) = 2.4\) or \(h_\theta(x) = -0.8\). These cannot be interpreted as probabilities, because probabilities must be strictly bounded in \([0, 1]\).
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-logistic-hypothesis">5. The Logistic Regression Hypothesis &amp; Sigmoid Activation</h2>
+      <p>
+        To ensure our model predictions strictly satisfy \(0 \le h_\theta(x) \le 1\), we pass the linear combination \(\theta^T x\) through a non-linear squashing function.
+      </p>
+
+      <h3>A. The Logistic (Sigmoid) Function (Slides 18&ndash;19)</h3>
+      <div class="def-box">
+        <span class="box-label">Definition 5.1 (The Standard Logistic / Sigmoid Function)</span>
+        The sigmoid function \(g(z): \mathbb{R} \to (0, 1)\) is defined as:
+        \[
+          g(z) = \frac{1}{1 + e^{-z}} = \frac{e^z}{1 + e^z}
+        \]
+        and possesses the following key mathematical properties:
+        <ul>
+          <li><strong>Asymptotics:</strong> \(\lim_{z \to +\infty} g(z) = 1\) and \(\lim_{z \to -\infty} g(z) = 0\).</li>
+          <li><strong>Symmetry around Origin:</strong> \(g(0) = \frac{1}{1 + 1} = 0.5\). Furthermore, \(g(-z) = 1 - g(z)\).</li>
+          <li><strong>Monotonicity:</strong> \(g'(z) > 0\) for all \(z \in \mathbb{R}\).</li>
+          <li><strong>Remarkable Derivative Property:</strong>
+            \[
+              g'(z) = \frac{d}{dz}\left(1 + e^{-z}\right)^{-1} = -(1 + e^{-z})^{-2} (-e^{-z}) = \frac{1}{1 + e^{-z}} \cdot \frac{e^{-z}}{1 + e^{-z}} = g(z)(1 - g(z))
+            \]
+          </li>
+        </ul>
+      </div>
+
+      <h3>B. The Probabilistic Hypothesis &amp; Likelihood Interpretation (Slides 20&ndash;21)</h3>
+      <p>
+        The Logistic Regression hypothesis is formulated by setting \(z = \theta^T x\):
+        \[
+          h_\theta(x) = g(\theta^T x) = \frac{1}{1 + e^{-\theta^T x}}
+        \]
+        We interpret \(h_\theta(x)\) as the estimated <strong>conditional probability</strong> that the label is positive (\(y=1\)) given the input features \(x\), parameterized by \(\theta\):
+        \[
+          h_\theta(x) = P(y = 1 \mid x; \theta)
+        \]
+        Since the sample space for binary classification is \(\{0, 1\}\), by the law of total probability:
+        \[
+          P(y = 0 \mid x; \theta) = 1 - P(y = 1 \mid x; \theta) = 1 - h_\theta(x)
+        \]
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Worked Clinical Example: Tumor Malignancy (Slide 21)</span>
+        Suppose an oncologist feeds a patient's tumor features \(x = [\text{size}, \text{density}]^T\) into the trained logistic regression model.
+        The hypothesis computes:
+        \[
+          h_\theta(x) = 0.7
+        \]
+        <em>Clinical Interpretation:</em>
+        <ul>
+          <li>There is a \(70\%\) probability that the patient's tumor is malignant (\(P(y=1 \mid x; \theta) = 0.7\)).</li>
+          <li>There is a \(30\%\) probability that the tumor is benign (\(P(y=0 \mid x; \theta) = 1 - 0.7 = 0.3\)).</li>
+        </ul>
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-logistic-unit">6. The Logistic Unit &amp; Linear Decision Boundaries</h2>
+
+      <h3>A. The "Logistic Unit" Artificial Neuron (Slide 22)</h3>
+      <p>
+        As illustrated in Slide 22, logistic regression serves as the fundamental building block of modern deep artificial neural networks:
+      </p>
+      <ul>
+        <li>Inputs \(x_0 = 1, x_1, x_2, \dots, x_n\) represent input dendrites.</li>
+        <li>Parameters \(\theta_0, \theta_1, \theta_2, \dots, \theta_n\) represent synaptic weights.</li>
+        <li>The nucleus computes the inner product \(z = \theta^T x = \sum_{j=0}^n \theta_j x_j\).</li>
+        <li>The non-linear activation function \(\sigma(z)\) produces the axonal firing rate \(y = h_\theta(x) \in (0, 1)\).</li>
+      </ul>
+
+      <h3>B. The Decision Boundary (Slides 17 &amp; 22)</h3>
+      <p>
+        To make a categorical discrete prediction \(\hat{y} \in \{0, 1\}\), we compare the predicted probability to a decision threshold, conventionally \(\tau = 0.5\):
+        \[
+          \hat{y} = \begin{cases} 1 & \text{if } h_\theta(x) \ge 0.5 \\ 0 & \text{if } h_\theta(x) < 0.5 \end{cases}
+        \]
+        Recalling the sigmoid curve, \(g(z) \ge 0.5\) if and only if \(z \ge 0\). Therefore:
+        \[
+          h_\theta(x) = g(\theta^T x) \ge 0.5 \iff \theta^T x \ge 0
+        \]
+        The geometric surface separating the predicted positive region from the negative region is called the <strong>Decision Boundary</strong>:
+        \[
+          \mathcal{B} = \left\{ x \in \mathbb{R}^n \;\middle|\; \theta^T x = 0 \right\}
+        \]
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Key Property: The Decision Boundary is a Property of the Parameters, Not the Dataset</span>
+        The decision boundary is defined entirely by the equation \(\theta^T x = 0\). The training dataset is used to fit the parameter vector \(\theta\). Once \(\theta\) is learned, the boundary is fixed, partitioning the entire feature space into positive and negative decision half-spaces.
+        <br><br>
+        <em>Iris Classification Example (Slide 17):</em>
+        Using \(x_1 = \text{petal length}\) and \(x_2 = \text{petal width}\) to classify Iris-Virginica (\(y=1\)) versus Not-Iris-Virginica (\(y=0\)), the condition \(\theta_0 + \theta_1 x_1 + \theta_2 x_2 = 0\) forms a straight line in \(\mathbb{R}^2\):
+        \[
+          x_2 = -\frac{\theta_1}{\theta_2} x_1 - \frac{\theta_0}{\theta_2}
+        \]
+        separating the two species clusters.
+      </div>
+
+      <!-- Section 7 -->
+      <h2 id="sec-cross-entropy">7. The Cross-Entropy Cost Function &amp; Convex Optimization</h2>
+
+      <h3>A. Why Mean Squared Error (MSE) Fails for Logistic Regression (Slides 24&ndash;25)</h3>
+      <p>
+        In linear regression, we minimized the sum of squared errors:
+        \[
+          J(\theta) = \frac{1}{m} \sum_{i=1}^m \frac{1}{2}\left(h_\theta(x^{(i)}) - y^{(i)}\right)^2
+        \]
+        If we substitute the non-linear logistic hypothesis \(h_\theta(x) = \frac{1}{1 + e^{-\theta^T x}}\) directly into the squared error loss:
+        \[
+          \text{Cost}\left(h_\theta(x), y\right) = \frac{1}{2}\left(\frac{1}{1 + e^{-\theta^T x}} - y\right)^2
+        \]
+        the resulting loss surface \(J(\theta)\) becomes <strong>strictly non-convex</strong>, as depicted in Slide 24.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 7.1 (Convex vs. Non-Convex Optimization Surfaces)</span>
+        A set \(\mathcal{C}\) is convex if for any two points \(u, v \in \mathcal{C}\) and any \(\lambda \in [0, 1]\), the line segment \(\lambda u + (1-\lambda)v \in \mathcal{C}\).
+        A function \(J(\theta)\) is convex if its epigraph is a convex set, or equivalently, if its Hessian matrix is positive semi-definite everywhere:
+        \[
+          H(\theta) = \nabla^2 J(\theta) \succeq 0 \quad \forall \theta
+        \]
+        When MSE is applied to logistic units, the squashing sigmoid produces regions of near-zero gradients (saturation) far from the optimum. The Hessian has negative eigenvalues in intermediate regions, creating a rugged error landscape riddled with local minima and saddle points. Gradient descent would become trapped in suboptimal local minima.
+      </div>
+
+      <h3>B. Derivation of the Cross-Entropy Cost Function (Slides 26&ndash;27)</h3>
+      <p>
+        To ensure that \(J(\theta)\) has a single unique global minimum, we construct a convex penalty function based on maximum likelihood estimation:
+      </p>
+      \[
+        \text{Cost}\left(h_\theta(x), y\right) = \begin{cases}
+          -\log\left(h_\theta(x)\right) & \text{if } y = 1 \\
+          -\log\left(1 - h_\theta(x)\right) & \text{if } y = 0
+        \end{cases}
+      \]
+      <p>
+        Let us analyze the asymptotic penalties illustrated in Slide 27:
+      </p>
+      <ul>
+        <li>
+          <strong>Case 1 (\(y = 1\)):</strong> The penalty is \(-\log(h_\theta(x))\).
+          <ul>
+            <li>If \(h_\theta(x) \to 1\), the model is perfectly confident and correct: \(\text{Cost} = -\log(1) = 0\).</li>
+            <li>If \(h_\theta(x) \to 0\), the model predicts a zero chance of a positive label when the true label is 1:
+              \[
+                \lim_{h \to 0} \left[-\log(h)\right] = +\infty
+              \]
+              The model pays an infinite penalty for being confident and wrong.
+            </li>
+          </ul>
+        </li>
+        <li>
+          <strong>Case 2 (\(y = 0\)):</strong> The penalty is \(-\log(1 - h_\theta(x))\).
+          <ul>
+            <li>If \(h_\theta(x) \to 0\), then \(1 - h_\theta(x) \to 1\), and \(\text{Cost} = -\log(1) = 0\).</li>
+            <li>If \(h_\theta(x) \to 1\), the model predicts positive with total certainty when the truth is 0:
+              \[
+                \lim_{h \to 1} \left[-\log(1 - h)\right] = +\infty
+              \]
+              Again, the model incurs an infinite penalty.
+            </li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3>C. The Unified Cross-Entropy Loss &amp; Gradient Descent Update (Slide 28)</h3>
+      <p>
+        Because \(y \in \{0, 1\}\) is binary, we can compress the two piecewise cases into a single algebraic equation:
+        \[
+          \text{Cost}\left(h_\theta(x), y\right) = -y \log\left(h_\theta(x)\right) - (1 - y) \log\left(1 - h_\theta(x)\right)
+        \]
+        Averaging this loss across all \(m\) training observations yields the <strong>Binary Cross-Entropy (Log-Loss)</strong> objective function:
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 7.1 (Binary Cross-Entropy Loss Function)</span>
+        The empirical cost function for logistic regression is:
+        \[
+          J(\theta) = -\frac{1}{m} \sum_{i=1}^m \left[ y^{(i)} \log\left(h_\theta(x^{(i)})\right) + \left(1 - y^{(i)}\right) \log\left(1 - h_\theta(x^{(i)})\right) \right]
+        \]
+        This cost function is strictly convex in \(\theta\), guaranteeing that any local minimum found by gradient descent is the unique global minimum.
+      </div>
+
+      <p>
+        To minimize \(J(\theta)\), we apply Gradient Descent. We initialize parameters \(\theta_{\text{init}}\) and repeatedly execute simultaneous updates for all \(j \in \{0, 1, \dots, n\}\):
+        \[
+          \theta_j := \theta_j - \alpha \frac{\partial}{\partial \theta_j} J(\theta)
+        \]
+        In Lecture 16, we will explicitly derive the partial derivative \(\frac{\partial}{\partial \theta_j} J(\theta)\) via the chain rule and reveal the remarkable mathematical coincidence linking the gradient of logistic regression to that of linear regression.
+      </p>
+
+      <!-- Section 8: Summary Table -->
+      <h2>8. Conceptual Synthesis: Comparative Summary</h2>
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Linear Regression</th>
+            <th>Logistic Regression</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Target Domain</strong></td>
+            <td>Continuous: \(y \in \mathbb{R}\)</td>
+            <td>Discrete / Categorical: \(y \in \{0, 1\}\)</td>
+          </tr>
+          <tr>
+            <td><strong>Hypothesis \(h_\theta(x)\)</strong></td>
+            <td>Affine: \(\theta^T x\) (unbounded)</td>
+            <td>Sigmoid: \(\frac{1}{1 + e^{-\theta^T x}} \in (0, 1)\)</td>
+          </tr>
+          <tr>
+            <td><strong>Output Interpretation</strong></td>
+            <td>Direct scalar value estimate \(\hat{y}\)</td>
+            <td>Probability: \(P(y=1 \mid x; \theta)\)</td>
+          </tr>
+          <tr>
+            <td><strong>Cost Function \(J(\theta)\)</strong></td>
+            <td>Mean Squared Error (MSE / OLS)</td>
+            <td>Binary Cross-Entropy (Log-Loss)</td>
+          </tr>
+          <tr>
+            <td><strong>Convexity</strong></td>
+            <td>Convex parabola / quadratic bowl</td>
+            <td>Convex (MSE would be non-convex)</td>
+          </tr>
+          <tr>
+            <td><strong>Second-Order Optimizer</strong></td>
+            <td>Normal Equation (closed form)</td>
+            <td>Newton-Raphson / Fisher Scoring (IRLS)</td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-14.html">&larr; Lecture 14: Supervised Learning, Regression &amp; Gradient Descent</a>
+      <a href="./lecture-16.html">Lecture 16: Logistic Regression &amp; Classification &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 440" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cup-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#182848"/>
+      <stop offset="100%" stop-color="#2980b9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Cover Background -->
+  <rect width="320" height="440" rx="8" fill="url(#cup-grad)"/>
+
+  <!-- Spine groove -->
+  <line x1="22" y1="0" x2="22" y2="440" stroke="#000" stroke-opacity="0.3" stroke-width="2"/>
+  <line x1="24" y1="0" x2="24" y2="440" stroke="#fff" stroke-opacity="0.1" stroke-width="1"/>
+
+  <!-- Series / Publisher -->
+  <text x="40" y="45" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', serif" font-size="11" font-weight="600" fill="#93c5fd" letter-spacing="1">CAMBRIDGE UNIVERSITY PRESS</text>
+  <line x1="40" y1="55" x2="280" y2="55" stroke="#60a5fa" stroke-width="1" stroke-opacity="0.4"/>
+
+  <!-- Title -->
+  <text x="40" y="115" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', Georgia, serif" font-size="28" font-weight="800" fill="#ffffff" letter-spacing="-0.5">Foundations</text>
+  <text x="40" y="148" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', Georgia, serif" font-size="28" font-weight="800" fill="#ffffff" letter-spacing="-0.5">of Data</text>
+  <text x="40" y="181" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', Georgia, serif" font-size="28" font-weight="800" fill="#ffffff" letter-spacing="-0.5">Science</text>
+
+  <!-- High-Dimensional Geometry Graphic -->
+  <g transform="translate(60, 215)" opacity="0.9">
+    <!-- Sphere wireframe / high dimension hypercube concept -->
+    <circle cx="100" cy="70" r="55" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-opacity="0.6"/>
+    <ellipse cx="100" cy="70" rx="55" ry="18" fill="none" stroke="#93c5fd" stroke-width="1" stroke-opacity="0.5"/>
+    <ellipse cx="100" cy="70" rx="18" ry="55" fill="none" stroke="#93c5fd" stroke-width="1" stroke-opacity="0.5"/>
+    
+    <!-- Eigenvectors / Orthogonal vectors -->
+    <line x1="100" y1="70" x2="155" y2="70" stroke="#fbbf24" stroke-width="2"/>
+    <polygon points="155,67 162,70 155,73" fill="#fbbf24"/>
+    
+    <line x1="100" y1="70" x2="100" y2="20" stroke="#f43f5e" stroke-width="2"/>
+    <polygon points="97,20 100,13 103,20" fill="#f43f5e"/>
+
+    <line x1="100" y1="70" x2="65" y2="105" stroke="#34d399" stroke-width="2"/>
+    <polygon points="63,101 60,110 69,107" fill="#34d399"/>
+  </g>
+
+  <!-- Authors -->
+  <text x="40" y="380" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="13" font-weight="600" fill="#f8fafc">Avrim Blum</text>
+  <text x="40" y="398" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="13" font-weight="600" fill="#f8fafc">John Hopcroft</text>
+  <text x="40" y="416" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="13" font-weight="600" fill="#f8fafc">Ravindran Kannan</text>
+</svg>

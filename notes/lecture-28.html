@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 28: Independent Component Analysis (ICA) &amp; Unsupervised Learning Synthesis | Basics of Data Science</title>
+  <meta name="description" content="MIT OCW / Stanford CS231n style comprehensive lecture notes on Independent Component Analysis (ICA): cocktail party problem, non-Gaussianity requirement, change of variables, maximum likelihood, natural gradient ascent, EEG artifact removal, and the grand taxonomy of unsupervised learning (clustering, dimensionality reduction, manifold learning, NMF).">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2328%20-%20independent%20component%20analysis.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 28 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 28: Independent Component Analysis (ICA) &amp; Unsupervised Learning Taxonomy</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Fall Semester 2026</div>
+        <div class="note-meta-item"><strong>Primary Deck:</strong> Lecture #28 (Slides 1–31)</div>
+        <div class="note-meta-item"><strong>Readings:</strong> PML-Intro Ch. 20; Hyv&auml;rinen, Karhunen &amp; Oja (ICA); Bell &amp; Sejnowski (1995); ESL Ch. 14</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-cocktail-party">1. The Cocktail Party Problem &amp; Blind Source Separation</a></li>
+        <li><a href="#sec-ica-vs-pca">2. Theoretical Contrast: ICA vs. PCA</a></li>
+        <li><a href="#sec-applications">3. Engineering Applications: Static vs. Temporal Domains</a></li>
+        <li><a href="#sec-eeg-case-study">4. In-Depth Case Study: Neural Cocktail Party &amp; EEG Artifact Removal</a></li>
+        <li><a href="#sec-mathematical-model">5. Mathematical Formulation &amp; Fundamental Ambiguities</a></li>
+        <li><a href="#sec-non-gaussianity">6. The Non-Gaussianity Requirement: Rotational Invariance Proof</a></li>
+        <li><a href="#sec-mle-derivation">7. Density Transformation &amp; Maximum Likelihood Derivation</a></li>
+        <li><a href="#sec-optimization-algorithm">8. Optimization: Stochastic Gradient &amp; Natural Gradient Ascent</a></li>
+        <li><a href="#sec-generalizations-algorithms">9. Advanced ICA Generalizations &amp; Algorithm Landscape</a></li>
+        <li><a href="#sec-unsupervised-taxonomy">10. Comprehensive Taxonomy of Unsupervised Learning (Course Synthesis)</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+
+      <!-- Section 1 -->
+      <section id="sec-cocktail-party">
+        <h2>1. The Cocktail Party Problem &amp; Blind Source Separation</h2>
+        <p>
+          Imagine being in a crowded room where \(d\) distinct acoustic sources (speakers talking, background music, passing siren) are active simultaneously. We place \(d\) microphones in different locations throughout the room. Because each microphone is situated at a different physical distance and angle relative to each acoustic source, every microphone records a unique linear superposition of all original voices (Slide 2).
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Definition 1.1 (Blind Source Separation &mdash; BSS)</span>
+          Given <strong>only</strong> the mixed multi-channel microphone recordings \(x(t) = [x_1(t), x_2(t), \dots, x_d(t)]^T\), and having <em>zero prior knowledge</em> of what the individual speakers said, zero knowledge of the room acoustics, and zero knowledge of the microphone spatial geometry, the objective of <strong>Blind Source Separation (BSS)</strong> is to reconstruct the original underlying source signals \(s(t) = [s_1(t), s_2(t), \dots, s_d(t)]^T\).
+        </div>
+
+        <p>
+          In a 2-speaker, 2-microphone configuration (Slides 3&ndash;5), the linear instantaneous mixing model is expressed as:
+          \[
+            \begin{aligned}
+              x_1(t) &= a_{11} s_1(t) + a_{12} s_2(t) \\
+              x_2(t) &= a_{21} s_1(t) + a_{22} s_2(t)
+            \end{aligned}
+          \]
+          We observe the sample sequences \(\left( \begin{bmatrix} x_1(1) \\ x_2(1) \end{bmatrix}, \begin{bmatrix} x_1(2) \\ x_2(2) \end{bmatrix}, \dots, \begin{bmatrix} x_1(n) \\ x_2(n) \end{bmatrix} \right)\). We possess neither the mixing coefficients \(\{a_{ij}\}\) nor the original source waveforms \(\{s_i(t)\}\). Our goal is to simultaneously recover \(\{s_i(t)\}\) and estimate \(\{a_{ij}\}\).
+        </p>
+
+        <p>
+          Slide 4 demonstrates this with empirical waveforms: while the raw recordings \(x_1(t)\) and \(x_2(t)\) appear unintelligibly garbled, the signals estimated via <strong>Independent Component Analysis (ICA)</strong> align almost perfectly with the true underlying source waveforms.
+        </p>
+      </section>
+
+      <!-- Section 2 -->
+      <section id="sec-ica-vs-pca">
+        <h2>2. Theoretical Contrast: ICA vs. PCA</h2>
+        <p>
+          Both Principal Component Analysis (Lecture 27) and Independent Component Analysis represent data as linear transformations of underlying components. However, their mathematical goals, statistical assumptions, and geometric foundations are fundamentally different (Slides 6&ndash;7).
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">Matrix Factorization Comparison (Slide 6)</span>
+          <ul>
+            <li>
+              <strong>PCA (Low-Rank Factorization for Compression):</strong>
+              \[
+                X_{N \times T} \approx U_{N \times M} S_{M \times T} \quad \text{with } M < N
+              \]
+              PCA projects data onto an orthogonal \(M\)-dimensional subspace that captures maximal variance and minimizes reconstruction error.
+            </li>
+            <li>
+              <strong>ICA (Full-Rank Factorization to Remove Higher-Order Dependence):</strong>
+              \[
+                X_{N \times T} = A_{N \times N} S_{N \times T} \quad \text{with } M = N
+              \]
+              ICA factors data to identify statistically independent rows without dimensional compression.
+            </li>
+          </ul>
+        </div>
+
+        <table style="width:100%; border-collapse:collapse; margin:1.5rem 0; font-size:0.92rem;">
+          <thead>
+            <tr style="background:var(--bg-subtle); border-bottom:2px solid var(--border-strong);">
+              <th style="padding:0.75rem; text-align:left;">Property</th>
+              <th style="padding:0.75rem; text-align:left;">Principal Component Analysis (PCA)</th>
+              <th style="padding:0.75rem; text-align:left;">Independent Component Analysis (ICA)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border-subtle);">
+              <td style="padding:0.75rem; font-weight:600;">Dimensionality</td>
+              <td style="padding:0.75rem;">Performs compression (\(M < N\)).</td>
+              <td style="padding:0.75rem;">Does not compress (\(M = N\); preserves feature count).</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-subtle);">
+              <td style="padding:0.75rem; font-weight:600;">Statistical Criterion</td>
+              <td style="padding:0.75rem;">Removes linear correlations only (2nd-order statistics: \(\text{Cov}(z_i, z_j) = 0\)).</td>
+              <td style="padding:0.75rem;">Removes correlations <strong>and</strong> higher-order dependencies (all moments / mutual information).</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-subtle);">
+              <td style="padding:0.75rem; font-weight:600;">Geometric Basis</td>
+              <td style="padding:0.75rem;">Strictly orthogonal axes (\(U^T U = I\)).</td>
+              <td style="padding:0.75rem;">Non-orthogonal / oblique basis vectors (columns of mixing matrix \(A\)).</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-subtle);">
+              <td style="padding:0.75rem; font-weight:600;">Component Ranking</td>
+              <td style="padding:0.75rem;">Naturally ordered: components sorted by eigenvalues \(\lambda_1 \ge \lambda_2 \ge \dots\).</td>
+              <td style="padding:0.75rem;">Unordered: components are equally important (no intrinsic hierarchy).</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-subtle);">
+              <td style="padding:0.75rem; font-weight:600;">Distributional Assumption</td>
+              <td style="padding:0.75rem;">Works optimally for Gaussian data (ellipsoidal contours).</td>
+              <td style="padding:0.75rem;"><strong>Fails entirely on Gaussian data</strong>; strictly requires non-Gaussianity.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Section 3 -->
+      <section id="sec-applications">
+        <h2>3. Engineering Applications: Static vs. Temporal Domains</h2>
+        <p>
+          Slide 8 categorizes the operational deployment of ICA across static pattern recognition and temporal signal processing:
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Taxonomy of ICA Applications (Slide 8)</span>
+          <ul>
+            <li>
+              <strong>Static (Spatial / Non-temporal) Applications:</strong>
+              <ul>
+                <li><strong>Image Denoising (Hoyer &amp; Hyv&auml;rinen):</strong> Decomposing image patches into sparse independent bases. While standard linear Wiener filters and non-linear median filters blur fine structural details, ICA denoising isolates localized high-frequency edges and textures, restoring crisp details (Slide 13).</li>
+                <li><strong>Microarray Gene Expression:</strong> Deconvolving overlapping cellular pathways and transcription regulator programs from bulk RNA microarrays.</li>
+                <li><strong>Astrophysics:</strong> Decomposing composite radiation spectra of distant galaxies into distinct stellar populations and interstellar gas emissions.</li>
+                <li><strong>Facial Analysis:</strong> Face recognition, facial expression recognition, and unsupervised receptive field feature extraction.</li>
+              </ul>
+            </li>
+            <li>
+              <strong>Temporal &amp; Dynamic Applications:</strong>
+              <ul>
+                <li><strong>Biomedical Signal Processing:</strong> Electroencephalography (EEG), Magnetoencephalography (MEG), Electrocardiography (fetal vs. maternal ECG), and functional MRI (fMRI).</li>
+                <li><strong>Brain-Computer Interfaces (BCI):</strong> Isolating intention-driven motor-cortex mu-rhythms from background cognitive chatter.</li>
+                <li><strong>Computational Neuroscience:</strong> Modeling visual cortex simple cell receptive fields (Gabor-like filters emerge naturally from natural image ICA) and hippocampus place cell firing fields.</li>
+                <li><strong>Financial Econometrics:</strong> Identifying hidden macroeconomic drivers governing asset return covariances.</li>
+                <li><strong>Blind Deconvolution:</strong> Equalizing multi-path reverberant communication channels.</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 4 -->
+      <section id="sec-eeg-case-study">
+        <h2>4. In-Depth Case Study: Neural Cocktail Party &amp; EEG Artifact Removal</h2>
+        <p>
+          Slides 9&ndash;12 present one of the most celebrated real-world applications of ICA: purifying high-density Electroencephalography (EEG) brainwave records.
+        </p>
+
+        <h3>The Neural Cocktail Party</h3>
+        <p>
+          Scalp EEG electrodes measure millivolt-level electrical potentials generated by synchronous postsynaptic potentials in cortical pyramidal neurons. However, these microscopic cerebral signals are severely corrupted by enormous physiological and external electrical artifacts (Slide 9):
+        </p>
+        <ul>
+          <li><strong>Ocular Artifacts:</strong> Eye blinks and lateral saccades produce massive voltage swings (the eye is an electrical dipole between the cornea and retina).</li>
+          <li><strong>Myogenic Artifacts:</strong> Muscle contractions in the jaw, neck, and forehead produce intense high-frequency EMG bursts.</li>
+          <li><strong>Cardiovascular Artifacts:</strong> Heartbeat electrical spikes (ECG) and arterial pulsation under electrodes.</li>
+          <li><strong>Technical Artifacts:</strong> Electrode impedance pops and 50/60 Hz power-line alternating current electromagnetic interference.</li>
+        </ul>
+
+        <div class="thm-box">
+          <span class="box-label">The EEG Unmixing &amp; Artifact Correction Pipeline (Slides 10&ndash;12)</span>
+          <p>
+            Because volume conduction through cerebrospinal fluid, skull, and scalp is linear and instantaneous, the recorded scalp potential vector \(X \in \mathbb{R}^{d \times T}\) across \(d\) channels is an exact linear mixture of underlying brain and artifact sources:
+            \[
+              X = A S \implies U = W X
+            \]
+            where \(W = A^{-1}\) is the learned unmixing matrix. The rows of \(U = WX\) represent the <strong>independent component activations</strong> over time, and the columns of \(A = W^{-1}\) define the <strong>scalp topographies (spatial projection maps)</strong> of each component (Slide 10).
+          </p>
+
+          <div class="note-callout" style="margin: 12px 0; border-left: 4px solid #3b82f6;">
+            <strong>Artifact Cancellation Pipeline:</strong>
+            \[
+              S = A^{-1} X = WX \xrightarrow{\text{Artifact Zeroing}} S_{\text{clean}} \xrightarrow{\text{Back-Projection}} X_{\text{corrected}} = A S_{\text{clean}} = W^{-1} S_{\text{clean}}
+            \]
+          </div>
+
+          <ol>
+            <li><strong>Forward Unmixing:</strong> Compute independent components \(S = A^{-1} X = W X\).</li>
+            <li><strong>Component Identification:</strong> Visually or algorithmically identify artifact components:
+              <ul>
+                <li>Eye blink: high-amplitude frontal topography localized over FP1/FP2 electrodes (Component 1 &amp; 2 in Slide 12).</li>
+                <li>Cardiac pulse: regular rhythmic QRS complexes.</li>
+                <li>Muscle noise: localized high-frequency power above 30 Hz.</li>
+              </ul>
+            </li>
+            <li><strong>Zeroing Artifacts:</strong> Construct purified component matrix \(S_{\text{new}}\) by setting the entire row corresponding to artifactual components to identically zero (marked with crosses &times; on Slide 11 &amp; 12).</li>
+            <li><strong>Reconstruction (Back-Projection):</strong> Project purified components back to scalp sensor space:
+              \[
+                X_{\text{corrected}} = A S_{\text{new}} = W^{-1} S_{\text{new}}
+              \]
+            </li>
+          </ol>
+          <p>
+            The resulting \(X_{\text{corrected}}\) preserves genuine neural electrophysiology across all channels with zero artifact contamination, resolving the distortion caused by simple time-domain filtering (Slide 12).
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 5 -->
+      <section id="sec-mathematical-model">
+        <h2>5. Mathematical Formulation &amp; Fundamental Ambiguities</h2>
+        <p>
+          Let \(s = [s_1, s_2, \dots, s_d]^T \in \mathbb{R}^d\) be an unobserved vector generated by \(d\) statistically independent physical sources. We observe mixtures through an unknown invertible square mixing matrix \(A \in \mathbb{R}^{d \times d}\) (Slide 14):
+          \[
+            x = A s
+          \]
+          Given a training dataset of repeated temporal snapshots \(\{x^{(i)} \in \mathbb{R}^d\}_{i=1}^n\), our objective is to learn the unmixing matrix \(W = A^{-1}\) so that:
+          \[
+            s^{(i)} = W x^{(i)}
+          \]
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Row-Wise Source Reconstruction (Slide 15)</span>
+          Decomposing the unmixing matrix \(W \in \mathbb{R}^{d \times d}\) by its rows:
+          \[
+            W = \begin{bmatrix} w_1^T \\ w_2^T \\ \vdots \\ w_d^T \end{bmatrix}, \quad w_j \in \mathbb{R}^d
+          \]
+          The \(j\)-th source for observation \(i\) is recovered by the inner product of the \(j\)-th unmixing filter with the observation vector:
+          \[
+            s_j^{(i)} = w_j^T x^{(i)}
+          \]
+          <div class="note-callout" style="margin-top: 8px;">
+            <strong>Interpretation:</strong> Here, \(s_j^{(i)} = w_j^T x^{(i)}\) denotes the recovered \(j\)-th source signal at time snapshot \(i\), extracted by projecting observation vector \(x^{(i)}\) onto unmixing filter \(w_j\).
+          </div>
+        </div>
+
+        <h3>Inherent Indeterminacies (Ambiguities) in ICA</h3>
+        <p>
+          Because both \(A\) and \(s\) are completely unknown, any linear blind separation model exhibits two fundamental indeterminacies that cannot be resolved without external constraints (Slides 16&ndash;17):
+        </p>
+
+        <div class="thm-box" style="background:#fffbeb; border-color:#fde047;">
+          <span class="box-label" style="color:#854d0e;">The Two Fundamental Ambiguities of ICA</span>
+          <ol>
+            <li>
+              <strong>Permutation Ambiguity (Slide 16):</strong><br>
+              Let \(P\) be an arbitrary \(d \times d\) permutation matrix (every row and column contains exactly one 1 and zeros elsewhere, so \(P^{-1} = P^T\)):
+              \[
+                x = A s = (A P^{-1}) (P s)
+              \]
+              Given only observations \(x^{(i)}\), there is no statistical mechanism to distinguish whether the true mixing matrix was \(A\) or \(A P^{-1}\). Consequently, the recovered source order is arbitrary (e.g., speaker 1 may be recovered at output index 2). For audio and physiological separation, source indexing is completely irrelevant.
+            </li>
+            <li>
+              <strong>Scaling &amp; Sign Ambiguity (Slide 17):</strong><br>
+              If a column of \(A\) is multiplied by a non-zero scalar \(\alpha\) while the corresponding source \(s_j\) is multiplied by \(1/\alpha\), the observed mixture remains identical:
+              \[
+                x^{(i)} = 2A \cdot (0.5 s^{(i)}) = A s^{(i)}
+              \]
+              Furthermore, multiplying a source by \(-1\) merely flips its polarity. In audio playback, inverted polarity \(-\!s(t)\) sounds acoustically indistinguishable to human hearing.
+              <br><br>
+              <strong>Canonical Normalization:</strong> To eliminate scale indeterminacy, we conventionally enforce that every source has zero mean and unit variance:
+              \[
+                \mathbb{E}[s_j] = 0, \quad \text{Var}(s_j) = \mathbb{E}[s_j^2] = 1
+              \]
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Section 6 -->
+      <section id="sec-non-gaussianity">
+        <h2>6. The Non-Gaussianity Requirement: Rotational Invariance Proof</h2>
+        <p>
+          Can ICA separate any set of independent sources? <strong>No.</strong> There is one foundational mathematical barrier: <em>ICA cannot separate Gaussian sources</em> (Slide 18).
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">Theorem 6.1 (Failure of ICA for Gaussian Sources)</span>
+          If the underlying independent sources \(s_j\) are normally distributed, the unmixing matrix \(W\) cannot be uniquely identified from the observations \(x = As\). ICA strictly requires that at most <em>one</em> source is Gaussian.
+        </div>
+
+        <div class="proof-box">
+          <span class="box-label">Proof via Rotational Invariance of Isotropic Gaussians (Slide 18)</span>
+          Consider a 2-dimensional system where the sources are independent standard normal variables:
+          \[
+            s \sim \mathcal{N}(0, I), \quad \text{where } I = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}
+          \]
+          The joint probability density of the sources is:
+          \[
+            p(s) = \frac{1}{2\pi} \exp\left(-\frac{1}{2} s^T s\right) = \frac{1}{2\pi} \exp\left(-\frac{s_1^2 + s_2^2}{2}\right)
+          \]
+          The contours of this density are concentric circles centered at the origin: <strong>the distribution is rotationally symmetric</strong>.
+          <br><br>
+          Now, the observed mixture is \(x = As\). Its distribution is zero-mean Gaussian with covariance:
+          \[
+            \mathbb{E}[x] = A \mathbb{E}[s] = 0
+          \]
+          \[
+            \text{Cov}(x) = \mathbb{E}[x x^T] = \mathbb{E}[(As)(As)^T] = A \mathbb{E}[s s^T] A^T = A \cdot I \cdot A^T = A A^T
+          \]
+          Thus, \(x \sim \mathcal{N}(0, A A^T)\).
+          <br><br>
+          Now let \(R \in \mathbb{R}^{2 \times 2}\) be an <strong>arbitrary orthogonal rotation matrix</strong>, satisfying \(R R^T = R^T R = I\). Define an alternative mixing matrix:
+          \[
+            A' = A R
+          \]
+          If data were generated according to \(A'\), the observed mixture would be \(x' = A' s\). The distribution of \(x'\) is also zero-mean Gaussian, with covariance:
+          \[
+            \text{Cov}(x') = \mathbb{E}[(A's)(A's)^T] = A' \mathbb{E}[ss^T] (A')^T = (AR) I (AR)^T = A (R R^T) A^T = A A^T
+          \]
+          Hence, \(x' \sim \mathcal{N}(0, A A^T)\).
+          <br><br>
+          The probability density of the observations is mathematically identical under mixing matrix \(A\) and under rotated mixing matrix \(A'\):
+          \[
+            p_x(x; A) \equiv p_x(x; A')
+          \]
+          No algorithm, regardless of the number of samples observed, can distinguish \(A\) from \(A R\). There exists an unresolvable arbitrary rotation in the parameter space, rendering source recovery impossible! \(\blacksquare\)
+        </div>
+
+        <div class="note-callout">
+          <strong>The Central Limit Theorem Intuition:</strong><br>
+          Recall the Central Limit Theorem (Lecture 09): the sum of independent random variables is always <em>more Gaussian</em> than the individual constituent variables.<br>
+          Since each observed mixture \(x_i = \sum_{j} a_{ij} s_j\) is a linear combination of independent sources, each mixture \(x_i\) is substantially more Gaussian than any individual source \(s_j\).<br>
+          Therefore, <strong>to unmix the signals, ICA must find directions \(w\) such that the projected variable \(w^T x\) is as NON-GAUSSIAN as possible!</strong>
+        </div>
+      </section>
+
+      <!-- Section 7 -->
+      <section id="sec-mle-derivation">
+        <h2>7. Density Transformation &amp; Maximum Likelihood Derivation</h2>
+        <p>
+          We now derive the Bell &amp; Sejnowski (1995) algorithm through the lens of Maximum Likelihood Estimation (MLE), bypassing the historic "infomax" information-theoretic terminology in favor of modern statistical principles (Slides 19&ndash;22).
+        </p>
+
+        <h3>Multivariable Density Transformation (Slide 19)</h3>
+        <p>
+          To write down the likelihood of the observed mixtures \(x\), we must relate the probability density function \(p_x(x)\) to the source density \(p_s(s)\) under the linear transformation \(x = As \iff s = Wx\).
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">Probability Density under Linear Transformation (Slide 19)</span>
+          Let \(s \sim p_s(s)\) and \(x = As\) where \(A\) is invertible with \(W = A^{-1}\). By multivariable calculus, conservation of probability mass requires \(p_x(x) |dx| = p_s(s) |ds|\). Therefore:
+          \[
+            p_x(x) = p_s(Wx) \cdot |W|
+          \]
+          where \(|W| = |\det(W)|\) denotes the absolute value of the determinant of \(W\) (the Jacobian determinant of the inverse mapping \(s \mapsto Wx\)).
+
+          <div class="note-callout" style="margin-top: 10px; border-left: 4px solid #1e3a8a;">
+            <strong>Pedagogical 1D Example (Linear Transformation of Densities):</strong><br>
+            Consider a scalar source \(s \sim \text{Uniform}(0, 1)\) scaled by \(A = 2\), so \(x = 2s\) and \(W = A^{-1} = 0.5\).<br>
+            The transformed variable \(x\) is uniformly distributed over \((0, 2)\). The source density is \(p_s(s) = 1\) on \([0, 1]\). Applying the transformation formula:
+            \[
+              p_x(x) = p_s(W x) \cdot |W| = p_s(0.5 x) \cdot 0.5 = 1 \times 0.5 = 0.5 \quad \text{for } x \in [0, 2]
+            \]
+            Integrating over its domain gives \(\int_0^2 0.5 \, dx = 1\), confirming conservation of probability mass. In \(d\) dimensions, \(|W| = |\det(W)|\) acts as the differential volume change factor.
+          </div>
+        </div>
+
+        <h3>Joint Likelihood under Independence (Slide 20)</h3>
+        <p>
+          Since the underlying sources are mutually independent, their joint density factorizes as the product of individual marginal densities:
+          \[
+            p_s(s) = \prod_{j=1}^d p_s(s_j)
+          \]
+          Substituting \(s_j = w_j^T x\), the density of an observed mixture vector \(x\) is:
+          \[
+            p(x) = \left( \prod_{j=1}^d p_s(w_j^T x) \right) \cdot |\det(W)|
+          \]
+        </p>
+
+        <h3>Specifying the Source Prior Density \(p_s\) (Slide 21)</h3>
+        <p>
+          What density should we assume for the unobserved sources \(p_s\)?
+        </p>
+        <p>
+          Recall that for any continuous random variable \(z\), its cumulative distribution function (CDF) \(F(z) = P(Z \le z)\) satisfies \(p_z(z) = F'(z)\). A valid CDF must be a monotonic function increasing from 0 to 1.
+        </p>
+        <p>
+          Since we cannot choose a Gaussian CDF, the standard robust default choice is the <strong>logistic sigmoid function</strong>:
+          \[
+            g(s) = \frac{1}{1 + e^{-s}}
+          \]
+          Differentiating \(g(s)\) yields the prior density for the sources:
+          \[
+            p_s(s) = g'(s) = \frac{e^{-s}}{(1 + e^{-s})^2} = g(s)(1 - g(s))
+          \]
+        </p>
+
+        <div class="note-callout">
+          <strong>Physical Realism of the Sigmoid Derivative:</strong><br>
+          The density \(g'(s) = g(s)(1-g(s))\) is a <strong>super-Gaussian (heavy-tailed)</strong> distribution. It exhibits a much sharper peak at zero and substantially heavier tails than a standard normal distribution. This matches real-world acoustic speech and natural images, where sources remain near zero most of the time (silence) and occasionally produce large bursts (words/edges).
+        </div>
+
+        <div class="note-callout" style="margin: 12px 0; border-left: 4px solid #1e3a8a;">
+          <strong>Practical Modeling Considerations:</strong>
+          <ol>
+            <li><strong>Prior Knowledge of Source Distributions:</strong> If prior domain knowledge about the physical sources is available (e.g. sub-Gaussian vs. super-Gaussian kurtosis), an appropriate tailored density \(p_s(s)\) should be substituted for the default sigmoid derivative.</li>
+            <li><strong>Zero-Mean Centering:</strong> ICA formally assumes that the sources (and thus observed mixtures) have zero mean: \(\mathbb{E}[s] = \mathbf{0} \implies \mathbb{E}[x] = \mathbf{0}\). In practice, data must be mean-centered before optimization: \(x^{(i)} \leftarrow x^{(i)} - \frac{1}{n}\sum_{k=1}^n x^{(k)}\).</li>
+          </ol>
+        </div>
+
+        <h3>The Full Dataset Log-Likelihood (Slide 22)</h3>
+        <p>
+          Given an i.i.d. training sample of \(n\) observations \(\{x^{(1)}, x^{(2)}, \dots, x^{(n)}\}\), the log-likelihood of the unmixing parameter matrix \(W\) is:
+          \[
+            \ell(W) = \sum_{i=1}^n \left( \sum_{j=1}^d \log g'\left(w_j^T x^{(i)}\right) + \log |\det(W)| \right)
+          \]
+        </p>
+      </section>
+
+      <!-- Section 8 -->
+      <section id="sec-optimization-algorithm">
+        <h2>8. Optimization: Stochastic Gradient &amp; Natural Gradient Ascent</h2>
+        <p>
+          To find the optimal unmixing matrix \(W^*\), we maximize \(\ell(W)\) via gradient ascent (Slides 22&ndash;24).
+        </p>
+
+        <h3>Analytical Gradient Derivation (Slide 22)</h3>
+        <p>
+          Let us differentiate the single-sample log-likelihood \(\ell^{(i)}(W) = \sum_{j=1}^d \log g'(w_j^T x^{(i)}) + \log |\det(W)|\) with respect to \(W\):
+        </p>
+
+        <div class="proof-box">
+          <span class="box-label">Step-by-Step Calculus (Slide 22 Handwritten Formulas)</span>
+          Recall that \(g'(s) = g(s)(1 - g(s))\). Differentiating again with respect to \(s\):
+          \[
+            g''(s) = g'(s)(1 - g(s)) - g(s) g'(s) = g'(s) - 2 g(s) g'(s) = g'(s)[1 - 2g(s)]
+          \]
+          Now, consider the first term in the log-likelihood for row \(w_j\):
+          \[
+            \frac{\partial}{\partial w_j} \log g'\left(w_j^T x^{(i)}\right) = \frac{g''\left(w_j^T x^{(i)}\right)}{g'\left(w_j^T x^{(i)}\right)} \cdot x^{(i)} = \left[ 1 - 2 g\left(w_j^T x^{(i)}\right) \right] x^{(i)}
+          \]
+          In matrix notation, stacking across all rows \(j = 1, \dots, d\):
+          \[
+            \nabla_W \sum_{j=1}^d \log g'\left(w_j^T x^{(i)}\right) = \begin{bmatrix} 1 - 2g(w_1^T x^{(i)}) \\ 1 - 2g(w_2^T x^{(i)}) \\ \vdots \\ 1 - 2g(w_d^T x^{(i)}) \end{bmatrix} (x^{(i)})^T
+          \]
+          For the determinant term, using Jacobi's formula \(\nabla_W \det(W) = \det(W) (W^{-1})^T\):
+          \[
+            \nabla_W \log |\det(W)| = \frac{1}{\det(W)} \cdot \det(W) (W^{-1})^T = (W^{-1})^T = (W^T)^{-1}
+          \]
+        </div>
+
+        <div class="def-box">
+          <span class="box-label">Algorithm 8.1: Stochastic Gradient Ascent for ICA (Slide 22&ndash;23)</span>
+          Iterate over training examples \(x^{(i)}\) with learning rate \(\alpha\):
+          \[
+            W := W + \alpha \left( \begin{bmatrix} 1 - 2g(w_1^T x^{(i)}) \\ 1 - 2g(w_2^T x^{(i)}) \\ \vdots \\ 1 - 2g(w_d^T x^{(i)}) \end{bmatrix} (x^{(i)})^T + (W^T)^{-1} \right)
+          \]
+          After convergence, reconstruct the source tracks for all observations:
+          \[
+            s^{(i)} = W x^{(i)}
+          \]
+        </div>
+
+        <div class="thm-box">
+          <span class="box-label">The Natural Gradient Acceleration (Amari, 1998)</span>
+          Evaluating \((W^T)^{-1}\) at every single training step is computationally burdensome (\(\mathcal{O}(d^3)\)).<br>
+          In <strong>Natural Gradient Ascent</strong>, the Euclidean gradient is post-multiplied by \(W^T W\) (the Riemannian metric tensor of the Lie group \(\text{GL}(d)\)):
+          \[
+            \nabla_{\text{nat}} \ell(W) = \nabla_W \ell(W) \cdot W^T W = \left( [1 - 2g(Wx)] x^T + (W^T)^{-1} \right) W^T W
+          \]
+          Since \((W^T)^{-1} W^T W = I \cdot W = W\), and defining \(y = Wx\):
+          \[
+            W := W + \alpha \left[ I - 2 g(y) y^T \right] W
+          \]
+          This eliminates matrix inversions completely, stabilizes conditioning, and converges orders of magnitude faster!
+        </div>
+
+        <h3>Remark on Temporal Dependence &amp; Shuffling (Slide 24)</h3>
+        <div class="note-callout">
+          <div style="margin-bottom: 6px; font-weight: bold;">
+            <strong>Sample Size &amp; Asymptotic Consistency:</strong> Here \(n\) denotes the number of temporal observation snapshots. As recording duration increases (\(n \to \infty\)), the empirical estimator converges to the true unmixing matrix despite temporal correlation.
+          </div>
+          In speech and physiological data, consecutive time samples \(x^{(t)}, x^{(t+1)}\) are temporally auto-correlated. Although the standard likelihood assumes independence over time (\(\prod_{i} p(x^{(i)})\)), <strong>having correlated training examples does not hurt asymptotic estimation consistency</strong> as sample length \(n \to \infty\).<br>
+          However, to prevent optimization oscillations, <strong>we randomly shuffle / permute the time indices before running stochastic gradient ascent!</strong>
+        </div>
+      </section>
+
+      <!-- Section 9 -->
+      <section id="sec-generalizations-algorithms">
+        <h2>9. Advanced ICA Generalizations &amp; Algorithm Landscape</h2>
+        <p>
+          Slides 25 and 26 survey modern extensions and the broader algorithmic ecosystem of ICA.
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Theoretical Generalizations of ICA (Slide 25)</span>
+          <ul>
+            <li><strong>Overcomplete &amp; Undercomplete ICA:</strong> When the number of sensors \(d\) does not equal the number of sources \(K\). In undercomplete ICA (\(d > K\)), we have sensor redundancy; in overcomplete ICA (\(d < K\), e.g., 2 microphones recording 5 speakers), sparsity priors are required to identify active sources.</li>
+            <li><strong>Sparse Component Analysis (SCA) &amp; Nonnegative ICA:</strong> Enforcing sparsity (\(L_1\)) or non-negativity constraints (\(s \ge 0\)) on source activations.</li>
+            <li><strong>Blind Source Deconvolution:</strong> Modeling acoustic reverberations and multi-path room echoes where mixtures are convolutive rather than instantaneous: \(x(t) = \sum_{\tau} A(\tau) s(t - \tau)\).</li>
+            <li><strong>Independent Subspace Analysis (ISA):</strong> Grouping components into multi-dimensional independent invariant subspaces (e.g., phase-invariant edge detectors).</li>
+            <li><strong>Post-Nonlinear ICA ("The Holy Grail"):</strong> Recovering sources under non-linear mixing models: \(x = f(As)\).</li>
+          </ul>
+        </div>
+
+        <h3>The Landscape of Over 100 ICA Algorithms (Slide 26)</h3>
+        <ul>
+          <li><strong>Entropy &amp; Negentropy Estimation:</strong>
+            <ul>
+              <li><strong>FastICA (Hyv&auml;rinen, 1999):</strong> Circled on Slide 26 as the standard industry benchmark. Uses a fixed-point iteration scheme based on maximum negentropy, achieving cubic convergence with zero step-size hyperparameter tuning!</li>
+              <li><strong>Infomax ICA (Bell &amp; Sejnowski, 1995):</strong> Information-maximization stochastic gradient.</li>
+              <li><strong>RADICAL (Learned-Miller &amp; Fisher, 2003):</strong> Robust, non-parametric entropy estimator.</li>
+            </ul>
+          </li>
+          <li><strong>Mutual Information (MI) Estimation:</strong> <strong>Kernel-ICA (Bach &amp; Jordan, 2002)</strong> using reproducing kernel Hilbert space contrasts.</li>
+          <li><strong>Higher-Order Moments &amp; Cumulants:</strong> <strong>JADE (Cardoso, 1993)</strong> &mdash; Joint Approximate Diagonalization of 4th-order cumulant tensors.</li>
+        </ul>
+      </section>
+
+      <!-- Section 10 -->
+      <section id="sec-unsupervised-taxonomy">
+        <h2>10. Comprehensive Taxonomy of Unsupervised Learning (Course Synthesis)</h2>
+        <p>
+          Slides 27&ndash;31 present the professor's handwritten grand synthesis, systematically organizing the entire universe of unsupervised machine learning algorithms studied across this course.
+        </p>
+
+        <div class="note-callout" style="margin-bottom: 12px; border-left: 4px solid #b91c1c;">
+          <strong>Synthesis of Unsupervised Learning Paradigms:</strong> Unsupervised machine learning methods can be systematically structured into three broad functional categories: Clustering, Dimensionality Reduction, and Matrix Factorization / Source Separation.
+        </div>
+
+        <h3>Category I: Clustering Methods</h3>
+        <p>Grouping unlabeled data into discrete clusters based on spatial proximity or probabilistic density (Slide 27):</p>
+        <ul>
+          <li><strong>K-Means vs. Gaussian Mixture Models (GMM):</strong> K-Means assumes isotropic, spherical clusters with hard assignment; GMM (Lecture 26) models arbitrary elliptical covariance matrices with soft Bayesian posterior responsibilities.</li>
+          <li><strong>Kernel K-Means:</strong> Mapping inputs non-linearly via \(\phi(x)\) into an inner-product feature space to segment non-linearly separable, concentric or interlocking clusters.</li>
+          <li><strong>Hierarchical Clustering:</strong> Building multi-scale agglomerative dendrograms without pre-specifying cluster count \(K\).</li>
+          <li><strong>DBSCAN:</strong> Density-Based Spatial Clustering of Applications with Noise. Groups points in high-density regions and discovers <strong>arbitrary cluster geometries</strong> (discovering clusters of arbitrary geometry) while isolating outliers.</li>
+        </ul>
+
+        <h3>Category II: Dimensionality Reduction Methods</h3>
+        <p>Compressing high-dimensional observations into lower-dimensional representations (Slide 27):</p>
+        <ul>
+          <li><strong>Linear Subspace Methods:</strong> PCA (unsupervised variance maximization) and Fisher's LDA (supervised class separability).</li>
+          <li><strong>Kernel Extensions:</strong> Kernel PCA (KPCA) and Kernel Discriminant Analysis (KDA) for non-linear subspace discovery.</li>
+          <li><strong>Deep Neural Autoencoders:</strong> Non-linear neural architectures consisting of an Encoder contracting to a latent bottleneck \(z \in \mathbb{R}^k\) and a Decoder reconstructing \(\tilde{x}\) (Slide 31).</li>
+        </ul>
+
+        <div class="thm-box" style="border-left: 4px solid #ef4444; background: #fef2f2;">
+          <span class="box-label" style="color: #991b1b;">Fundamental Equivalence: Linear Autoencoder and PCA</span>
+          A neural autoencoder with <strong>linear activation functions</strong> trained with Mean Squared Error (MSE) loss learns a latent representation whose column span is <strong>mathematically identical to the subspace spanned by the top \(k\) principal eigenvectors of PCA</strong>! Adding non-linear activation functions generalizes the autoencoder to non-linear manifold learning.
+        </div>
+
+        <div class="def-box">
+          <span class="box-label">Non-Parametric Manifold Learning</span>
+          <div class="note-callout" style="margin-bottom: 10px; border-left: 4px solid #1e3a8a;">
+            <strong>Non-Parametric Nature:</strong> Unlike parametric dimensionality reduction methods (such as PCA) that define a global projection mapping \(z = U^T x\) applicable to unseen points, manifold learning techniques are non-parametric: they calculate low-dimensional embeddings individually for each training sample to preserve local geometry, without yielding a global out-of-sample projection function.
+          </div>
+          <p>
+            Unlike PCA which provides a parametric global projection matrix \(z = U^T x\) applicable to unseen test points, <strong>Manifold Learning techniques (Isomap, Locally Linear Embedding &mdash; LLE, t-SNE)</strong> are non-parametric: they discover low-dimensional embeddings for the given training dataset points individually by preserving local geodesic distances or neighborhood reconstruction weights, without establishing an out-of-sample parametric mapping function.
+          </p>
+        </div>
+
+        <h3>Category III: Source Separation &amp; Matrix Factorization</h3>
+        <p>Decomposing composite data matrices into constituent components (Slides 29&ndash;31):</p>
+        <ul>
+          <li><strong>Independent Component Analysis (ICA):</strong> \(X = AS\) enforcing statistical independence across sources.</li>
+          <li><strong>Non-negative Matrix Factorization (NMF, Slide 29):</strong> Approximating non-negative data \(X \ge 0\) by low-rank factors:
+            \[
+              X_{M \times N} \approx W_{M \times K} H_{K \times N}, \quad \text{subject to } W \ge 0, \; H \ge 0
+            \]
+            Because cancellations via subtraction are strictly forbidden, NMF yields purely <strong>additive, parts-based representations</strong>.
+            <ul>
+              <li><strong>Distance / Divergence Criteria:</strong> Optimized using Euclidean Frobenius norm (\(\|X - WH\|_F^2\)), Kullback-Leibler (KL) divergence, or <strong>Itakura-Saito (IS) divergence</strong> (Itakura-Saito, Kullback-Leibler, or Frobenius distance). The IS divergence is scale-invariant, making it the gold standard for audio decomposition.</li>
+              <li><strong>Document Topic Modeling (Slide 29):</strong> Factoring a Document-Word matrix \(X\) into a Document-Topic matrix \(W\) and a Topic-Word dictionary \(H\).</li>
+              <li><strong>Soft Overlapping Clustering:</strong> Unlike hard K-Means, NMF naturally accommodates data points belonging simultaneously to multiple overlapping semantic clusters (soft clustering).</li>
+              <li><strong>Audio Spectrogram Decomposition (Slide 30):</strong> Decomposing a Short-Time Fourier Transform (STFT) magnitude spectrogram \(X \in \mathbb{R}^{F \times T}\) into spectral basis dictionaries \(W_{F \times K}\) (spectral dictionaries) and time-activation matrices \(H_{K \times T}\).</li>
+              <li><strong>Hyperspectral Image Unmixing (Slide 31):</strong> Factoring an \(F \times N_1 \times N_2\) hyperspectral earth-observation cube into pure material spectral signatures (endmembers) and geographic abundance fractional maps (hyperspectral spectral unmixing).</li>
+            </ul>
+          </li>
+        </ul>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-27.html">&larr; Lecture 27: Principal Component Analysis (PCA) &amp; Fisher's LDA</a>
+      <a href="../index.html#lectures">Back to Course Lectures &uarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

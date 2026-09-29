@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 03: Review of Probability Theory (Part 2) | Basics of Data Science</title>
+  <meta name="description" content="Detailed lecture notes on expectation, LOTUS, variance, Uniform(0,1) variance derivation, common distributions, joint distributions, marginalization, Bayes rule for random variables, independence vs correlation counterexample, and n-dimensional random vectors.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%233%20-%20probability%20review.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 3 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 03: Review of Probability Theory (Part 2): Moments, Families &amp; Joint Random Vectors</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Instructor:</strong> Prof. Sayeh Mirzaee</div>
+        <div class="note-meta-item"><strong>Reference:</strong> Sheldon Ross, <em>A First Course in Probability</em></div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-expectation">1. Mathematical Expectation &amp; The LOTUS Theorem</a></li>
+        <li><a href="#sec-variance">2. Variance &amp; Derivation for \(\text{Uniform}(0, 1)\)</a></li>
+        <li><a href="#sec-distributions">3. Canonical Discrete &amp; Continuous Distributions</a></li>
+        <li><a href="#sec-joint-rvs">4. Bivariate Random Variables: Joint CDF, PMF &amp; PDF</a></li>
+        <li><a href="#sec-marginal-conditional">5. Marginal Distributions &amp; Conditional Distributions</a></li>
+        <li><a href="#sec-bayes-rvs">6. Bayes' Rule for Random Variables</a></li>
+        <li><a href="#sec-independence-uncorrelated">7. Independence vs. Uncorrelatedness (The Crucial Counterexample)</a></li>
+        <li><a href="#sec-multivariate">8. Multiple Random Variables (\(n\)-Dimensional Random Vectors)</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-expectation">1. Mathematical Expectation &amp; The LOTUS Theorem</h2>
+      <p>
+        The <strong>expectation</strong> (or mathematical mean) represents the center of mass of a probability distribution.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 1.1 (Expectation)</span>
+        <ul>
+          <li><strong>Discrete Random Variable:</strong>
+            \[
+              E[X] \triangleq \sum_{x \in \text{Val}(X)} x \, p_X(x)
+            \]
+          </li>
+          <li><strong>Continuous Random Variable:</strong>
+            \[
+              E[X] \triangleq \int_{-\infty}^{\infty} x \, f_X(x) \, dx
+            \]
+          </li>
+        </ul>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 1.2 (Law of the Unconscious Statistician - LOTUS)</span>
+        To compute the expected value of a transformed random variable \(g(X)\), we do not need to derive the distribution of \(g(X)\); we integrate or sum directly against the distribution of \(X\):
+        <ul>
+          <li><strong>Discrete:</strong>
+            \[
+              E[g(X)] = \sum_{x \in \text{Val}(X)} g(x) \, p_X(x)
+            \]
+          </li>
+          <li><strong>Continuous:</strong>
+            \[
+              E[g(X)] = \int_{-\infty}^{\infty} g(x) \, f_X(x) \, dx
+            \]
+          </li>
+        </ul>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Proposition 1.3 (Linearity of Expectation)</span>
+        Expectation is a strictly linear operator. For any constants \(a, \alpha, \beta \in \mathbb{R}\) and functions \(g_1, g_2\):
+        <ol>
+          <li>\(E[a] = a\), since \(\int_{-\infty}^\infty a f_X(x) dx = a \int_{-\infty}^\infty f_X(x) dx = a\).</li>
+          <li>\(E[a f(X)] = a E[f(X)]\).</li>
+          <li>\(E[\alpha g_1(X) + \beta g_2(X)] = \alpha E[g_1(X)] + \beta E[g_2(X)]\).</li>
+          <li><strong>Indicator Expectation:</strong> For the indicator random variable \(\mathbf{1}\{X = k\}\):
+            \[
+              E[\mathbf{1}\{X = k\}] = 1 \cdot P(X = k) + 0 \cdot P(X \neq k) = P(X = k)
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 2 -->
+      <h2 id="sec-variance">2. Variance &amp; Derivation for \(\text{Uniform}(0, 1)\)</h2>
+      <p>
+        While expectation characterizes central tendency, <strong>variance</strong> quantifies the expected squared dispersion around the mean:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 2.1 (Variance &amp; Scaling Properties)</span>
+        \[
+          \text{Var}(X) \triangleq E\big[(X - E[X])^2\big] = E[X^2] - (E[X])^2
+        \]
+        Under scalar multiplication and constant shifts:
+        \[
+          \text{Var}(a X + b) = a^2 \, \text{Var}(X), \qquad \text{Var}(a f(X)) = a^2 \, \text{Var}(f(X))
+        \]
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Explicit Derivation from Slides (\(X \sim \text{Uniform}(0, 1)\))</span>
+        <p>
+          Let \(X \sim \text{Uniform}(0, 1)\). Its density is \(f_X(x) = 1\) for \(x \in [0, 1]\) and \(0\) otherwise.
+        </p>
+        <ol>
+          <li><strong>Mean:</strong>
+            \[
+              E[X] = \int_0^1 x \cdot 1 \, dx = \left[ \frac{x^2}{2} \right]_0^1 = \frac{1}{2}
+            \]
+          </li>
+          <li><strong>Second Moment:</strong>
+            \[
+              E[X^2] = \int_0^1 x^2 \cdot 1 \, dx = \left[ \frac{x^3}{3} \right]_0^1 = \frac{1}{3}
+            \]
+          </li>
+          <li><strong>Variance:</strong>
+            \[
+              \text{Var}(X) = E[X^2] - (E[X])^2 = \frac{1}{3} - \left(\frac{1}{2}\right)^2 = \frac{1}{3} - \frac{1}{4} = \frac{1}{12}
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-distributions">3. Canonical Discrete &amp; Continuous Distributions</h2>
+      <p>
+        The lecture systematically cataloged the workhorse parametric probability families frequently used in data science:
+      </p>
+
+      <h3>Discrete Families</h3>
+      <div class="def-box">
+        <span class="box-label">Discrete Distributions</span>
+        <ol>
+          <li><strong>Bernoulli Distribution:</strong> A single binary trial with success probability \(p \in [0, 1]\):
+            \[
+              P_X(x) = p^x (1-p)^{1-x} = \begin{cases} p & x = 1 \text{ (Heads)} \\ 1-p & x = 0 \text{ (Tails)} \\ 0 & \text{otherwise} \end{cases}
+            \]
+            \[
+              E[X] = p, \qquad \text{Var}(X) = E[X^2] - E[X]^2 = p - p^2 = p(1-p)
+            \]
+          </li>
+          <li><strong>Binomial Distribution:</strong> Number of successes in \(n\) independent Bernoulli\((p)\) trials:
+            \[
+              X \sim \text{Binomial}(n, p), \qquad P_X(x) = \binom{n}{x} p^x (1-p)^{n-x}, \quad x \in \{0, 1, \dots, n\}
+            \]
+            \[
+              E[X] = np, \qquad \text{Var}(X) = np(1-p)
+            \]
+          </li>
+          <li><strong>Geometric Distribution:</strong> Number of independent trials until the <em>first</em> success occurs:
+            \[
+              X \sim \text{Geometric}(p), \qquad p(x) = p(1-p)^{x-1}, \quad x \in \{1, 2, 3, \dots\}
+            \]
+            \[
+              E[X] = \frac{1}{p}, \qquad \text{Var}(X) = \frac{1-p}{p^2}
+            \]
+          </li>
+          <li><strong>Poisson Distribution:</strong> Counts the occurrences of events that occur independently at a constant average rate \(\lambda > 0\) (often used for modeling rare events):
+            \[
+              X \sim \text{Poisson}(\lambda), \qquad p(x) = \frac{e^{-\lambda} \lambda^x}{x!}, \quad x \in \{0, 1, 2, \dots\}
+            \]
+            \[
+              E[X] = \lambda, \qquad \text{Var}(X) = \lambda
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <h3>Continuous Families</h3>
+      <div class="def-box">
+        <span class="box-label">Continuous Distributions</span>
+        <ol>
+          <li><strong>Uniform Distribution:</strong> Equal probability density across interval \([a, b]\):
+            \[
+              X \sim \text{Uniform}(a, b), \qquad f_X(x) = \begin{cases} \frac{1}{b-a} & a \le x \le b \\ 0 & \text{otherwise} \end{cases}
+            \]
+            \[
+              E[X] = \frac{a+b}{2}, \qquad \text{Var}(X) = \frac{(b-a)^2}{12}
+            \]
+          </li>
+          <li><strong>Exponential Distribution:</strong> Time elapsed until the occurrence of an event in a Poisson process:
+            \[
+              X \sim \text{Exponential}(\lambda), \qquad f(x) = \begin{cases} \lambda e^{-\lambda x} & x \ge 0 \\ 0 & \text{otherwise} \end{cases} \quad (\lambda > 0)
+            \]
+            \[
+              E[X] = \frac{1}{\lambda}, \qquad \text{Var}(X) = \frac{1}{\lambda^2}
+            \]
+          </li>
+          <li><strong>Normal (Gaussian) Distribution:</strong> The bell-shaped distribution that underpins classical statistics:
+            \[
+              X \sim \text{Normal}(\mu, \sigma^2), \qquad f_X(x) = \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)
+            \]
+            Symmetric around the mean \(\mu\), with dispersion governed by standard deviation \(\sigma\).
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-joint-rvs">4. Bivariate Random Variables: Joint CDF, PMF &amp; PDF</h2>
+      <p>
+        In applications, we frequently measure multiple characteristics simultaneously.
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Slide Motivating Example (Two Dependent Random Variables)</span>
+        <p>
+          Suppose we flip a coin \(10\) times. We may be simultaneously interested in two distinct variables:
+        </p>
+        <ul>
+          <li>Variable \(A\): The total count of heads obtained in the \(10\) flips.</li>
+          <li>Variable \(B\): The maximum length of consecutive heads (the longest streak).</li>
+        </ul>
+        <p>
+          Examining \(A\) and \(B\) separately with univariate CDFs \(F_A(a)\) and \(F_B(b)\) discards the correlation and dependency between them. 
+          To capture their joint probabilistic structure, we define the <strong>Joint CDF</strong>.
+        </p>
+      </div>
+
+      <div class="def-box">
+        <span class="box-label">Definition 4.1 (Joint CDF &amp; Properties)</span>
+        For any two random variables \(X\) and \(Y\), the Joint Cumulative Distribution Function is:
+        \[
+          F_{XY}(x, y) \triangleq P(X \le x, Y \le y)
+        \]
+        satisfying the fundamental boundary conditions:
+        <ol>
+          <li>\(0 \le F_{XY}(x, y) \le 1\).</li>
+          <li>\(\lim_{x \to \infty, y \to \infty} F_{XY}(x, y) = 1\).</li>
+          <li>\(\lim_{x \to -\infty} F_{XY}(x, y) = \lim_{y \to -\infty} F_{XY}(x, y) = 0\).</li>
+        </ol>
+      </div>
+
+      <div class="def-box">
+        <span class="box-label">Definition 4.2 (Joint PMF &amp; Joint PDF)</span>
+        <ul>
+          <li><strong>Discrete Joint PMF:</strong>
+            \[
+              P_{XY}(x, y) \triangleq P(X = x, Y = y), \qquad \sum_{x \in \text{Val}(X)} \sum_{y \in \text{Val}(Y)} P_{XY}(x, y) = 1
+            \]
+          </li>
+          <li><strong>Continuous Joint PDF:</strong> The mixed second partial derivative of the Joint CDF:
+            \[
+              f_{XY}(x, y) \triangleq \frac{\partial^2 F_{XY}(x, y)}{\partial x \partial y}
+            \]
+            where:
+            \[
+              \iint_{\mathbb{R}^2} f_{XY}(x, y) \, dx \, dy = 1, \qquad P\big((X, Y) \in A\big) = \iint_A f_{XY}(x, y) \, dx \, dy
+            \]
+            <em>Warning:</em> Just as in the univariate case, \(f_{XY}(x, y) \neq P(X=x, Y=y)\).
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-marginal-conditional">5. Marginal Distributions &amp; Conditional Distributions</h2>
+      <p>
+        Given a joint distribution, we can recover the individual behavior of one variable by "summing out" or "integrating out" the other variable. 
+        This operation is called <strong>marginalization</strong>.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 5.1 (Marginal Distributions)</span>
+        <ul>
+          <li><strong>Marginal CDF:</strong>
+            \[
+              F_X(x) = \lim_{y \to \infty} F_{XY}(x, y), \qquad F_Y(y) = \lim_{x \to \infty} F_{XY}(x, y)
+            \]
+          </li>
+          <li><strong>Marginal PMF (Discrete):</strong>
+            \[
+              P_X(x) = \sum_{y \in \text{Val}(Y)} P_{XY}(x, y), \qquad P_Y(y) = \sum_{x \in \text{Val}(X)} P_{XY}(x, y)
+            \]
+          </li>
+          <li><strong>Marginal PDF (Continuous):</strong>
+            \[
+              f_X(x) = \int_{-\infty}^{\infty} f_{XY}(x, y) \, dy, \qquad f_Y(y) = \int_{-\infty}^{\infty} f_{XY}(x, y) \, dx
+            \]
+          </li>
+        </ul>
+      </div>
+
+      <div class="def-box">
+        <span class="box-label">Definition 5.2 (Conditional Distributions)</span>
+        Conditioning describes the distribution of \(Y\) once we observe that \(X = x\):
+        <ul>
+          <li><strong>Discrete Conditional PMF:</strong> For \(P_X(x) > 0\):
+            \[
+              P_{Y \mid X}(y \mid x) \triangleq \frac{P_{XY}(x, y)}{P_X(x)}
+            \]
+          </li>
+          <li><strong>Continuous Conditional PDF:</strong> For \(f_X(x) > 0\):
+            \[
+              f_{Y \mid X}(y \mid x) \triangleq \frac{f_{XY}(x, y)}{f_X(x)}
+            \]
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-bayes-rvs">6. Bayes' Rule for Random Variables</h2>
+      <p>
+        Combining conditional definitions with marginalization yields <strong>Bayes' Rule for Random Variables</strong>:
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 6.1 (Bayes' Rule for Random Variables)</span>
+        <ul>
+          <li><strong>Discrete Formulation:</strong>
+            \[
+              P_{Y \mid X}(y \mid x) = \frac{P_{XY}(x, y)}{P_X(x)} = \frac{P_{X \mid Y}(x \mid y) \, P_Y(y)}{\sum_{y' \in \text{Val}(Y)} P_{X \mid Y}(x \mid y') \, P_Y(y')}
+            \]
+            where \(P_Y(y)\) is the prior distribution and \(P_{Y \mid X}(y \mid x)\) is the posterior distribution given evidence \(x\).
+          </li>
+          <li><strong>Continuous Formulation:</strong>
+            \[
+              f_{Y \mid X}(y \mid x) = \frac{f_{XY}(x, y)}{f_X(x)} = \frac{f_{X \mid Y}(x \mid y) \, f_Y(y)}{\int_{-\infty}^{\infty} f_{X \mid Y}(x \mid y') \, f_Y(y') \, dy'}
+            \]
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 7 -->
+      <h2 id="sec-independence-uncorrelated">7. Independence vs. Uncorrelatedness (The Crucial Counterexample)</h2>
+
+      <div class="def-box">
+        <span class="box-label">Definition 7.1 (Statistical Independence of Random Variables)</span>
+        Two random variables \(X\) and \(Y\) are statistically independent if and only if their joint distribution factors into the product of their marginals:
+        \[
+          F_{XY}(x, y) = F_X(x) \, F_Y(y) \quad \forall x, y \in \mathbb{R}
+        \]
+        Equivalently:
+        <ul>
+          <li>Discrete: \(P_{XY}(x, y) = P_X(x) \, P_Y(y) \iff P_{Y \mid X}(y \mid x) = P_Y(y)\).</li>
+          <li>Continuous: \(f_{XY}(x, y) = f_X(x) \, f_Y(y) \iff f_{Y \mid X}(y \mid x) = f_Y(y)\).</li>
+        </ul>
+        <em>Physical Interpretation:</em> Knowing the realized value of \(X\) has absolutely zero effect on the distribution of \(Y\).
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Proposition 7.2 (Properties of Independent Variables)</span>
+        If \(X\) and \(Y\) are independent:
+        <ol>
+          <li>For any sets \(A, B \subseteq \mathbb{R}\):
+            \[
+              P(X \in A, Y \in B) = P(X \in A) \, P(Y \in B)
+            \]
+          </li>
+          <li>Any transformations \(g(X)\) and \(h(Y)\) are also independent, and expectations factor:
+            \[
+              E\big[g(X) \, h(Y)\big] = E\big[g(X)\big] \, E\big[h(Y)\big]
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <h3>Covariance and Variance of Sums</h3>
+      <div class="def-box">
+        <span class="box-label">Definition 7.3 (Covariance)</span>
+        \[
+          \text{Cov}(X, Y) \triangleq E\big[(X - E[X])(Y - E[Y])\big] = E[XY] - E[X] \, E[Y]
+        \]
+        Variables with \(\text{Cov}(X, Y) = 0\) are called <strong>uncorrelated</strong>.
+        The variance of a sum is given by:
+        \[
+          \text{Var}(X + Y) = \text{Var}(X) + \text{Var}(Y) + 2\,\text{Cov}(X, Y)
+        \]
+        When \(X\) and \(Y\) are independent, \(\text{Cov}(X, Y) = 0\), so \(\text{Var}(X + Y) = \text{Var}(X) + \text{Var}(Y)\).
+      </div>
+
+      <div class="thm-box" style="border-left: 4px solid var(--ut-crimson, #b91c1c); background: rgba(185, 28, 28, 0.05);">
+        <span class="box-label" style="color: #b91c1c; font-weight: 700;">Crucial Counterexample: Uncorrelatedness \(\centernot\implies\) Independence</span>
+        <p>
+          While independence strictly implies zero covariance, <strong>the converse is fundamentally false</strong>. 
+          The professor presented the following exact counterexample (marked with a prominent red cross on slide 27):
+        </p>
+        <p>
+          Let \(X \sim \text{Uniform}(-1, 1)\), and define \(Y = X^2\).
+        </p>
+        <ul>
+          <li><strong>Are they independent?</strong> Absolutely not. Knowing \(X\) determines \(Y\) completely (\(Y\) is a deterministic function of \(X\)).</li>
+          <li><strong>What is their covariance?</strong>
+            <ol>
+              <li>By symmetry of \(\text{Uniform}(-1, 1)\): \(E[X] = \int_{-1}^1 x \cdot \frac{1}{2} \, dx = 0\).</li>
+              <li>Compute the joint product expectation:
+                \[
+                  E[XY] = E[X \cdot X^2] = E[X^3] = \int_{-1}^1 x^3 \cdot \frac{1}{2} \, dx = 0
+                \]
+                (since \(x^3\) is an odd function integrated over the symmetric interval \([-1, 1]\)).
+              </li>
+              <li>Evaluate covariance:
+                \[
+                  \text{Cov}(X, Y) = E[XY] - E[X] \, E[Y] = 0 - (0 \cdot E[Y]) = 0
+                \]
+              </li>
+            </ol>
+          </li>
+        </ul>
+        <p>
+          <em>Conclusion:</em> \(X\) and \(Y\) have zero covariance (\(\text{Cov}(X, Y) = 0\), completely uncorrelated), yet they are completely dependent! 
+          Covariance measures only <strong>linear</strong> association, missing nonlinear relationships entirely.
+        </p>
+      </div>
+
+      <!-- Section 8 -->
+      <h2 id="sec-multivariate">8. Multiple Random Variables (\(n\)-Dimensional Random Vectors)</h2>
+      <p>
+        The slide deck concludes by extending all definitions from bivariate pairs to general \(n\)-dimensional random vectors \(\mathbf{X} = (X_1, X_2, \dots, X_n)^T\):
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 8.1 (\(n\)-Dimensional Distributions)</span>
+        <ul>
+          <li><strong>Joint CDF:</strong>
+            \[
+              F_{X_1, X_2, \dots, X_n}(x_1, x_2, \dots, x_n) \triangleq P(X_1 \le x_1, X_2 \le x_2, \dots, X_n \le x_n)
+            \]
+          </li>
+          <li><strong>Joint Continuous PDF:</strong> The \(n\)-th mixed partial derivative:
+            \[
+              f_{X_1, X_2, \dots, X_n}(x_1, x_2, \dots, x_n) = \frac{\partial^n F_{X_1, \dots, X_n}(x_1, \dots, x_n)}{\partial x_1 \, \partial x_2 \dots \partial x_n}
+            \]
+          </li>
+          <li><strong>Marginal Density:</strong> Integrating out the remaining \(n-1\) variables:
+            \[
+              f_{X_1}(x_1) = \int \dots \int_{\mathbb{R}^{n-1}} f_{X_1, X_2, \dots, X_n}(x_1, x_2, \dots, x_n) \, dx_2 \, dx_3 \dots dx_n
+            \]
+          </li>
+          <li><strong>Conditional Density:</strong> Conditioning one variable on all remaining \(n-1\) variables:
+            \[
+              f_{X_1 \mid X_2, \dots, X_n}(x_1 \mid x_2, \dots, x_n) = \frac{f_{X_1, X_2, \dots, X_n}(x_1, x_2, \dots, x_n)}{f_{X_2, \dots, X_n}(x_2, \dots, x_n)}
+            \]
+          </li>
+        </ul>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Summary Takeaway</span>
+        <p>
+          Lectures 02 and 03 establish the complete mathematical bedrock of probability theory: from Kolmogorov's axioms to multivariate joint distributions. 
+          With this solid grounding in random vectors, expectations, and marginalization, we proceed in <strong>Lecture 04</strong> to 
+          <em>Sampling Methods</em> (Simple Random, Stratified, Cluster, Systematic) and the transition to <em>Point Estimation</em> in <strong>Lecture 05</strong>.
+        </p>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-02.html">&larr; Lecture 02: Review of Probability Theory (Part 1)</a>
+      <a href="./lecture-04.html">Lecture 04: Sampling Methods &amp; Survey Design &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

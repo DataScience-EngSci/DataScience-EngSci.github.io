@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 09: Convergence in Distribution &amp; The Central Limit Theorem | Basics of Data Science</title>
+  <meta name="description" content="MIT OCW style lecture notes on convergence in distribution, the Lindeberg-Lévy Central Limit Theorem, simulation empirical verification, asymptotic normality notation, and Gamma distribution approximations.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%239%20-%20central%20limit%20theorem.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 9 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 09: Convergence in Distribution &amp; The Central Limit Theorem</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Nov 23, 2026</div>
+        <div class="note-meta-item"><strong>Instructor:</strong> Prof. Sayeh Mirzaee</div>
+        <div class="note-meta-item"><strong>Readings:</strong> FDS Ch. 3; SFDS Ch. 2; PML-Intro Ch. 4</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-normal-properties">1. The Normal Distribution &amp; Standard Normal Computation</a></li>
+        <li><a href="#sec-exact-normal-means">2. Exact Distributions of Linear Combinations and Sample Means</a></li>
+        <li><a href="#sec-convergence-dist">3. Convergence in Distribution (Weak Convergence)</a></li>
+        <li><a href="#sec-simulation-motivation">4. Empirical Progression: 10,000 Exponential Sample Means</a></li>
+        <li><a href="#sec-clt-theorem">5. The Lindeberg-Lévy Central Limit Theorem (CLT)</a></li>
+        <li><a href="#sec-asymptotic-normality">6. Asymptotic Normality Definition &amp; Notation</a></li>
+        <li><a href="#sec-gamma-example">7. Comprehensive Application: Large Sample Mean of Gamma Distribution</a></li>
+        <li><a href="#sec-mgf-proof">8. Theoretical Foundation: MGF Proof Sketch</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-normal-properties">1. The Normal Distribution &amp; Standard Normal Computation</h2>
+      <p>
+        The Gaussian (Normal) distribution is the cornerstone of probability theory and statistical data science. 
+        A continuous random variable \(X \sim \mathcal{N}(\mu, \sigma^2)\) has probability density function (PDF):
+        \[
+          f_X(x) = \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left( -\frac{1}{2\sigma^2}(x - \mu)^2 \right), \quad x \in \mathbb{R}
+        \]
+      </p>
+      <p>
+        When \(\mu = 0\) and \(\sigma^2 = 1\), the random variable is termed the <strong>standard normal</strong>, denoted \(Z \sim \mathcal{N}(0, 1)\), with PDF:
+        \[
+          f_Z(z) = \frac{1}{\sqrt{2\pi}} e^{-\frac{1}{2}z^2}
+        \]
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 1.1 (Standard Normal CDF &amp; Numerical Computation)</span>
+        The cumulative distribution function (CDF) of the standard normal is denoted by \(\Phi(z)\):
+        \[
+          \Phi(z) = P(Z \le z) = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^z e^{-\frac{1}{2}t^2} \, dt
+        \]
+        <strong>Key Computational Fact:</strong> The integral \(\int e^{-t^2/2} dt\) cannot be expressed in closed form using elementary algebraic functions. 
+        Consequently, values of \(\Phi(z)\) must be evaluated through numerical integration:
+        <ul>
+          <li>Historically using <strong>standard normal tables</strong>.</li>
+          <li>In computational data science using software functions, such as <code>pnorm(z)</code> in R or <code>scipy.stats.norm.cdf(z)</code> in Python.</li>
+        </ul>
+        <em>Example from Slides:</em> <code>pnorm(1.23)</code> yields \(\Phi(1.23) \approx 0.891\) (specifically \(0.89065\)).
+      </div>
+
+      <!-- Section 2 -->
+      <h2 id="sec-exact-normal-means">2. Exact Distributions of Linear Combinations and Sample Means</h2>
+      <p>
+        Before considering arbitrary distributions, recall the fundamental closure property of Gaussian variables under linear combinations.
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Proposition 2.1 (Linear Combinations of Normal Random Variables)</span>
+        If \(X_1, X_2, \dots, X_n\) are independent normal random variables with \(X_i \sim \mathcal{N}(\mu_i, \sigma_i^2)\), 
+        then any linear combination \(\sum_{i=1}^n a_i X_i\) is <em>strictly and exactly normally distributed</em>:
+        \[
+          \sum_{i=1}^n a_i X_i \sim \mathcal{N}\left(\sum_{i=1}^n a_i \mu_i, \, \sum_{i=1}^n a_i^2 \sigma_i^2\right)
+        \]
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Example 2.2 (Single Normal Probability - Slide Example 1)</span>
+        Suppose \(X \sim \mathcal{N}(1, 4)\). Find \(P(X \le 2)\).
+        <p>Standardizing the variable:</p>
+        \[
+          P(X \le 2) = P\left( \frac{X - \mu}{\sigma} \le \frac{2 - 1}{\sqrt{4}} \right) = P\left( Z \le \frac{1}{2} \right) = \Phi(0.5) \approx 0.6915
+        \]
+        In R, this is evaluated directly as <code>pnorm(0.5)</code> or <code>pnorm(2, mean = 1, sd = 2)</code>.
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Example 2.3 (Sample Mean of Independent Normals - Slide Example 2)</span>
+        Suppose \(X_1, X_2, X_3 \overset{\text{i.i.d.}}{\sim} \mathcal{N}(1, 4)\). Find \(P(\bar{X} \le 2)\), where \(\bar{X} = \frac{1}{3}(X_1 + X_2 + X_3)\).
+        <p>Because each \(X_i\) is Gaussian, \(\bar{X}\) is also <em>exactly</em> normally distributed:</p>
+        \[
+          E[\bar{X}] = E[X_1] = 1, \qquad \text{Var}(\bar{X}) = \frac{\text{Var}(X_1)}{n} = \frac{4}{3} \implies \sigma_{\bar{X}} = \frac{2}{\sqrt{3}}
+        \]
+        Now standardizing \(\bar{X}\):
+        \[
+          P(\bar{X} \le 2) = P\left( \frac{\bar{X} - \mu_{\bar{X}}}{\sigma_{\bar{X}}} \le \frac{2 - 1}{2/\sqrt{3}} \right) = P\left( Z \le \frac{\sqrt{3}}{2} \right) \approx P(Z \le 0.8660) \approx 0.8068
+        \]
+        In R: <code>pnorm(sqrt(3)/2)</code> \(\approx 0.8068\).
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-convergence-dist">3. Convergence in Distribution (Weak Convergence)</h2>
+      <p>
+        What if the underlying distribution is <em>not</em> normal? To characterize the behavior of sums and averages of non-Gaussian variables, 
+        we require the concept of <strong>convergence in distribution</strong>.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 3.1 (Convergence in Distribution)</span>
+        Let \(X_1, X_2, X_3, \dots\) be a sequence of random variables where \(X_n\) has cumulative distribution function \(F_n(x) = P(X_n \le x)\). 
+        Let \(X\) be a random variable with cumulative distribution function \(F(x) = P(X \le x)\).<br>
+        The sequence is said to <strong>converge in distribution</strong> to \(X\), denoted:
+        \[
+          X_n \overset{d}{\longrightarrow} X
+        \]
+        if and only if:
+        \[
+          \lim_{n \to \infty} F_n(x) = F(x)
+        \]
+        at all points \(x \in \mathbb{R}\) where the target CDF \(F\) is continuous.
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Crucial Pedagogical Distinction (Slide 8)</span>
+        Convergence in distribution is termed <strong>"weak convergence"</strong> because:
+        <blockquote>
+          <em>"The random variables in the sequence are <strong>not getting closer to each other</strong>. Their <strong>distributions</strong> are getting close!"</em>
+        </blockquote>
+        <p>
+          <strong>Illustrative Counterexample:</strong> Consider the sequence \(X_n \sim \mathcal{N}(1/n, 1)\). As \(n \to \infty\), the mean \(1/n \to 0\), 
+          so the distribution of \(X_n\) becomes identical to \(Z \sim \mathcal{N}(0, 1)\):
+          \[
+            X_n \overset{d}{\longrightarrow} Z \sim \mathcal{N}(0, 1)
+          \]
+          However, for any fixed \(n\), \(X_n\) continues to fluctuate across \(\mathbb{R}\) with variance \(1\). If \(X_n\) and \(Z\) are independent, 
+          \(|X_n - Z|\) never shrinks to zero! Thus, \(X_n\) does not converge to \(Z\) in probability or almost surely—only the functional form of their CDF converges.
+        </p>
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-simulation-motivation">4. Empirical Progression: 10,000 Exponential Sample Means</h2>
+      <p>
+        To build concrete intuition before stating the theorem, Slides 9–17 present a computational simulation in R: 
+        generating \(10{,}000\) independent sample means \(\bar{X}_n\) drawn from a highly skewed, non-Gaussian parent distribution:
+        \[
+          X \sim \text{Exponential}(\text{rate} = \lambda), \quad f(x) = \lambda e^{-\lambda x} \quad (x \ge 0)
+        \]
+      </p>
+      <ul>
+        <li><strong>\(n = 1\) (Slide 9):</strong> \(\bar{X}_1 = X_1\). The histogram of sample means is identical to the raw exponential density: heavily right-skewed with peak at \(x = 0\) and a long tail extending past \(x = 8\).</li>
+        <li><strong>\(n = 2\) (Slide 10):</strong> The mode moves strictly away from zero (\(\approx 0.7\)); the severe skewness begins to soften.</li>
+        <li><strong>\(n = 3\) to \(n = 5\) (Slides 11–13):</strong> The distribution rapidly develops bilateral shoulders and begins to resemble a symmetric bell shape.</li>
+        <li><strong>\(n = 10\) (Slide 14):</strong> The distribution of \(\bar{X}_{10}\) is unmistakably bell-shaped and centered at \(\mu = 1/\lambda = 1.0\).</li>
+        <li><strong>\(n = 100\) (Slide 15):</strong> A sharp, symmetric Gaussian density tightly centered at \(1.0\) with variance \(\sigma^2/n = 1/100 = 0.01\) (standard deviation \(0.10\)).</li>
+        <li><strong>\(n = 1000\) and \(n = 10{,}000\) (Slides 16–17):</strong> Highly concentrated Gaussian spikes centered at \(1.00\), with dispersion collapsing exactly at rate \(1/\sqrt{n}\).</li>
+      </ul>
+      <p>
+        This empirical experiment vividly illustrates the magic of the Central Limit Theorem: despite the original distribution being completely asymmetrical and one-sided, averaging rapidly washes away the underlying skewness, leaving a pure Gaussian profile.
+      </p>
+
+      <!-- Section 5 -->
+      <h2 id="sec-clt-theorem">5. The Lindeberg-Lévy Central Limit Theorem (CLT)</h2>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 5.1 (The Central Limit Theorem - Slide 18)</span>
+        Let \(X_1, X_2, X_3, \dots\) be a sequence of independent and identically distributed (i.i.d.) random variables from 
+        <strong>any distribution</strong> with finite expectation \(E[X_i] = \mu\) and finite variance \(\text{Var}(X_i) = \sigma^2 < \infty\).<br>
+        Let \(\bar{X}_n = \frac{1}{n}\sum_{i=1}^n X_i\) be the sample mean. Then:
+        \[
+          \frac{\bar{X}_n - \mu}{\sigma / \sqrt{n}} \overset{d}{\longrightarrow} \mathcal{N}(0, 1) \quad \text{as } n \to \infty
+        \]
+        Equivalently, in terms of standard deviation of the sample mean \(\sigma_{\bar{X}} = \sigma / \sqrt{n}\):
+        \[
+          \frac{\bar{X}_n - \mu_{\bar{X}}}{\sigma_{\bar{X}}} \overset{d}{\longrightarrow} \mathcal{N}(0, 1)
+        \]
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-asymptotic-normality">6. Asymptotic Normality Definition &amp; Notation</h2>
+
+      <div class="def-box">
+        <span class="box-label">Definition 6.1 (Asymptotic Normality - Slide 19)</span>
+        A sequence of random variables \(X_n\) is defined to be <strong>asymptotically normal</strong> if there exist sequences 
+        of real numbers \(\{a_n\}\) (location) and \(\{b_n\}\) (scale with \(b_n > 0\)) such that:
+        \[
+          \frac{X_n - a_n}{\sqrt{b_n}} \overset{d}{\longrightarrow} \mathcal{N}(0, 1)
+        \]
+        When this condition holds, we write:
+        \[
+          X_n \overset{\text{asymp}}{\sim} \mathcal{N}(a_n, b_n)
+        \]
+        <strong>Crucial Caution (Slide 19):</strong> This notation does <em>not</em> mean that \(X_n\) literally equals or converges to the random variable \(\mathcal{N}(a_n, b_n)\). 
+        It is a shorthand statement that the standardized ratio \((X_n - a_n)/\sqrt{b_n}\) has a CDF that converges pointwise to \(\Phi(z)\).
+      </div>
+
+      <p>
+        Applying this notation to the Central Limit Theorem (Slide 20):
+        \[
+          \bar{X}_n \overset{\text{asymp}}{\sim} \mathcal{N}\left(\mu, \frac{\sigma^2}{n}\right)
+        \]
+      </p>
+
+      <!-- Section 7 -->
+      <h2 id="sec-gamma-example">7. Comprehensive Application: Large Sample Mean of Gamma Distribution</h2>
+      <p>
+        Slides 21–23 work through an end-to-end practical calculation applying the CLT to sample means from a Gamma distribution.
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Example 7.1 (Gamma Sample Mean Probability - Slides 21–23)</span>
+        Let \(\bar{X}\) be the sample mean of a random sample of size \(n = 100\) drawn from a \(\text{Gamma}(\alpha = 3, \beta = 2)\) distribution.<br>
+        <strong>Problem:</strong> What is the approximate probability that \(\bar{X} > 1.4\)?
+        <p><strong>Step 1: Compute population parameters:</strong></p>
+        For \(\text{Gamma}(\alpha, \beta)\) with PDF \(f(x) = \frac{\beta^\alpha}{\Gamma(\alpha)} x^{\alpha-1} e^{-\beta x}\):
+        \[
+          E[X_1] = \frac{\alpha}{\beta} = \frac{3}{2} = 1.5, \qquad \text{Var}(X_1) = \frac{\alpha}{\beta^2} = \frac{3}{2^2} = \frac{3}{4} = 0.75
+        \]
+        <p><strong>Step 2: Sample mean moments:</strong></p>
+        \[
+          \mu_{\bar{X}} = E[\bar{X}] = E[X_1] = \frac{3}{2} = 1.5
+        \]
+        \[
+          \sigma_{\bar{X}}^2 = \text{Var}(\bar{X}) = \frac{\text{Var}(X_1)}{n} = \frac{3/4}{100} = \frac{3}{400} = 0.0075 \implies \sigma_{\bar{X}} = \sqrt{\frac{3}{400}} \approx 0.08660
+        \]
+        <p><strong>Step 3: Invoke the Central Limit Theorem:</strong></p>
+        Because \(n = 100 \ge 30\), the CLT guarantees that \(\bar{X}\) has an approximately normal distribution:
+        \[
+          \bar{X} \overset{\text{asymp}}{\sim} \mathcal{N}\left(1.5, \, \frac{3}{400}\right)
+        \]
+        <p><strong>Step 4: Standardize and compute tail probability:</strong></p>
+        \[
+          P(\bar{X} > 1.4) = P\left( \frac{\bar{X} - \mu_{\bar{X}}}{\sigma_{\bar{X}}} > \frac{1.4 - 1.5}{\sqrt{3/400}} \right)
+        \]
+        \[
+          \frac{1.4 - 1.5}{\sqrt{0.0075}} = \frac{-0.1}{0.08660} \approx -1.1547 \approx -1.15
+        \]
+        Therefore:
+        \[
+          P(\bar{X} > 1.4) \approx P(Z > -1.15) = 1 - P(Z \le -1.15) = 1 - \Phi(-1.15)
+        \]
+        Using the standard normal CDF:
+        \[
+          \Phi(-1.15) \approx 0.1251 \implies 1 - 0.1251 \approx 0.8749 \approx 0.87
+        \]
+        In R, this is executed in a single command:
+        \[
+          \texttt{1 - pnorm(-1.15)} \quad \longrightarrow \quad 0.8749281
+        \]
+      </div>
+
+      <!-- Section 8 -->
+      <h2 id="sec-mgf-proof">8. Theoretical Foundation: MGF Proof Sketch</h2>
+      <p>
+        Why does the Gaussian distribution arise as the universal limiting distribution? The classical proof using Moment Generating Functions (MGFs) explains this universality algebraically.
+      </p>
+
+      <div class="proof-box">
+        <span class="box-label">Proof of the CLT via Moment Generating Functions</span>
+        Assume the moment generating function \(M_X(t) = E[e^{tX}]\) exists in an open neighborhood around \(t = 0\).<br>
+        Define the standardized individual variables:
+        \[
+          Y_i = \frac{X_i - \mu}{\sigma} \implies E[Y_i] = 0, \quad E[Y_i^2] = \text{Var}(Y_i) = 1
+        \]
+        The standardized sample mean is:
+        \[
+          Z_n = \frac{\bar{X}_n - \mu}{\sigma / \sqrt{n}} = \frac{1}{\sqrt{n}}\sum_{i=1}^n Y_i
+        \]
+        The Taylor series expansion of \(M_Y(s) = E[e^{sY_i}]\) around \(s = 0\) is:
+        \[
+          M_Y(s) = E\left[1 + s Y_i + \frac{s^2 Y_i^2}{2} + o(s^2)\right] = 1 + s \underbrace{E[Y_i]}_{0} + \frac{s^2}{2}\underbrace{E[Y_i^2]}_{1} + o(s^2) = 1 + \frac{s^2}{2} + o(s^2)
+        \]
+        By independence of the \(Y_i\)'s, the MGF of \(Z_n\) is:
+        \[
+          M_{Z_n}(t) = E\left[\exp\left(\frac{t}{\sqrt{n}}\sum_{i=1}^n Y_i\right)\right] = \left[ M_Y\left(\frac{t}{\sqrt{n}}\right) \right]^n = \left( 1 + \frac{t^2}{2n} + o\left(\frac{t^2}{n}\right) \right)^n
+        \]
+        Taking the limit as \(n \to \infty\):
+        \[
+          \lim_{n \to \infty} M_{Z_n}(t) = \exp\left(\frac{t^2}{2}\right)
+        \]
+        Since \(e^{t^2/2}\) is uniquely the moment generating function of \(\mathcal{N}(0, 1)\), <strong>Lévy's Continuity Theorem</strong> guarantees:
+        \[
+          Z_n \overset{d}{\longrightarrow} \mathcal{N}(0, 1) \quad \blacksquare
+        \]
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Summary Takeaway</span>
+        The Central Limit Theorem provides the bridge from arbitrary population distributions to tractable Gaussian approximations. 
+        In Lecture 10, we will see how the CLT combines with the Taylor expansion of the score function to establish the 
+        <strong>asymptotic normality and efficiency of Maximum Likelihood Estimators</strong>: \(\sqrt{n}(\hat{\theta}_n - \theta) \overset{d}{\to} \mathcal{N}(0, 1/I_1(\theta))\).
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-08.html">&larr; Lecture 08: Fisher Simplifications &amp; Limit Theorems</a>
+      <a href="./lecture-10.html">Lecture 10: Asymptotic Properties of MLE &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

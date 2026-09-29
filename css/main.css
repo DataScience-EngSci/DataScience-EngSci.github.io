@@ -1,0 +1,1243 @@
+/**
+ * Basics of Data Science - University of Tehran
+ * Editorial Academic Design System Grounded in Apple HIG Principles
+ * Lightweight, open, high-legibility layout avoiding box-clutter.
+ */
+
+/* ==========================================================================
+   Design Tokens & CSS Variables
+   ========================================================================== */
+:root {
+  /* Color Palette - Light Mode */
+  --bg-canvas: #ffffff;
+  --bg-subtle: #f8f9fa;
+  --bg-hover: #f1f3f5;
+  --bg-glass: rgba(255, 255, 255, 0.88);
+
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-hairline: rgba(0, 0, 0, 0.05);
+  --border-strong: rgba(0, 0, 0, 0.2);
+
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+  --text-muted: #9ca3af;
+
+  /* University of Tehran Royal Academic Palette */
+  --ut-blue: #0c3e74;
+  --ut-blue-hover: #082d55;
+  --ut-blue-subtle: rgba(12, 62, 116, 0.08);
+  --accent-primary: #0066cc;
+  --accent-primary-hover: #0052a3;
+  --accent-subtle: rgba(0, 102, 204, 0.08);
+
+  --color-success: #15803d;
+  --color-success-bg: rgba(21, 128, 61, 0.08);
+  --color-warning: #b45309;
+  --color-warning-bg: rgba(180, 83, 9, 0.08);
+  --color-purple: #7e22ce;
+  --color-purple-bg: rgba(126, 34, 206, 0.08);
+
+  /* Locked / Inactive State */
+  --locked-bg: #f3f4f6;
+  --locked-text: #9ca3af;
+  --locked-border: #e5e7eb;
+
+  /* Typography Stack */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-serif: "New York", "Charter", "Georgia", serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Radii & Layout */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-full: 9999px;
+
+  --max-width: 1140px;
+  --nav-height: 60px;
+
+  --transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Dark Mode Tokens */
+[data-theme="dark"] {
+  --bg-canvas: #0a0a0c;
+  --bg-subtle: #141417;
+  --bg-hover: #1c1c21;
+  --bg-glass: rgba(10, 10, 12, 0.88);
+
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-hairline: rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.25);
+
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --text-muted: #6b7280;
+
+  --ut-blue: #38bdf8;
+  --ut-blue-hover: #7dd3fc;
+  --ut-blue-subtle: rgba(56, 189, 248, 0.12);
+  --accent-primary: #38bdf8;
+  --accent-primary-hover: #7dd3fc;
+  --accent-subtle: rgba(56, 189, 248, 0.12);
+
+  --color-success: #4ade80;
+  --color-success-bg: rgba(74, 222, 128, 0.12);
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(251, 191, 36, 0.12);
+  --color-purple: #c084fc;
+  --color-purple-bg: rgba(192, 132, 252, 0.12);
+
+  --locked-bg: #18181b;
+  --locked-text: #52525b;
+  --locked-border: #27272a;
+}
+
+/* ==========================================================================
+   Base & Resets
+   ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background-color: var(--bg-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: var(--accent-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--accent-primary-hover);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+/* ==========================================================================
+   Site Header & Frosted Navigation Bar
+   ========================================================================== */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  height: var(--nav-height);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--transition-normal);
+}
+
+.nav-inner {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.brand:hover {
+  opacity: 0.9;
+}
+
+.ut-logo-img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.brand-text-group {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.brand-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.brand-subtitle {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  gap: 0.5rem;
+}
+
+.nav-link {
+  padding: 0.4rem 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+  background: var(--bg-subtle);
+}
+
+.nav-link.active {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  transition: all var(--transition-fast);
+}
+
+.theme-toggle-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-subtle);
+}
+
+.theme-toggle-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.mobile-nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+
+/* ==========================================================================
+   Hero Section - Clean Academic Typography
+   ========================================================================== */
+.hero {
+  padding: 4.5rem 0 3.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hero-institution-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ut-blue);
+  margin-bottom: 1rem;
+}
+
+.hero-title {
+  font-size: clamp(2.25rem, 4.5vw, 3.75rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+}
+
+.hero-lead {
+  font-size: clamp(1.1rem, 1.8vw, 1.3rem);
+  color: var(--text-secondary);
+  max-width: 820px;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+/* Hero Key Info Bar (No box cards!) */
+.hero-faculty-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--border-hairline);
+  font-size: 0.92rem;
+}
+
+.faculty-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.faculty-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+}
+
+.faculty-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.faculty-link {
+  color: var(--accent-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Quick Action Pills */
+.hero-action-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.pill-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+.pill-action:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  color: var(--accent-primary);
+}
+
+.pill-action.primary {
+  background: var(--ut-blue);
+  color: #ffffff;
+  border-color: var(--ut-blue);
+}
+
+.pill-action.primary:hover {
+  background: var(--ut-blue-hover);
+  color: #ffffff;
+}
+
+.pill-action svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ==========================================================================
+   Section Headers & Shared Editorial Flow
+   ========================================================================== */
+.section {
+  padding: 4.5rem 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.section-header {
+  margin-bottom: 2.5rem;
+}
+
+.section-eyebrow {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ut-blue);
+  margin-bottom: 0.35rem;
+}
+
+.section-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.section-desc {
+  font-size: 1.02rem;
+  color: var(--text-secondary);
+  max-width: 750px;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   Section 1: Overview & Policies (Editorial Two-Column Layout)
+   ========================================================================== */
+.overview-editorial-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 3.5rem;
+}
+
+.editorial-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+
+.editorial-block-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.85rem;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.editorial-text {
+  font-size: 0.98rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.editorial-text + .editorial-text {
+  margin-top: 0.85rem;
+}
+
+/* Syllabus Single Column List */
+.syllabus-single-column-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  list-style: none;
+  margin-top: 0.75rem;
+  padding: 0;
+}
+
+.syllabus-single-column-list li {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px dashed var(--border-hairline);
+}
+
+.syllabus-single-column-list li::before {
+  content: "•";
+  color: var(--ut-blue);
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Instructor email styling */
+.email-obfuscated {
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  user-select: all;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.email-obfuscated:hover {
+  color: var(--ut-blue);
+  text-decoration: underline;
+}
+
+/* eLearn notice */
+.elearn-notice {
+  margin-top: 2.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  border-left: 3px solid var(--ut-blue);
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.elearn-notice svg {
+  width: 18px;
+  height: 18px;
+  color: var(--ut-blue);
+  flex-shrink: 0;
+}
+
+/* Grading Breakdown List (No box card) */
+.grading-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  margin-top: 0.75rem;
+}
+
+.grading-table tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.grading-table td {
+  padding: 0.75rem 0;
+  color: var(--text-secondary);
+}
+
+.grading-table td:last-child {
+  text-align: right;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+/* Minimalist rule note */
+.minimal-note {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  padding-left: 1rem;
+  border-left: 2px solid var(--ut-blue);
+  margin-top: 0.75rem;
+}
+
+/* ==========================================================================
+   Section 2: Landscape Scrollable Calendar (Open Minimalist Timeline)
+   ========================================================================== */
+.calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.calendar-legend-flow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.cal-legend-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 0.35rem;
+}
+
+.cal-legend-dot.lecture { background: var(--accent-primary); }
+.cal-legend-dot.quiz { background: var(--color-purple); }
+.cal-legend-dot.milestone { background: var(--color-success); }
+.cal-legend-dot.break { background: var(--color-warning); }
+
+.calendar-nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cal-arrow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+.cal-arrow-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.cal-arrow-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Horizontal Timeline Track (No heavy boxes) */
+.timeline-track-container {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 1.5rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.timeline-track-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.timeline-track-container::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 10px;
+}
+
+.timeline-flex-row {
+  display: flex;
+  gap: 0;
+  min-width: max-content;
+}
+
+.timeline-item {
+  width: 250px;
+  flex: 0 0 250px;
+  padding: 0 1.5rem;
+  border-right: 1px solid var(--border-hairline);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.timeline-item:last-child {
+  border-right: none;
+}
+
+.timeline-date-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.timeline-week {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.timeline-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.timeline-pill.lecture { background: var(--accent-subtle); color: var(--accent-primary); }
+.timeline-pill.quiz { background: var(--color-purple-bg); color: var(--color-purple); }
+.timeline-pill.milestone { background: var(--color-success-bg); color: var(--color-success); }
+.timeline-pill.break { background: var(--color-warning-bg); color: var(--color-warning); }
+
+.timeline-date {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.35rem;
+}
+
+.timeline-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin-bottom: 0.5rem;
+}
+
+.timeline-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 1rem;
+}
+
+.timeline-action-link {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: auto;
+}
+
+.timeline-action-link:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   Section 3: Lectures (Open Academic Curriculum Schedule)
+   ========================================================================== */
+.lectures-chapter {
+  margin-bottom: 3.5rem;
+}
+
+.lectures-chapter:last-child {
+  margin-bottom: 0;
+}
+
+.chapter-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--text-primary);
+}
+
+.chapter-heading {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+}
+
+.chapter-sub {
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+}
+
+/* Open Lecture Row (No boxes!) */
+.lecture-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 215px;
+  gap: 1.5rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: start;
+}
+
+.lecture-row:hover {
+  /* Removed jarring animations and padding shifts */
+}
+
+.lecture-row.highlight {
+  background-color: var(--accent-subtle);
+  outline: 2px solid var(--accent-primary);
+  border-radius: var(--radius-sm);
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.lecture-col-date {
+  display: flex;
+  flex-direction: column;
+}
+
+.lec-id {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ut-blue);
+}
+
+.lec-date-text {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+}
+
+.lecture-col-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.lec-title-text {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.lec-synopsis-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.lecture-col-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+/* Button Links */
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.45rem;
+  padding: 0.42rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.btn-action svg {
+  flex-shrink: 0;
+}
+
+.btn-note {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-note:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  color: var(--accent-primary);
+}
+
+.btn-slide {
+  background: var(--ut-blue-subtle);
+  color: var(--ut-blue);
+  border: 1px solid rgba(12, 62, 116, 0.2);
+}
+
+.btn-slide:hover {
+  background: var(--ut-blue);
+  color: #ffffff;
+}
+
+.btn-action svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ==========================================================================
+   Section 4: Homeworks & Projects (Open Academic List)
+   ========================================================================== */
+.hw-table-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.hw-row {
+  display: grid;
+  grid-template-columns: 100px 1.5fr 1fr 270px;
+  gap: 1.5rem;
+  padding: 1.35rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: center;
+}
+
+.hw-row:first-child {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.hw-row.is-locked {
+  opacity: 0.65;
+}
+
+.hw-num-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hw-label {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.hw-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--radius-xs);
+  text-transform: uppercase;
+}
+
+.hw-status-tag.released {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.hw-status-tag.preview {
+  background: rgba(14, 116, 144, 0.12);
+  color: var(--color-primary);
+  border: 1px solid rgba(14, 116, 144, 0.25);
+}
+
+.hw-status-tag.locked {
+  background: var(--locked-bg);
+  color: var(--locked-text);
+}
+
+.hw-info-col h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.hw-info-col p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.hw-dates-col {
+  font-size: 0.82rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.hw-date-line {
+  color: var(--text-secondary);
+}
+
+.hw-date-line strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.hw-actions-col {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.btn-hw-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+.btn-hw-link:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  color: var(--accent-primary);
+}
+
+.btn-hw-link.disabled-lock {
+  background: var(--locked-bg) !important;
+  color: var(--locked-text) !important;
+  border-color: var(--locked-border) !important;
+  cursor: not-allowed;
+  pointer-events: none;
+  user-select: none;
+}
+
+.btn-hw-link svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ==========================================================================
+   Section 5: References (Open Book Gallery, No Clunky Boxes)
+   ========================================================================== */
+.references-open-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 3rem 2.5rem;
+}
+
+.ref-open-item {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ref-book-visual {
+  flex: 0 0 115px;
+  width: 115px;
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: transform var(--transition-normal);
+}
+
+.ref-open-item:hover .ref-book-visual {
+  transform: translateY(-3px);
+}
+
+.ref-book-visual img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.ref-book-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex-grow: 1;
+}
+
+.ref-book-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.ref-book-authors {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.ref-book-pub {
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  margin-bottom: 0.35rem;
+}
+
+.ref-book-role {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ut-blue);
+}
+
+.ref-link-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  margin-top: 0.4rem;
+}
+
+.ref-link-pill:hover {
+  text-decoration: underline;
+}
+
+.ref-link-pill svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* ==========================================================================
+   Site Footer
+   ========================================================================== */
+.site-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border-subtle);
+  padding: 3rem 0;
+  font-size: 0.85rem;
+  color: var(--text-tertiary);
+}
+
+.footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.footer-ut-emblem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.footer-ut-emblem img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.footer-links-group {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.footer-links-group a {
+  color: var(--text-secondary);
+}
+
+.footer-links-group a:hover {
+  color: var(--accent-primary);
+}
+
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+@media (max-width: 950px) {
+  .overview-editorial-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .lecture-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .lecture-col-actions {
+    align-items: flex-start;
+    max-width: 240px;
+  }
+
+  .hw-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .hw-actions-col {
+    justify-content: flex-start;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .nav-links.is-open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: var(--nav-height);
+    left: 0;
+    right: 0;
+    background: var(--bg-canvas);
+    padding: 1.25rem 2rem;
+    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+
+  .mobile-nav-toggle {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero {
+    padding: 3rem 0 2rem;
+  }
+
+  .ref-open-item {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .ref-book-visual {
+    width: 100px;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Math typography rendering */
+.math-rendered {
+  font-family: var(--font-serif);
+  font-size: 0.95em;
+  letter-spacing: 0.02em;
+}
+
+.math-rendered em {
+  font-style: italic;
+  font-family: var(--font-serif);
+}

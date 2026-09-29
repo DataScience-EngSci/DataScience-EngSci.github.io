@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 440" width="100%" height="100%">
+  <defs>
+    <linearGradient id="crc-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="60%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="crc-gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#fbbf24"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="320" height="440" rx="8" fill="url(#crc-grad)" stroke="#334155" stroke-width="1.5"/>
+  <line x1="22" y1="0" x2="22" y2="440" stroke="#000" stroke-opacity="0.4" stroke-width="2"/>
+  <line x1="24" y1="0" x2="24" y2="440" stroke="#fff" stroke-opacity="0.1" stroke-width="1"/>
+
+  <!-- Top Badge -->
+  <text x="36" y="44" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="10" font-weight="700" fill="#f59e0b" letter-spacing="1.2">CHAPMAN &amp; HALL / CRC DATA SCIENCE SERIES</text>
+  <rect x="36" y="52" width="248" height="2" fill="url(#crc-gold)"/>
+
+  <!-- Title -->
+  <text x="36" y="105" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', Georgia, serif" font-size="26" font-weight="800" fill="#ffffff" letter-spacing="-0.5">Statistical</text>
+  <text x="36" y="136" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', Georgia, serif" font-size="26" font-weight="800" fill="#ffffff" letter-spacing="-0.5">Foundations</text>
+  <text x="36" y="167" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', Georgia, serif" font-size="26" font-weight="800" fill="#ffffff" letter-spacing="-0.5">of Data Science</text>
+
+  <!-- High-dimensional sparse regression & matrix art -->
+  <g transform="translate(45, 195)">
+    <rect width="230" height="120" rx="6" fill="#090d16" stroke="#1e293b" stroke-width="1"/>
+    <!-- Sparse matrix grid -->
+    <g opacity="0.8">
+      <rect x="25" y="20" width="70" height="75" rx="3" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+      <!-- Sparse nonzeros -->
+      <rect x="32" y="28" width="6" height="6" fill="#f59e0b"/>
+      <rect x="48" y="38" width="6" height="6" fill="#f59e0b"/>
+      <rect x="75" y="48" width="6" height="6" fill="#f59e0b"/>
+      <rect x="38" y="65" width="6" height="6" fill="#f59e0b"/>
+      <rect x="62" y="78" width="6" height="6" fill="#f59e0b"/>
+      
+      <!-- Multiplication symbol -->
+      <text x="110" y="63" font-family="sans-serif" font-size="18" fill="#94a3b8" text-anchor="middle">&times;</text>
+      
+      <!-- Vector beta -->
+      <rect x="125" y="20" width="16" height="75" rx="2" fill="none" stroke="#38bdf8" stroke-width="1.5"/>
+      <rect x="127" y="38" width="12" height="6" fill="#38bdf8"/>
+      <rect x="127" y="65" width="12" height="6" fill="#38bdf8"/>
+      
+      <!-- Equal symbol -->
+      <text x="156" y="63" font-family="sans-serif" font-size="18" fill="#94a3b8" text-anchor="middle">=</text>
+      
+      <!-- Vector y -->
+      <rect x="172" y="20" width="16" height="75" rx="2" fill="none" stroke="#4ade80" stroke-width="1.5"/>
+      <rect x="174" y="25" width="12" height="10" fill="#4ade80" opacity="0.6"/>
+      <rect x="174" y="45" width="12" height="20" fill="#4ade80" opacity="0.8"/>
+      <rect x="174" y="72" width="12" height="15" fill="#4ade80" opacity="0.7"/>
+    </g>
+  </g>
+
+  <!-- Authors -->
+  <text x="36" y="355" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="12" font-weight="600" fill="#f8fafc">Jianqing Fan &bull; Runze Li</text>
+  <text x="36" y="375" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="12" font-weight="600" fill="#f8fafc">Cun-Hui Zhang &bull; Hui Zou</text>
+
+  <!-- CRC Press imprint -->
+  <text x="36" y="415" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="11" font-weight="700" fill="#94a3b8">CRC Press &bull; Taylor &amp; Francis Group</text>
+</svg>

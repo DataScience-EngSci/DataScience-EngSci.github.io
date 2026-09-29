@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 26: Gaussian Mixture Models &amp; The EM Algorithm | Basics of Data Science</title>
+  <meta name="description" content="Stanford CS231n / MIT OCW style comprehensive lecture notes on Gaussian Mixture Models, latent variable models, the Expectation-Maximization algorithm, Jensen's inequality, ELBO lower bounds, and monotonic likelihood convergence proof.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2326&amp;27%20-%20gaussian%20mixtures%20em%20and%20pca.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 26&amp;27 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 26: Gaussian Mixture Models &amp; The Expectation-Maximization Algorithm</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Fall Semester 2026</div>
+        <div class="note-meta-item"><strong>Primary Deck:</strong> Lecture #26&amp;27 (Slides 1–21)</div>
+        <div class="note-meta-item"><strong>Readings:</strong> PML-Intro Ch. 21; Bishop PRML Ch. 9; ESL Ch. 8</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-from-kmeans-to-gmm">1. From Hard Clustering to Soft Probabilistic Density Estimation</a></li>
+        <li><a href="#sec-gmm-formulation">2. The Gaussian Mixture Generative Model &amp; Latent Variables</a></li>
+        <li><a href="#sec-mle-bottleneck">3. The MLE Bottleneck &amp; Supervised GDA Analogy</a></li>
+        <li><a href="#sec-em-gmm">4. The EM Algorithm for Gaussian Mixtures (E-Step &amp; M-Step)</a></li>
+        <li><a href="#sec-jensens-inequality">5. Mathematical Foundations: Jensen's Inequality</a></li>
+        <li><a href="#sec-general-em">6. The General EM Algorithm &amp; The Evidence Lower Bound (ELBO)</a></li>
+        <li><a href="#sec-tightness-proof">7. Derivation of ELBO Tightness: Why Posterior \(Q(z) = p(z|x)\)</a></li>
+        <li><a href="#sec-monotonic-convergence">8. Rigorous Proof of Monotonic Likelihood Convergence &amp; Stopping Criteria</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+
+      <!-- Section 1 -->
+      <section id="sec-from-kmeans-to-gmm">
+        <h2>1. From Hard Clustering to Soft Probabilistic Density Estimation</h2>
+        <p>
+          In Lecture 25, we explored K-Means clustering as a coordinate descent method minimizing the Euclidean distortion:
+        </p>
+        \[
+          J(c, \mu) = \frac{1}{m} \sum_{i=1}^m \|x^{(i)} - \mu_{c^{(i)}}\|^2
+        \]
+        <p>
+          While computationally efficient, K-Means enforces <em>hard assignments</em>: each training example \(x^{(i)}\) is deterministically allocated to a single centroid \(c^{(i)} \in \{1, \dots, K\}\). This presents two fundamental theoretical limitations:
+        </p>
+        <ol>
+          <li><strong>Zero Uncertainty Quantification:</strong> A sample equidistant between two cluster centers is assigned with \(100\%\) certainty to one of them, discarding boundary ambiguity.</li>
+          <li><strong>Spherical, Equal-Variance Geometry:</strong> The Euclidean metric implicitly assumes clusters are isotropic spheres with identical variance across all dimensions and components, failing on elongated, tilted, or unequal clusters.</li>
+        </ol>
+        <p>
+          <strong>Gaussian Mixture Models (GMMs)</strong> generalize K-Means into a fully generative probabilistic framework. Rather than a hard assignment, every data point receives a <em>soft responsibility</em>—a posterior probability vector over all \(K\) Gaussian components.
+        </p>
+      </section>
+
+      <!-- Section 2 -->
+      <section id="sec-gmm-formulation">
+        <h2>2. The Gaussian Mixture Generative Model &amp; Latent Variables</h2>
+        <p>
+          Suppose we are given an unlabelled dataset \(\{x^{(1)}, x^{(2)}, \dots, x^{(m)}\}\) where \(x^{(i)} \in \mathbb{R}^d\) (Slide 2). We hypothesize that data points are generated by a mixture of \(k\) multivariate Gaussian distributions.
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Definition 2.1 (The Generative Process — Slide 2)</span>
+          For each observation \(x^{(i)}\), we introduce a <strong>latent (hidden/unobserved) random variable</strong> \(z^{(i)} \in \{1, 2, \dots, k\}\) representing the cluster identity. The joint distribution factorizes as:
+          \[
+            p(x^{(i)}, z^{(i)}) = p(x^{(i)} \mid z^{(i)}) \, p(z^{(i)})
+          \]
+          <ol>
+            <li>
+              <strong>Prior Distribution on Components:</strong> The latent variable follows a categorical distribution parameterized by \(\phi = (\phi_1, \dots, \phi_k)^T\):
+              \[
+                z^{(i)} \sim \text{Categorical}(\phi), \quad \text{where} \quad p(z^{(i)} = j) = \phi_j
+              \]
+              subject to the simplex constraints: \(\phi_j \ge 0\) and \(\sum_{j=1}^k \phi_j = 1\).
+            </li>
+            <li>
+              <strong>Conditional Density of Features:</strong> Conditioned on belonging to component \(j\), the feature vector is normally distributed:
+              \[
+                x^{(i)} \mid (z^{(i)} = j) \sim \mathcal{N}(\mu_j, \Sigma_j)
+              \]
+              with mean \(\mu_j \in \mathbb{R}^d\) and covariance matrix \(\Sigma_j \in \mathbb{S}_{++}^d\):
+              \[
+                p(x^{(i)} \mid z^{(i)} = j; \mu, \Sigma) = \frac{1}{(2\pi)^{d/2} |\Sigma_j|^{1/2}} \exp\left( -\frac{1}{2}(x^{(i)} - \mu_j)^T \Sigma_j^{-1}(x^{(i)} - \mu_j) \right)
+              \]
+            </li>
+          </ol>
+          The marginal density of the observed data point is obtained by summing (marginalizing) over all possible states of the latent indicator:
+          \[
+            p(x^{(i)}; \phi, \mu, \Sigma) = \sum_{j=1}^k p(x^{(i)} \mid z^{(i)} = j; \mu_j, \Sigma_j) \, p(z^{(i)} = j; \phi) = \sum_{j=1}^k \phi_j \mathcal{N}(x^{(i)}; \mu_j, \Sigma_j)
+          \]
+        </div>
+      </section>
+
+      <!-- Section 3 -->
+      <section id="sec-mle-bottleneck">
+        <h2>3. The MLE Bottleneck &amp; Supervised GDA Analogy</h2>
+        <p>
+          Given the parameters \(\theta = \{\phi, \mu, \Sigma\}\), the marginal log-likelihood across the \(m\) independent training samples is (Slide 3):
+        </p>
+        \[
+          \ell(\phi, \mu, \Sigma) = \sum_{i=1}^m \log p(x^{(i)}; \phi, \mu, \Sigma) = \sum_{i=1}^m \log \left( \sum_{z^{(i)}=1}^k p(x^{(i)} \mid z^{(i)}; \mu, \Sigma) \, p(z^{(i)}; \phi) \right)
+        \]
+
+        <div class="note-callout">
+          <strong>The Analytical Bottleneck:</strong><br>
+          Notice the sum over \(z^{(i)}\) resides <em>strictly inside</em> the logarithm! When we differentiate \(\ell\) with respect to \(\mu_j\) or \(\Sigma_j\), the chain rule yields:
+          \[
+            \nabla_{\mu_j} \log \sum_{l=1}^k \phi_l \mathcal{N}(x^{(i)}; \mu_l, \Sigma_l) = \frac{\phi_j \nabla_{\mu_j}\mathcal{N}(x^{(i)}; \mu_j, \Sigma_j)}{\sum_{l=1}^k \phi_l \mathcal{N}(x^{(i)}; \mu_l, \Sigma_l)}
+          \]
+          The denominator couples the parameters of all \(k\) components together. Setting \(\nabla \ell = 0\) produces a highly intractable, non-linear system with <strong>no closed-form algebraic solution</strong>!
+        </div>
+
+        <div class="thm-box">
+          <span class="box-label">The Supervised Benchmark: Connection to GDA (Slides 3 &amp; 4)</span>
+          <div class="note-callout" style="margin-bottom: 10px; border-left: 4px solid #dc2626;">
+            <strong>Connection to Supervised GDA:</strong> In the hypothetical case where latent labels were observed, the model would reduce directly to Gaussian Discriminant Analysis.
+          </div>
+          If the latent labels \(z^{(i)}\) were known and observed (as in supervised Gaussian Discriminant Analysis from Lecture 18), the complete-data log-likelihood would decompose cleanly:
+          \[
+            \ell_{\text{complete}}(\phi, \mu, \Sigma) = \sum_{i=1}^m \left[ \log p(x^{(i)} \mid z^{(i)}; \mu, \Sigma) + \log p(z^{(i)}; \phi) \right]
+          \]
+          Here, the logarithm directly hits the Gaussian exponential! Maximizing with respect to \(\phi_j, \mu_j, \Sigma_j\) yields the familiar closed-form MLE estimators (Slide 4):
+          \[
+            \phi_j = \frac{1}{m} \sum_{i=1}^m 1\{z^{(i)} = j\}
+          \]
+          \[
+            \mu_j = \frac{\sum_{i=1}^m 1\{z^{(i)} = j\} x^{(i)}}{\sum_{i=1}^m 1\{z^{(i)} = j\}}
+          \]
+          \[
+            \Sigma_j = \frac{\sum_{i=1}^m 1\{z^{(i)} = j\} (x^{(i)} - \mu_j)(x^{(i)} - \mu_j)^T}{\sum_{i=1}^m 1\{z^{(i)} = j\}}
+          \]
+        </div>
+      </section>
+
+      <!-- Section 4 -->
+      <section id="sec-em-gmm">
+        <h2>4. The EM Algorithm for Gaussian Mixtures (E-Step &amp; M-Step)</h2>
+        <p>
+          Since \(z^{(i)}\) is unknown, the Expectation-Maximization (EM) algorithm establishes an elegant iterative compromise (Slides 5–8):
+        </p>
+        <ol>
+          <li><strong>E-Step (Expectation):</strong> Compute "soft guesses" (responsibilities) for the unknown \(z^{(i)}\) using the current parameter estimates.</li>
+          <li><strong>M-Step (Maximization):</strong> Re-estimate parameters using weighted maximum likelihood, replacing the hard indicators \(1\{z^{(i)}=j\}\) with the soft responsibilities \(w_j^{(i)}\).</li>
+        </ol>
+
+        <div class="def-box">
+          <span class="box-label">Algorithm 4.1 (EM Algorithm for GMMs — Slides 6–7)</span>
+          Initialize \(\mu_j, \Sigma_j, \phi_j\) randomly for all \(j \in \{1, \dots, k\}\). Repeat until convergence:
+          <ol>
+            <li>
+              <strong>E-Step:</strong> For each training sample \(i \in \{1, \dots, m\}\) and cluster \(j \in \{1, \dots, k\}\), compute the posterior responsibility via Bayes' Rule:
+              \[
+                w_j^{(i)} := p(z^{(i)} = j \mid x^{(i)}; \phi, \mu, \Sigma) = \frac{p(x^{(i)} \mid z^{(i)} = j; \mu, \Sigma) \, p(z^{(i)} = j; \phi)}{\sum_{l=1}^k p(x^{(i)} \mid z^{(i)} = l; \mu, \Sigma) \, p(z^{(i)} = l; \phi)}
+              \]
+              \[
+                w_j^{(i)} = \frac{\phi_j \mathcal{N}(x^{(i)}; \mu_j, \Sigma_j)}{\sum_{l=1}^k \phi_l \mathcal{N}(x^{(i)}; \mu_l, \Sigma_l)}
+              \]
+            </li>
+            <li>
+              <strong>M-Step:</strong> Update model parameters as weighted averages using weights \(w_j^{(i)}\):
+              \[
+                \phi_j := \frac{1}{m} \sum_{i=1}^m w_j^{(i)}
+              \]
+              \[
+                \mu_j := \frac{\sum_{i=1}^m w_j^{(i)} x^{(i)}}{\sum_{i=1}^m w_j^{(i)}}
+              \]
+              \[
+                \Sigma_j := \frac{\sum_{i=1}^m w_j^{(i)} (x^{(i)} - \mu_j)(x^{(i)} - \mu_j)^T}{\sum_{i=1}^m w_j^{(i)}}
+              \]
+            </li>
+          </ol>
+        </div>
+
+        <div class="note-callout">
+          <strong>Comparison: K-Means vs. EM (Slide 8):</strong>
+          <ul>
+            <li><strong>Hard vs. Soft Assignments:</strong> K-Means assigns \(c(i) \in \{1, \dots, K\}\) deterministically (hard). EM computes posterior probabilities \(w_j^{(i)} \in [0, 1]\) with \(\sum_j w_j^{(i)} = 1\) (soft).</li>
+            <li><strong>Local Optima:</strong> Just like K-Means, EM is a non-convex optimization method susceptible to getting trapped in local maxima. Reinitializing with several different starting parameters (multiple random restarts) is essential in practice.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 5 -->
+      <section id="sec-jensens-inequality">
+        <h2>5. Mathematical Foundations: Jensen's Inequality</h2>
+        <p>
+          Slides 9 to 11 introduce the general theoretical framework justifying the EM algorithm. The fundamental mathematical bedrock is <strong>Jensen's Inequality</strong>.
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">Definition 5.1 (Convexity &amp; Jensen's Inequality — Slide 10)</span>
+          Let \(f: \mathbb{R} \to \mathbb{R}\) be a function.
+          <ul>
+            <li>\(f\) is <strong>convex</strong> if \(f''(x) \ge 0\) for all \(x\). For vector-valued inputs \(f: \mathbb{R}^d \to \mathbb{R}\), the Hessian matrix is positive semi-definite: \(H \succeq 0\).</li>
+            <li>\(f\) is <strong>strictly convex</strong> if \(f''(x) > 0\) (or \(H \succ 0\)).</li>
+          </ul>
+          <strong>Theorem (Jensen's Inequality):</strong> Let \(f\) be a convex function, and let \(X\) be a random variable. Then:
+          \[
+            E[f(X)] \ge f(E[X])
+          \]
+          Moreover, if \(f\) is strictly convex, equality holds if and only if \(X = E[X]\) with probability 1 (i.e., \(X\) is a constant).
+        </div>
+
+        <div class="thm-box" style="background: #fffbeb; border-color: #fde047;">
+          <span class="box-label" style="color: #854d0e;">Geometric Intuition (Two-Point Distribution)</span>
+          Consider a discrete random variable taking values \(a\) and \(b\) with equal probability \(P(X = a) = 0.5\) and \(P(X = b) = 0.5\):
+          <ul>
+            <li>The expectation of \(X\) is the midpoint: \(E[X] = \frac{a + b}{2}\). Evaluating the function at the mean gives \(f(E[X]) = f\left(\frac{a+b}{2}\right)\), which lies on the convex curve.</li>
+            <li>The expected value of the function is the average of function values: \(E[f(X)] = \frac{f(a) + f(b)}{2}\), which lies on the secant chord connecting \((a, f(a))\) and \((b, f(b))\).</li>
+          </ul>
+          Because the secant chord of a convex curve always lies strictly above the curve itself, we have \(E[f(X)] \ge f(E[X])\).
+          <br><br>
+          <strong>Corollary for Concave Functions (e.g., Logarithm — Slide 14):</strong><br>
+          If \(g(x)\) is a <strong>concave</strong> function (\(g''(x) \le 0\)), such as \(g(x) = \log x\) whose second derivative is \(g''(x) = -\frac{1}{x^2} < 0\), the inequality reverses:
+          \[
+            E[\log(X)] \le \log(E[X])
+          \]
+        </div>
+      </section>
+
+      <!-- Section 6 -->
+      <section id="sec-general-em">
+        <h2>6. The General EM Algorithm &amp; The Evidence Lower Bound (ELBO)</h2>
+        <p>
+          We now formulate the general Expectation-Maximization theory for an arbitrary probabilistic model with observed data \(x\) and latent variables \(z\), parameterized by \(\theta\) (Slides 12–15).
+        </p>
+        <p>
+          Let \(\{x^{(1)}, \dots, x^{(n)}\}\) be a dataset of \(n\) independent training examples. The marginal log-likelihood is:
+        </p>
+        \[
+          \ell(\theta) = \sum_{i=1}^n \log p(x^{(i)}; \theta) = \sum_{i=1}^n \log \sum_{z^{(i)}} p(x^{(i)}, z^{(i)}; \theta)
+        \]
+        <div class="note-callout" style="margin: 8px 0; color: #475569; font-size: 0.95rem;">
+          <em>Continuous Latent Variables:</em> If \(z\) is continuous, the discrete summation over \(z\) is replaced by an integral: \(\int p(x, z; \theta) dz\).
+        </div>
+
+        <div class="proof-box">
+          <span class="box-label">Derivation of the Evidence Lower Bound (ELBO — Slides 13–15)</span>
+          Consider a single training example \(x\). Let \(Q\) be an arbitrary valid probability distribution over the latent variable \(z\) (\(\sum_z Q(z) = 1\) and \(Q(z) \ge 0\)). We multiply and divide by \(Q(z)\) inside the sum:
+          \[
+            \log p(x; \theta) = \log \sum_z p(x, z; \theta) = \log \sum_z Q(z) \left( \frac{p(x, z; \theta)}{Q(z)} \right)
+          \]
+          Notice that \(\sum_z Q(z) \left[ \dots \right]\) is the definition of an expectation with respect to the distribution \(z \sim Q\):
+          \[
+            \log p(x; \theta) = \log \left( E_{z \sim Q} \left[ \frac{p(x, z; \theta)}{Q(z)} \right] \right)
+          \]
+          Applying Jensen's inequality to the concave function \(f(u) = \log(u)\):
+          \[
+            \log \left( E_{z \sim Q} \left[ \frac{p(x, z; \theta)}{Q(z)} \right] \right) \ge E_{z \sim Q} \left[ \log \left( \frac{p(x, z; \theta)}{Q(z)} \right) \right]
+          \]
+          \[
+            \log p(x; \theta) \ge \sum_z Q(z) \log \frac{p(x, z; \theta)}{Q(z)}
+          \]
+          We formally define this quantity as the <strong>Evidence Lower Bound (ELBO)</strong> (Slide 18):
+          \[
+            \text{ELBO}(x; Q, \theta) = \sum_z Q(z) \log \frac{p(x, z; \theta)}{Q(z)}
+          \]
+          \[
+            \forall Q, \theta, x: \quad \log p(x; \theta) \ge \text{ELBO}(x; Q, \theta)
+          \]
+        </div>
+      </section>
+
+      <!-- Section 7 -->
+      <section id="sec-tightness-proof">
+        <h2>7. Derivation of ELBO Tightness: Why Posterior \(Q(z) = p(z|x)\)</h2>
+        <p>
+          For any arbitrary distribution \(Q\), the ELBO provides a lower bound on the true log-evidence. But when is this lower bound <strong>tight</strong> (i.e., when does equality hold)? (Slides 15–17)
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">Theorem 7.1 (Optimal Choice of \(Q\) — Slides 15–17)</span>
+          By Jensen's inequality, equality holds if and only if the random variable inside the expectation is constant with probability 1:
+          \[
+            \frac{p(x, z; \theta)}{Q(z)} = c
+          \]
+          where \(c\) is a constant that does not depend on \(z\). This implies:
+          \[
+            Q(z) \propto p(x, z; \theta)
+          \]
+          Since \(Q(z)\) is a probability distribution that must sum to 1 (\(\sum_z Q(z) = 1\)), we normalize:
+          \[
+            Q(z) = \frac{p(x, z; \theta)}{\sum_{z'} p(x, z'; \theta)} = \frac{p(x, z; \theta)}{p(x; \theta)} = p(z \mid x; \theta)
+          \]
+          <strong>Conclusion:</strong> To make the lower bound tight at the current parameter value \(\theta\), we must set \(Q(z)\) equal to the <strong>posterior distribution of the latent variables given the observed data</strong>!
+        </div>
+
+        <div class="proof-box">
+          <span class="box-label">Direct Verification of Equality (Slide 17)</span>
+          We directly substitute \(Q(z) = p(z \mid x; \theta)\) into the lower bound:
+          \[
+            \begin{aligned}
+              \sum_z Q(z) \log \frac{p(x, z; \theta)}{Q(z)}
+              &= \sum_z p(z \mid x; \theta) \log \frac{p(x, z; \theta)}{p(z \mid x; \theta)} \\
+              &= \sum_z p(z \mid x; \theta) \log \frac{p(z \mid x; \theta) p(x; \theta)}{p(z \mid x; \theta)} \\
+              &= \sum_z p(z \mid x; \theta) \log p(x; \theta) \\
+              &= \log p(x; \theta) \sum_z p(z \mid x; \theta) \\
+              &= \log p(x; \theta) \cdot 1 = \log p(x; \theta)
+            \end{aligned}
+          \]
+          This confirms algebraically that setting \(Q\) to the true posterior makes the ELBO perfectly touch the true log-likelihood curve at \(\theta\).
+        </div>
+      </section>
+
+      <!-- Section 8 -->
+      <section id="sec-monotonic-convergence">
+        <h2>8. Rigorous Proof of Monotonic Likelihood Convergence &amp; Stopping Criteria</h2>
+        <p>
+          Slides 19–21 culminate in the general definition and convergence proof of the EM algorithm across the full dataset \(\{x^{(1)}, \dots, x^{(m)}\}\).
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">The General EM Algorithm (Slide 20)</span>
+          Repeat until convergence:
+          <ol>
+            <li>
+              <strong>E-Step:</strong> For each training example \(i \in \{1, \dots, m\}\), set:
+              \[
+                Q_i(z^{(i)}) := p(z^{(i)} \mid x^{(i)}; \theta)
+              \]
+            </li>
+            <li>
+              <strong>M-Step:</strong> Update the parameters \(\theta\) by maximizing the sum of ELBOs:
+              \[
+                \theta := \arg\max_\theta \sum_{i=1}^m \text{ELBO}(x^{(i)}; Q_i, \theta) = \arg\max_\theta \sum_{i=1}^m \sum_{z^{(i)}} Q_i(z^{(i)}) \log \frac{p(x^{(i)}, z^{(i)}; \theta)}{Q_i(z^{(i)})}
+              \]
+            </li>
+          </ol>
+          <div class="note-callout" style="margin-top: 8px; color: #15803d;">
+            <strong>Local Optima:</strong> Because the incomplete-data log-likelihood \(\ell(\theta)\) is generally non-convex, EM converges to local maxima and is sensitive to initialization.
+          </div>
+        </div>
+
+        <div class="proof-box">
+          <span class="box-label">Monotonic Convergence Proof of the EM Algorithm</span>
+          Let \(\theta^{(t)}\) be the parameter estimate at iteration \(t\).
+          <ol>
+            <li>
+              In the E-step, setting \(Q_i^{(t)}(z^{(i)}) = p(z^{(i)} \mid x^{(i)}; \theta^{(t)})\) makes the bound tight:
+              \[
+                \ell(\theta^{(t)}) = \sum_{i=1}^m \text{ELBO}\left(x^{(i)}; Q_i^{(t)}, \theta^{(t)}\right)
+              \]
+            </li>
+            <li>
+              In the M-step, \(\theta^{(t+1)}\) is explicitly chosen to maximize the bound holding \(Q^{(t)}\) fixed:
+              \[
+                \theta^{(t+1)} = \arg\max_\theta \sum_{i=1}^m \text{ELBO}\left(x^{(i)}; Q_i^{(t)}, \theta\right)
+              \]
+              Therefore, the value of the ELBO evaluated at \(\theta^{(t+1)}\) cannot be smaller than at \(\theta^{(t)}\):
+              \[
+                \sum_{i=1}^m \text{ELBO}\left(x^{(i)}; Q_i^{(t)}, \theta^{(t+1)}\right) \ge \sum_{i=1}^m \text{ELBO}\left(x^{(i)}; Q_i^{(t)}, \theta^{(t)}\right) = \ell(\theta^{(t)})
+              \]
+            </li>
+            <li>
+              By Jensen's inequality, the true log-likelihood at \(\theta^{(t+1)}\) is always bounded from below by the ELBO evaluated with any distribution \(Q^{(t)}\):
+              \[
+                \ell(\theta^{(t+1)}) \ge \sum_{i=1}^m \text{ELBO}\left(x^{(i)}; Q_i^{(t)}, \theta^{(t+1)}\right)
+              \]
+            </li>
+          </ol>
+          Chaining the inequalities together:
+          \[
+            \ell(\theta^{(t+1)}) \ge \sum_{i=1}^m \text{ELBO}\left(x^{(i)}; Q_i^{(t)}, \theta^{(t+1)}\right) \ge \sum_{i=1}^m \text{ELBO}\left(x^{(i)}; Q_i^{(t)}, \theta^{(t)}\right) = \ell(\theta^{(t)})
+          \]
+          \[
+            \implies \ell(\theta^{(t+1)}) \ge \ell(\theta^{(t)})
+          \]
+          This establishes that the log-likelihood is <strong>monotonically non-decreasing</strong> at every iteration of EM!
+        </div>
+
+        <div class="thm-box" style="background: #f8fafc; border-color: #64748b;">
+          <span class="box-label">Stopping Criterion</span>
+          The algorithm monitors the relative change in log-likelihood and terminates when progress falls below a convergence tolerance threshold \(\epsilon_{\text{th}}\):
+          \[
+            \left| \frac{\ell(\theta)^{(t+1)} - \ell(\theta)^{(t)}}{\ell(\theta)^{(t)}} \right| < \text{th}
+          \]
+          Typical threshold values range from \(10^{-4}\) to \(10^{-6}\).
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-25.html">&larr; Lecture 25: SVM Duality, K-Means &amp; Intro to EM</a>
+      <a href="./lecture-27.html">Lecture 27: Principal Component Analysis (PCA) &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

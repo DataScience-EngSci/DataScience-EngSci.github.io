@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 10: Asymptotic Properties of Maximum Likelihood Estimators | Basics of Data Science</title>
+  <meta name="description" content="MIT OCW style lecture notes on asymptotic properties of MLEs: consistency, asymptotic normality, asymptotic efficiency, Continuous Mapping Theorem, and non-regular Uniform order statistics.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2310%20-%20asymptotic%20properties%20of%20mle.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 10 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 10: Asymptotic Properties of Maximum Likelihood Estimators</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Nov 30, 2026</div>
+        <div class="note-meta-item"><strong>Readings:</strong> FDS Ch. 3; SFDS Ch. 2; PML-Intro Ch. 4</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-asymptotic-overview">1. The Role of Asymptotics in Statistical Inference</a></li>
+        <li><a href="#sec-four-properties">2. The Four Golden Asymptotic Properties of MLE</a></li>
+        <li><a href="#sec-cmt">3. Continuous Mapping Theorem &amp; Consistency Proofs</a></li>
+        <li><a href="#sec-exponential-case">4. Finite-Sample vs. Asymptotic Behavior: Exponential MLE</a></li>
+        <li><a href="#sec-mse-consistency">5. General Sufficient Conditions for Consistency</a></li>
+        <li><a href="#sec-non-regular-uniform">6. Non-Regular Case: Uniform Distribution Order Statistics</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-asymptotic-overview">1. The Role of Asymptotics in Statistical Inference</h2>
+      <p>
+        In finite samples, finding estimators that are strictly unbiased or exactly achieve the Cramér-Rao Lower Bound 
+        is often analytically intractable. In big data regimes, however, the sample size \(n\) is large (\(n \to \infty\)). 
+        <strong>Asymptotic theory</strong> analyzes the limiting behavior of estimators as data accumulates indefinitely.
+      </p>
+
+      <!-- Section 2 -->
+      <h2 id="sec-four-properties">2. The Four Golden Asymptotic Properties of MLE</h2>
+      <p>
+        Under standard Cramér regularity conditions (differentiable log-likelihood, non-boundary true parameter \(\theta_0 \in \text{int}(\Theta)\), 
+        support independent of \(\theta\), and strictly positive Fisher Information \(I_1(\theta_0) > 0\)), 
+        the Maximum Likelihood Estimator \(\hat{\theta}_n\) enjoys four extraordinary theoretical guarantees:
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 2.1 (The Four Asymptotic Properties of MLE)</span>
+        <ol>
+          <li>
+            <strong>Consistency:</strong> The MLE converges in probability to the true parameter value:
+            \[
+              \hat{\theta}_n \overset{P}{\longrightarrow} \theta_0 \quad \text{as } n \to \infty
+            \]
+          </li>
+          <li>
+            <strong>Asymptotic Unbiasedness:</strong> Even if biased in finite samples (such as the \(\frac{n-1}{n}\) factor in Gaussian variance), the expected value converges to the truth:
+            \[
+              \lim_{n \to \infty} E\left[\hat{\theta}_n\right] = \theta_0
+            \]
+          </li>
+          <li>
+            <strong>Asymptotic Efficiency:</strong> The variance of the MLE converges to the Cramér-Rao Lower Bound with equality:
+            \[
+              \lim_{n \to \infty} \frac{\text{CRLB}_n(\theta_0)}{\text{Var}\left(\hat{\theta}_n\right)} = 1
+            \]
+            No consistent estimator can possess smaller asymptotic variance!
+          </li>
+          <li>
+            <strong>Asymptotic Normality:</strong> The sampling distribution of the MLE approaches a Gaussian distribution centered at \(\theta_0\):
+            \[
+              \sqrt{n}\left(\hat{\theta}_n - \theta_0\right) \overset{d}{\longrightarrow} \mathcal{N}\left(0, \frac{1}{I_1(\theta_0)}\right)
+            \]
+            Equivalently:
+            \[
+              \frac{\hat{\theta}_n - \theta_0}{\sqrt{\text{CRLB}_n(\theta_0)}} \overset{d}{\longrightarrow} \mathcal{N}(0, 1)
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-cmt">3. Continuous Mapping Theorem &amp; Consistency Proofs</h2>
+      <p>
+        To rigorously establish the consistency of non-linear estimators, we use fundamental algebraic properties and the Continuous Mapping Theorem for convergence in probability.
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 3.1 (Algebraic Properties of Convergence in Probability)</span>
+        Suppose \(\{X_n\}\) and \(\{Y_n\}\) are sequences of random variables such that \(X_n \overset{P}{\longrightarrow} X\) and \(Y_n \overset{P}{\longrightarrow} Y\). Then:
+        <ul>
+          <li><strong>Sum rule:</strong> \(X_n + Y_n \overset{P}{\longrightarrow} X + Y\)</li>
+          <li><strong>Product rule:</strong> \(X_n Y_n \overset{P}{\longrightarrow} X Y\)</li>
+          <li><strong>Quotient rule:</strong> \(\frac{X_n}{Y_n} \overset{P}{\longrightarrow} \frac{X}{Y}\) &nbsp;(provided \(P(Y \neq 0) = 1\))</li>
+          <li><strong>Continuous Mapping Theorem (CMT):</strong> \(g(X_n) \overset{P}{\longrightarrow} g(X)\) for any function \(g\) continuous on the support of \(X\).</li>
+        </ul>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Application: Consistency of the Exponential Rate MLE</span>
+        Let \(X_1, \dots, X_n \overset{\text{i.i.d.}}{\sim} \text{Exponential}(\lambda)\). In Lecture 05, we found the MLE to be \(\hat{\lambda}_n = \frac{1}{\bar{X}_n}\).<br>
+        <p><strong>Step 1 (WLLN):</strong> By the Weak Law of Large Numbers, the sample mean converges in probability to the population mean:</p>
+        \[
+          \bar{X}_n \overset{P}{\longrightarrow} E[X_1] = \frac{1}{\lambda}
+        \]
+        <p><strong>Step 2 (Continuous Mapping):</strong> Is it true that \(\hat{\lambda}_n = \frac{1}{\bar{X}_n} \overset{P}{\longrightarrow} \frac{1}{1/\lambda} = \lambda\)? Yes! Since \(\lambda > 0\), the transformation \(g(x) = \frac{1}{x}\) is continuous at \(x = \frac{1}{\lambda} > 0\). Applying the Continuous Mapping Theorem:</p>
+        \[
+          \hat{\lambda}_n = g(\bar{X}_n) = \frac{1}{\bar{X}_n} \overset{P}{\longrightarrow} g\left(\frac{1}{\lambda}\right) = \frac{1}{1/\lambda} = \lambda
+        \]
+        <p>Thus, \(\hat{\lambda}_n\) is a <strong>consistent</strong> estimator of \(\lambda\). &#10004;</p>
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-exponential-case">4. Finite-Sample vs. Asymptotic Behavior: Exponential MLE</h2>
+      <p>
+        Let us rigorously verify how finite-sample bias disappears and asymptotic efficiency is attained for the Exponential rate estimator.
+      </p>
+
+      <div class="proof-box">
+        <span class="box-label">Exact Sampling Distribution and Moments</span>
+        The sum \(S_n = \sum_{i=1}^n X_i\) follows a \(\text{Gamma}(n, \lambda)\) distribution with density:
+        \[
+          f_{S_n}(s) = \frac{\lambda^n}{\Gamma(n)} s^{n-1} e^{-\lambda s}, \quad s > 0
+        \]
+        The MLE is \(\hat{\lambda}_n = \frac{n}{S_n}\). Its expectation is:
+        \[
+          E\left[\hat{\lambda}_n\right] = n E\left[\frac{1}{S_n}\right] = n \int_0^\infty \frac{1}{s} \frac{\lambda^n}{(n-1)!} s^{n-1} e^{-\lambda s} \, ds = \frac{n \lambda^n}{(n-1)!} \int_0^\infty s^{n-2} e^{-\lambda s} \, ds
+        \]
+        Recognizing the standard Gamma integral \(\int_0^\infty s^{n-2} e^{-\lambda s} \, ds = \frac{(n-2)!}{\lambda^{n-1}}\):
+        \[
+          E\left[\hat{\lambda}_n\right] = \frac{n \lambda^n}{(n-1)!} \frac{(n-2)!}{\lambda^{n-1}} = \frac{n}{n - 1}\lambda
+        \]
+        Notice that in finite samples, \(\hat{\lambda}_n\) is biased upward: \(\text{Bias} = \frac{\lambda}{n-1} > 0\). 
+        However:
+        \[
+          \lim_{n \to \infty} E\left[\hat{\lambda}_n\right] = \lim_{n \to \infty} \left(\frac{n}{n - 1}\right)\lambda = \lambda \quad (\text{Asymptotically Unbiased})
+        \]
+        Similarly, computing the second moment yields:
+        \[
+          E\left[\hat{\lambda}_n^2\right] = \frac{n^2}{(n - 1)(n - 2)}\lambda^2 \implies \text{Var}\left(\hat{\lambda}_n\right) = \frac{n^2}{(n - 1)^2 (n - 2)}\lambda^2
+        \]
+        Recall from Lecture 08 that \(\text{CRLB}_n(\lambda) = \frac{\lambda^2}{n}\). Now compute the efficiency ratio:
+        \[
+          \lim_{n \to \infty} \frac{\text{CRLB}_n(\lambda)}{\text{Var}\left(\hat{\lambda}_n\right)} = \lim_{n \to \infty} \frac{\frac{\lambda^2}{n}}{\frac{n^2}{(n-1)^2(n-2)}\lambda^2} = \lim_{n \to \infty} \frac{(n - 1)^2 (n - 2)}{n^3} = 1 \quad \blacksquare
+        \]
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-mse-consistency">5. General Sufficient Conditions for Consistency</h2>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 5.1 (MSE-Based Consistency)</span>
+        Let \(\hat{\theta}_n\) be any sequence of estimators for parameter \(\theta\). If:
+        <ol>
+          <li>\(\lim_{n \to \infty} \text{Bias}\left(\hat{\theta}_n\right) = 0\) (Asymptotically unbiased)</li>
+          <li>\(\lim_{n \to \infty} \text{Var}\left(\hat{\theta}_n\right) = 0\) (Variance vanishes)</li>
+        </ol>
+        Then \(\lim_{n \to \infty} \text{MSE}\left(\hat{\theta}_n\right) = 0\), which guarantees:
+        \[
+          \hat{\theta}_n \overset{P}{\longrightarrow} \theta \quad (\text{Consistency})
+        \]
+      </div>
+
+      <div class="proof-box">
+        <span class="box-label">Proof</span>
+        By Chebyshev's inequality applied to \(\hat{\theta}_n\):
+        \[
+          P(|\hat{\theta}_n - \theta| \ge \varepsilon) \le \frac{E\left[(\hat{\theta}_n - \theta)^2\right]}{\varepsilon^2} = \frac{\text{MSE}\left(\hat{\theta}_n\right)}{\varepsilon^2} = \frac{\text{Var}(\hat{\theta}_n) + [\text{Bias}(\hat{\theta}_n)]^2}{\varepsilon^2}
+        \]
+        Taking \(n \to \infty\), both variance and bias squared vanish, driving the bound to \(0\). \(\blacksquare\)
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-non-regular-uniform">6. Non-Regular Case: Uniform Distribution Order Statistics</h2>
+      <p>
+        To see the power of the variance-vanishing condition, consider the non-regular uniform model where standard derivative-based likelihood theory fails because the support depends on the parameter.
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Example: Maximum Estimator for Uniform\((0, \theta)\)</span>
+        <p>
+          Let \(X_1, X_2, \dots, X_n \overset{\text{i.i.d.}}{\sim} \text{Uniform}(0, \theta)\). 
+          The maximum order statistic is:
+        </p>
+        \[
+          Y_n = \max(X_1, X_2, \dots, X_n)
+        \]
+        <p>Is \(Y_n\) a consistent estimator of \(\theta\)? Let us derive its exact sampling distribution:</p>
+        
+        <p><strong>Step 1: Cumulative Distribution Function (CDF):</strong></p>
+        \[
+        \begin{aligned}
+          F_{Y_n}(y) = P(Y_n \le y) &= P(\max(X_1, \dots, X_n) \le y) \\
+          &= P(X_1 \le y, X_2 \le y, \dots, X_n \le y) \\
+          &= P(X_1 \le y) \cdot P(X_2 \le y) \cdots P(X_n \le y) \quad (\text{by independence}) \\
+          &= [P(X_1 \le y)]^n = \left[\frac{y}{\theta}\right]^n, \quad 0 \le y \le \theta
+        \end{aligned}
+        \]
+
+        <p><strong>Step 2: Probability Density Function (PDF):</strong> Differentiating the CDF with respect to \(y\):</p>
+        \[
+          f_{Y_n}(y) = \frac{d}{dy} F_{Y_n}(y) = \frac{d}{dy}\left[\frac{y}{\theta}\right]^n = \frac{n}{\theta^n} y^{n-1}, \quad 0 \le y \le \theta
+        \]
+
+        <p><strong>Step 3: Expected Value (Mean):</strong></p>
+        \[
+          E[Y_n] = \int_{-\infty}^\infty y f_{Y_n}(y) \, dy = \int_0^\theta y \left(\frac{n}{\theta^n} y^{n-1}\right) dy = \frac{n}{\theta^n} \int_0^\theta y^n \, dy = \frac{n}{\theta^n} \left[\frac{y^{n+1}}{n+1}\right]_0^\theta = \frac{n}{n+1} \theta
+        \]
+        <p>Notice that \(\lim_{n \to \infty} E[Y_n] = \lim_{n \to \infty} \frac{n}{n+1}\theta = \theta\), so \(Y_n\) is asymptotically unbiased.</p>
+
+        <p><strong>Step 4: Variance and Consistency:</strong> Computing the second moment:</p>
+        \[
+          E[Y_n^2] = \int_0^\theta y^2 \left(\frac{n}{\theta^n} y^{n-1}\right) dy = \frac{n}{\theta^n} \int_0^\theta y^{n+1} \, dy = \frac{n}{n+2} \theta^2
+        \]
+        \[
+          \text{Var}(Y_n) = E[Y_n^2] - (E[Y_n])^2 = \frac{n}{n+2}\theta^2 - \left(\frac{n}{n+1}\right)^2 \theta^2 = \frac{n}{(n+1)^2(n+2)} \theta^2
+        \]
+        <p>As \(n \to \infty\):</p>
+        \[
+          \lim_{n \to \infty} \text{Var}(Y_n) = \lim_{n \to \infty} \frac{n}{(n+1)^2(n+2)}\theta^2 = 0
+        \]
+        <p>
+          Since \(Y_n\) is asymptotically unbiased and its variance converges to \(0\), it satisfies the Chebyshev / generalized Markov condition:
+        </p>
+        \[
+          Y_n = \max(X_1, \dots, X_n) \overset{P}{\longrightarrow} \theta \quad \text{Consistent!} \quad \text{\checkmark}
+        \]
+      </div>
+
+      <div class="note-callout">
+        <strong>Pedagogical Insight:</strong> Notice that \(\text{Var}(Y_n) \sim \frac{\theta^2}{n^2}\), decaying at rate \(O(1/n^2)\) rather than the standard parametric rate \(O(1/n)\). The maximum approaches the boundary \(\theta\) much faster than sample means converge to expectations!
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-09.html">&larr; Lecture 09: Convergence in Distribution &amp; CLT</a>
+      <a href="./lecture-11.html">Lecture 11: Confidence Intervals &amp; Student's t &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 22: Advice for Applying Machine Learning, Diagnostics &amp; Skewed Metrics | Basics of Data Science</title>
+  <meta name="description" content="MIT OCW / Stanford CS231n style lecture notes on machine learning diagnostics: systematic debugging workflows, train/validation/test splits, bias-variance analysis, double descent, learning curves, regularization tuning, skewed class metrics, threshold tuning, and ROC/AUC curves.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2322%20-%20machine%20learning%20diagnostics%20and%20debugging.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 22 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 22: Advice for Applying Machine Learning, Diagnostics &amp; Skewed Metrics</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Fall 2026</div>
+        <div class="note-meta-item"><strong>Readings:</strong> Murphy PML-1 Ch. 11; Hastie et al. <em>ESL</em> Ch. 7; Ng <em>Machine Learning Yearning</em></div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-debugging-dilemma">1. The Debugging Dilemma: Engineering Intuition vs. Formal Diagnostics</a></li>
+        <li><a href="#sec-eval-protocol">2. Evaluating Hypotheses &amp; The Three-Way Train / Validation / Test Split</a></li>
+        <li><a href="#sec-k-fold-cv">3. Resampling Protocols: \(K\)-Fold &amp; Leave-One-Out Cross-Validation</a></li>
+        <li><a href="#sec-bias-variance-poly">4. Diagnosing Bias vs. Variance: Polynomial Degree Curves &amp; Double Descent</a></li>
+        <li><a href="#sec-regularization-tuning">5. Regularization Diagnostics: Tuning \(\lambda\) &amp; Structural Stability</a></li>
+        <li><a href="#sec-learning-curves">6. Learning Curves: Diagnosing Sample Efficiency (\(m \to \infty\))</a></li>
+        <li><a href="#sec-decision-matrix">7. The Systematic ML Action Matrix &amp; Neural Architecture Sizing</a></li>
+        <li><a href="#sec-skewed-classes">8. Imbalanced &amp; Skewed Classes: The Accuracy Paradox</a></li>
+        <li><a href="#sec-precision-recall-f1">9. Precision, Recall &amp; Why Harmonic Mean Governs \(F_1\)-Score</a></li>
+        <li><a href="#sec-roc-auc">10. Decision Threshold Tuning, ROC Curves &amp; Multi-Class One-vs-All</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-debugging-dilemma">1. The Debugging Dilemma: Engineering Intuition vs. Formal Diagnostics</h2>
+      <p>
+        Suppose an engineer implements regularized linear regression to predict housing prices using a dataset of features (square footage, bedrooms, floors, neighborhood income, kitchen dimensions, etc.):
+        \[
+          J(\theta) = \frac{1}{2m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right)^2 + \frac{\lambda}{2m} \sum_{j=1}^n \theta_j^2
+        \]
+        When deployed on a new batch of houses, the model commits unacceptably large prediction errors. At this critical juncture, teams commonly face six conflicting engineering proposals:
+      </p>
+      <ul>
+        <li><em>Proposal 1:</em> Spend three months collecting 50,000 more training examples.</li>
+        <li><em>Proposal 2:</em> Aggressively prune the feature set to eliminate noise.</li>
+        <li><em>Proposal 3:</em> Design and extract additional domain-specific features.</li>
+        <li><em>Proposal 4:</em> Add higher-order polynomial and interaction terms (\(x_1^2, x_2^2, x_1 x_2, \dots\)).</li>
+        <li><em>Proposal 5:</em> Decrease the regularization hyperparameter \(\lambda\).</li>
+        <li><em>Proposal 6:</em> Increase the regularization hyperparameter \(\lambda\).</li>
+      </ul>
+      <p>
+        Pursuing these options by gut feeling or trial-and-error is disastrous: collecting more data when a model suffers from high bias accomplishes virtually nothing, while adding features to a high-variance model amplifies overfitting. <strong>Machine Learning Diagnostics</strong> are targeted quantitative tests that isolate whether an algorithm suffers from <em>underfitting (high bias)</em>, <em>overfitting (high variance)</em>, or numerical instability.
+      </p>
+
+      <!-- Section 2 -->
+      <h2 id="sec-eval-protocol">2. Evaluating Hypotheses &amp; The Three-Way Train / Validation / Test Split</h2>
+      <p>
+        In polynomial fitting, a high-degree hypothesis \(h_\theta(x) = \theta_0 + \theta_1 x + \dots + \theta_4 x^4\) can weave through every training point, achieving near-zero training error \(J_{\text{train}}(\theta) \approx 0\). However, its generalization error on unseen points explodes.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 2.1 (The Two-Way Split &amp; The Model Selection Trap)</span>
+        Suppose we partition a dataset into \(70\%\) Training and \(30\%\) Test. To choose the best polynomial degree \(d \in \{1, 2, \dots, 10\}\):
+        <ol>
+          <li>Fit parameters \(\theta^{(d)} = \arg\min_\theta J_{\text{train}}(\theta)\) for each candidate degree \(d\).</li>
+          <li>Evaluate each model on the test set: \(J_{\text{test}}(\theta^{(d)})\).</li>
+          <li>Select the degree minimizing test error: \(d_{\text{opt}} = \arg\min_d J_{\text{test}}(\theta^{(d)})\) (e.g., \(d_{\text{opt}} = 5\)).</li>
+        </ol>
+        <p>
+          <strong>The Fatal Flaw (Data Leakage):</strong> The reported test performance \(J_{\text{test}}(\theta^{(5)})\) is now an <strong>optimistically biased</strong> estimate of true generalization error! Because hyperparameter \(d\) was explicitly chosen to minimize test error, the test set has leaked into the model selection process (violating the cardinal rule of independent model evaluation).
+        </p>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 2.1 (The Three-Way Partitioning Protocol)</span>
+        To obtain a strictly unbiased estimate of real-world generalization, the dataset \(\mathcal{D}\) must be partitioned into three disjoint subsets:
+        <ul>
+          <li><strong>Training Set (\(\approx 60\%\), size \(m\)):</strong> Used exclusively to optimize parameter weights \(\theta\).</li>
+          <li><strong>Cross-Validation / Validation Set (\(\approx 20\%\), size \(m_{\text{cv}}\)):</strong> Used to select hyperparameters (degree \(d\), regularization \(\lambda\), neural depth/width).</li>
+          <li><strong>Test Set (\(\approx 20\%\), size \(m_{\text{test}}\)):</strong> Held strictly in reserve for the final, one-shot reporting of generalization error.</li>
+        </ul>
+      </div>
+
+      <div class="def-box">
+        <span class="box-label">Definition 2.2 (Standard Evaluation Metrics: Omission of Penalty)</span>
+        Crucially, when computing training, validation, and test errors for diagnostic purposes, <strong>the regularization penalty is omitted</strong>:
+        \[
+          J_{\text{train}}(\theta) = \frac{1}{2m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right)^2
+        \]
+        \[
+          J_{\text{cv}}(\theta) = \frac{1}{2m_{\text{cv}}} \sum_{i=1}^{m_{\text{cv}}} \left(h_\theta(x_{\text{cv}}^{(i)}) - y_{\text{cv}}^{(i)}\right)^2
+        \]
+        \[
+          J_{\text{test}}(\theta) = \frac{1}{2m_{\text{test}}} \sum_{i=1}^{m_{\text{test}}} \left(h_\theta(x_{\text{test}}^{(i)}) - y_{\text{test}}^{(i)}\right)^2
+        \]
+        For binary logistic regression, the test classification error can be measured via binary cross-entropy or \(0/1\) misclassification error:
+        \[
+          \text{error}(h_\theta(x), y) = \begin{cases} 1 & \text{if } (h_\theta(x) \ge 0.5 \land y = 0) \lor (h_\theta(x) < 0.5 \land y = 1) \\ 0 & \text{otherwise} \end{cases}
+        \]
+        \[
+          \text{Test Error Rate} = \frac{1}{m_{\text{test}}} \sum_{i=1}^{m_{\text{test}}} \text{error}\left(h_\theta(x_{\text{test}}^{(i)}), y_{\text{test}}^{(i)}\right)
+        \]
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-k-fold-cv">3. Resampling Protocols: \(K\)-Fold &amp; Leave-One-Out Cross-Validation</h2>
+      <p>
+        When total sample size is small (e.g., \(m \le 1000\)), sequestering \(20\%\) into a static validation set deprives the learning algorithm of vital training points. <strong>\(K\)-Fold Cross-Validation</strong> mitigates this variance.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 3.1 (\(K\)-Fold Cross-Validation &amp; Leave-One-Out)</span>
+        The training-validation pool is randomly partitioned into \(K\) equal, non-overlapping folds \(F_1, F_2, \dots, F_K\) (commonly \(K=5\) or \(K=10\)):
+        <ol>
+          <li>For each fold \(k \in \{1, \dots, K\}\):
+            <ul>
+              <li>Treat fold \(F_k\) as the validation set.</li>
+              <li>Train parameters \(\theta^{(k)}\) on the remaining \(K-1\) folds combined.</li>
+              <li>Evaluate the validation error on fold \(F_k\): \(J_{\text{cv}}^{(k)}(\theta^{(k)})\).</li>
+            </ul>
+          </li>
+          <li>Compute the overall cross-validation error by averaging across all \(K\) folds:
+            \[
+              J_{\text{cv}} = \frac{1}{K} \sum_{k=1}^K J_{\text{cv}}^{(k)}(\theta^{(k)})
+            \]
+            <em>(The cross-validation estimate aggregates validation loss across all \(K\) folds).</em>
+          </li>
+        </ol>
+        <p>
+          <strong>Leave-One-Out (LOOCV):</strong> The extreme setting where \(K = m\). In each iteration, exactly one sample is held out for validation (evaluating on a single holdout sample per cycle) while the model is trained on the remaining \(m-1\) samples. While LOOCV yields nearly unbiased error estimates, it requires \(m\) complete training cycles, making it computationally prohibitive for deep models.
+        </p>
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-bias-variance-poly">4. Diagnosing Bias vs. Variance: Polynomial Degree Curves &amp; Double Descent</h2>
+      <p>
+        The relationship between model complexity (e.g., polynomial degree \(d\)) and empirical error provides our primary diagnostic lens:
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 4.1 (Bias-Variance Characteristic Behaviors)</span>
+        <ul>
+          <li><strong>High Bias (Underfitting, \(d=1\)):</strong> The hypothesis space is overly rigid to capture the true underlying data manifold.
+            \[
+              J_{\text{train}}(\theta) \text{ is high}, \quad J_{\text{cv}}(\theta) \approx J_{\text{train}}(\theta) \text{ is high}
+            \]
+            There is no substantial gap between train and validation errors; the model fails to fit even the training set.
+          </li>
+          <li><strong>High Variance (Overfitting, \(d \ge 4\)):</strong> The hypothesis space possesses excessive degrees of freedom, fitting idiosyncratic noise in the training sample.
+            \[
+              J_{\text{train}}(\theta) \text{ is very low}, \quad J_{\text{cv}}(\theta) \gg J_{\text{train}}(\theta)
+            \]
+            There exists a <strong>large generalization gap</strong>: \(\Delta = J_{\text{cv}}(\theta) - J_{\text{train}}(\theta) \gg 0\).
+          </li>
+        </ul>
+      </div>
+
+      <div class="note-callout">
+        <span class="callout-title">The Modern "Double Descent" Phenomenon (*)</span>
+        As circled in the instructor's handwritten notes on Slide 13 (<em>«double descent phenomena *»</em>), classical learning theory posits that beyond the interpolation threshold (where the number of parameters \(p\) matches the number of samples \(m\)), test error diverges toward infinity.
+        <br><br>
+        However, modern deep learning reveals that in heavily over-parameterized regimes (\(p \gg m\)), a <strong>second descent</strong> occurs! Implicit regularization in stochastic gradient descent (minimum-norm interpolating solutions) causes test error to decrease again, achieving superior generalization despite zero training loss.
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-regularization-tuning">5. Regularization Diagnostics: Tuning \(\lambda\) &amp; Structural Stability</h2>
+      <p>
+        Regularization acts as a soft constraint that stabilizes ill-conditioned parameter estimation (promoting numerical stability). The regularization parameter \(\lambda\) controls the trade-off between fitting training targets and keeping weights small.
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 5.1 (Behavior of Errors as a Function of \(\lambda\))</span>
+        Consider minimizing \(J_{\text{reg}}(\theta) = J_{\text{train}}(\theta) + \frac{\lambda}{2m} \sum_{j=1}^n \theta_j^2\):
+        <ul>
+          <li><strong>Extremely Large \(\lambda\) (e.g., \(\lambda = 10000\)):</strong>
+            The penalty dominates the loss. All feature weights are crushed to zero (\(\theta_1 \approx 0, \dots, \theta_n \approx 0\)), leaving only the unpenalized bias:
+            \[
+              h_\theta(x) \approx \theta_0 \implies \text{Horizontal flat line}
+            \]
+            The algorithm suffers from extreme <strong>High Bias (underfitting)</strong>: both \(J_{\text{train}}\) and \(J_{\text{cv}}\) are unacceptably high.
+          </li>
+          <li><strong>Extremely Small \(\lambda\) (e.g., \(\lambda \approx 0\)):</strong>
+            The penalty vanishes. Parameters fluctuate wildly to fit individual training outliers. The algorithm suffers from extreme <strong>High Variance (overfitting)</strong>: \(J_{\text{train}} \approx 0\) but \(J_{\text{cv}}\) is very high.
+          </li>
+          <li><strong>Intermediate \(\lambda^*\):</strong>
+            Validation error \(J_{\text{cv}}(\lambda)\) achieves its global minimum, balancing bias and variance.
+          </li>
+        </ul>
+      </div>
+
+      <div class="def-box">
+        <span class="box-label">Algorithm 5.1 (Multiplicative Grid Search for \(\lambda\))</span>
+        To determine optimal \(\lambda\), evaluate over an exponential grid of values:
+        \[
+          \lambda \in \{0, \, 0.01, \, 0.02, \, 0.04, \, 0.08, \, 0.16, \, 0.32, \, 0.64, \, 1.28, \, 2.56, \, 5.12, \, 10\}
+        \]
+        <ol>
+          <li>For each candidate \(\lambda^{(k)}\), find \(\theta^{(\lambda^{(k)})} = \arg\min_\theta J_{\text{reg}}(\theta; \lambda^{(k)})\).</li>
+          <li>Evaluate \(J_{\text{cv}}(\theta^{(\lambda^{(k)})})\) <em>without</em> the regularization penalty.</li>
+          <li>Select \(\lambda_{\text{opt}} = \arg\min_\lambda J_{\text{cv}}(\theta^{(\lambda)})\) (e.g., \(\lambda_{\text{opt}} = 0.08\)).</li>
+          <li>Compute final unbiased generalization error on the untouched test set: \(J_{\text{test}}(\theta^{(\lambda_{\text{opt}})})\).</li>
+        </ol>
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-learning-curves">6. Learning Curves: Diagnosing Sample Efficiency (\(m \to \infty\))</h2>
+      <p>
+        A <strong>learning curve</strong> plots \(J_{\text{train}}\) and \(J_{\text{cv}}\) as a function of training sample size \(m\) for a fixed model architecture.
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Example 6.1 (The Genesis of Learning Curves)</span>
+        Suppose we fit a quadratic model \(h_\theta(x) = \theta_0 + \theta_1 x + \theta_2 x^2\):
+        <ul>
+          <li>For \(m = 1, 2, 3\): It is trivial to pass a parabola perfectly through 1, 2, or 3 points. Thus \(J_{\text{train}}(\theta) \approx 0\). However, three points provide minimal representation of the true distribution, causing massive validation error: \(J_{\text{cv}}(\theta) \gg 0\).</li>
+          <li>As \(m\) increases (\(m = 10, 50, 100, \dots\)): It becomes mathematically impossible for a rigid quadratic curve to fit every noisy training point exactly. Hence, \(J_{\text{train}}(\theta)\) rises monotonically. Conversely, having more data provides better parameter estimates, causing \(J_{\text{cv}}(\theta)\) to decline monotonically.</li>
+        </ul>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">The Fundamental Asymptotic Diagnostic Rules</span>
+        <ol>
+          <li>
+            <strong>Learning Curves Under High Bias (Underfitting):</strong>
+            <p>
+              Both \(J_{\text{train}}\) and \(J_{\text{cv}}\) flatten rapidly, converging to a plateau at an unacceptably high error value. The gap between them is virtually zero.
+            </p>
+            <p style="color: #c62828; font-weight: 700;">
+              Diagnostic Law: If a learning algorithm suffers from high bias, gathering more training data will NOT (by itself) help much!
+            </p>
+            The model family is simply incapable of expressing the underlying concept; adding 100,000 points to a straight line fitting a sine wave only produces an equally erroneous straight line.
+          </li>
+          <li>
+            <strong>Learning Curves Under High Variance (Overfitting):</strong>
+            <p>
+              \(J_{\text{train}}\) remains relatively low, while \(J_{\text{cv}}\) remains high, leaving a prominent <strong>gap</strong> between the curves. Crucially, as \(m \to \infty\), \(J_{\text{cv}}\) continues sloping downward toward \(J_{\text{train}}\).
+            </p>
+            <p style="color: #2e7d32; font-weight: 700;">
+              Diagnostic Law: If a learning algorithm suffers from high variance, gathering more training data WILL help significantly (\(m \uparrow \implies J_{\text{cv}} \downarrow\))!
+            </p>
+            More samples constrain the degrees of freedom, preventing the model from fitting spurious noise.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 7 -->
+      <h2 id="sec-decision-matrix">7. The Systematic ML Action Matrix &amp; Neural Architecture Sizing</h2>
+      <p>
+        Armed with our bias-variance diagnosis, we can now resolve the six opening dilemmas with rigorous engineering precision:
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">The Master ML Debugging Action Matrix</span>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-size: 0.95rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); background: var(--bg-card); text-align: left;">
+              <th style="padding: 8px;">Engineering Action</th>
+              <th style="padding: 8px;">Target Pathology</th>
+              <th style="padding: 8px;">Theoretical Justification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 8px;"><strong>Get more training examples</strong></td>
+              <td style="padding: 8px; color: #d32f2f; font-weight: 700;">Fixes High Variance</td>
+              <td style="padding: 8px;">Constrains over-parameterized models; drives empirical risk toward true expectation by the Weak Law of Large Numbers.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 8px;"><strong>Try smaller sets of features</strong></td>
+              <td style="padding: 8px; color: #d32f2f; font-weight: 700;">Fixes High Variance</td>
+              <td style="padding: 8px;">Lowers the VC-dimension and parameter dimensionality \(p\), mitigating the curse of dimensionality.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 8px;"><strong>Try getting additional features</strong></td>
+              <td style="padding: 8px; color: var(--ut-blue); font-weight: 700;">Fixes High Bias</td>
+              <td style="padding: 8px;">Enriches the hypothesis space, giving the model expressive capacity to capture omitted variable dynamics.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 8px;"><strong>Add polynomial features (\(x_1^2, x_1 x_2\))</strong></td>
+              <td style="padding: 8px; color: var(--ut-blue); font-weight: 700;">Fixes High Bias</td>
+              <td style="padding: 8px;">Creates non-linear decision surfaces without modifying the underlying linear optimization solver.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 8px;"><strong>Try decreasing \(\lambda\)</strong></td>
+              <td style="padding: 8px; color: var(--ut-blue); font-weight: 700;">Fixes High Bias</td>
+              <td style="padding: 8px;">Relaxes parameter shrinkage, allowing weights to expand to fit complex contours.</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px;"><strong>Try increasing \(\lambda\)</strong></td>
+              <td style="padding: 8px; color: #d32f2f; font-weight: 700;">Fixes High Variance</td>
+              <td style="padding: 8px;">Penalizes large weight norms, smoothing the hypothesis and driving superfluous coefficients toward zero.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="font-size: 1.15rem; margin-top: 1.5rem; color: var(--navy-primary);">Neural Network Architecture Sizing</h3>
+      <p>
+        In deep learning, architecture choice embodies a direct bias-variance tradeoff:
+      </p>
+      <ul>
+        <li><strong>"Small" Neural Networks (fewer layers / units):</strong> Computationally inexpensive, but prone to <em>underfitting (high bias)</em> if the task demands complex hierarchical representations.</li>
+        <li><strong>"Large" Neural Networks (deep architectures / wide hidden layers):</strong> Computationally expensive, but capable of approximating virtually any continuous mapping. Prone to <em>overfitting (high variance)</em>.</li>
+      </ul>
+      <p>
+        <em>Modern Best Practice:</em> Default to a large neural network, and tame high variance using regularization (\(L_2\) weight decay \(\lambda\), Dropout, data augmentation, early stopping).
+      </p>
+      <div class="note-callout">
+        <span class="callout-title">Systematic Architectural Tuning</span>
+        <em>The validation set serves as the rigorous objective benchmark to select the number of hidden layers, neuron widths, and layer connectivity.</em><br>
+        Hyperparameters such as the number of hidden layers, units per layer, and activation functions should be tuned systematically on the validation set, never the test set.
+      </div>
+
+      <!-- Section 8 -->
+      <h2 id="sec-skewed-classes">8. Imbalanced &amp; Skewed Classes: The Accuracy Paradox</h2>
+      <p>
+        When evaluating classification systems on highly imbalanced (skewed) datasets, raw classification accuracy collapses completely as an informative metric.
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Example 8.1 (The Medical Cancer Diagnosis Paradox)</span>
+        Consider binary classification for oncology screening:
+        \[
+          y \in \{0, 1\} \quad (0: \text{healthy}, \; 1: \text{cancerous})
+        \]
+        Suppose only \(0.5\%\) of patients entering the clinic actually have cancer (prevalence \(\pi = 0.005\)).
+        <br><br>
+        A sophisticated machine learning model achieves \(99\%\) classification accuracy (\(1\%\) error rate). Is this an impressive result?
+        <br><br>
+        <strong>The Trivial Predictor:</strong> Consider a brainless 2-line Python script that completely ignores input features \(x\):
+        <pre style="background: var(--bg-card); padding: 10px; border-radius: 6px; font-size: 0.9rem;"><code>def predict_cancer(x):
+    return 0  # Predict "healthy" for every single patient</code></pre>
+        Evaluating this trivial dummy predictor on the dataset:
+        \[
+          \text{Overall Accuracy} = \frac{\text{Correct Predictions}}{\text{Total Patients}} = \frac{99.5\%}{100\%} = 99.5\%!
+        \]
+        The dummy rule achieves \(99.5\%\) accuracy, outperforming the machine learning model! Yet it fails to detect <strong>a single cancerous tumor</strong>, resulting in fatal clinical outcomes.
+      </div>
+
+      <div class="def-box">
+        <span class="box-label">Definition 8.1 (Overall Accuracy vs. Balanced / Average Accuracy)</span>
+        For binary classes \(y \in \{0, 1\}\):
+        <ul>
+          <li><strong>Overall Accuracy:</strong>
+            \[
+              \text{Accuracy} = \frac{\text{True Positive (TP)} + \text{True Negative (TN)}}{m}
+            \]
+          </li>
+          <li><strong>Average / Balanced Accuracy:</strong>
+            Let \(C_1\) denote accuracy on class 1, and \(C_2\) accuracy on class 2:
+            \[
+              C_1 = \frac{\text{True for Class 1}}{\text{Total in Class 1}}, \quad C_2 = \frac{\text{True for Class 2}}{\text{Total in Class 2}}
+            \]
+            \[
+              \text{Balanced Accuracy} = \frac{C_1 + C_2}{2}
+            \]
+          </li>
+        </ul>
+        For the trivial dummy predictor above: \(C_2 = 100\%\) (all healthy identified) but \(C_1 = 0\%\) (zero cancers found). Its balanced accuracy is \(\frac{100\% + 0\%}{2} = 50\%\)—instantly exposing the predictor as no better than a coin flip!
+      </div>
+
+      <!-- Section 9 -->
+      <h2 id="sec-precision-recall-f1">9. Precision, Recall &amp; Why Harmonic Mean Governs \(F_1\)-Score</h2>
+      <p>
+        To rigorously evaluate skewed classifications, we construct the <strong>Confusion Matrix</strong>. By convention, <strong>\(y=1\) is assigned to the rare, minority class of primary interest</strong> (the minority class).
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 9.1 (The Confusion Matrix &amp; Constituent Rates)</span>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 0.5rem; text-align: center; font-size: 0.95rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); background: var(--bg-card);">
+              <th style="padding: 6px;"></th>
+              <th style="padding: 6px;">Actual Positive (\(y=1\))</th>
+              <th style="padding: 6px;">Actual Negative (\(y=0\))</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 6px; font-weight: 700;">Predicted Positive (\(\hat{y}=1\))</td>
+              <td style="padding: 6px; color: #2e7d32; font-weight: 700;">True Positive (TP)</td>
+              <td style="padding: 6px; color: #d32f2f; font-weight: 700;">False Positive (FP) [Type I Error]</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px; font-weight: 700;">Predicted Negative (\(\hat{y}=0\))</td>
+              <td style="padding: 6px; color: #d32f2f; font-weight: 700;">False Negative (FN) [Type II Error]</td>
+              <td style="padding: 6px; color: #2e7d32; font-weight: 700;">True Negative (TN)</td>
+            </tr>
+          </tbody>
+        </table>
+        <ul>
+          <li><strong>Precision:</strong> Of all instances we predicted as positive, what fraction truly are positive?
+            \[
+              \text{Precision} = \frac{\text{TP}}{\text{TP} + \text{FP}}
+            \]
+            <em>Intuition:</em> "Of all patients predicted to have the condition, what percentage truly have it?"
+          </li>
+          <li><strong>Recall / Sensitivity:</strong> Of all actual positive cases in reality, what fraction did our model successfully detect?
+            \[
+              \text{Recall} = \frac{\text{TP}}{\text{TP} + \text{FN}}
+            \]
+            <em>Intuition:</em> "What fraction of all actual diseased patients were successfully caught by the classifier?"
+          </li>
+          <li><strong>Specificity:</strong> Of all actual negative cases, what fraction were correctly labeled negative?
+            \[
+              \text{Specificity} = \frac{\text{TN}}{\text{TN} + \text{FP}}
+            \]
+          </li>
+          <li><strong>False Positive Rate (FPR):</strong>
+            \[
+              \text{FPR} = 1 - \text{Specificity} = \frac{\text{FP}}{\text{TN} + \text{FP}}
+            \]
+            <em>Intuition:</em> "What fraction of actual healthy patients were erroneously classified as positive?"
+          </li>
+        </ul>
+      </div>
+
+      <h3 style="font-size: 1.15rem; margin-top: 1.5rem; color: var(--navy-primary);">Why Not Arithmetic Mean? The Harmonic Necessity of \(F_1\)</h3>
+      <p>
+        When evaluating multiple candidate models, we seek a single scalar metric summarizing both Precision (\(P\)) and Recall (\(R\)). Why can we not simply compute their arithmetic average \(\frac{P + R}{2}\)?
+      </p>
+
+      <div class="proof-box">
+        <span class="box-label">Worked Comparison: Arithmetic Mean vs. Harmonic Mean (\(F_1\))</span>
+        Consider three algorithms evaluated on a cancer screening task (reproducing Slide 28):
+        <table style="width: 100%; border-collapse: collapse; margin-top: 0.75rem; text-align: center; font-size: 0.95rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); background: var(--bg-card);">
+              <th style="padding: 6px;">Algorithm</th>
+              <th style="padding: 6px;">Precision (\(P\))</th>
+              <th style="padding: 6px;">Recall (\(R\))</th>
+              <th style="padding: 6px;">Arithmetic Mean \(\frac{P+R}{2}\)</th>
+              <th style="padding: 6px;">Harmonic Mean \(F_1 = \frac{2PR}{P+R}\)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 6px;"><strong>Algorithm 1</strong></td>
+              <td style="padding: 6px;">0.50</td>
+              <td style="padding: 6px;">0.40</td>
+              <td style="padding: 6px;">0.450</td>
+              <td style="padding: 6px; font-weight: 700; color: #2e7d32;">0.444 (Winner!)</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 6px;"><strong>Algorithm 2</strong></td>
+              <td style="padding: 6px;">0.70</td>
+              <td style="padding: 6px;">0.10</td>
+              <td style="padding: 6px;">0.400</td>
+              <td style="padding: 6px;">0.175</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px;"><strong>Algorithm 3</strong></td>
+              <td style="padding: 6px;">0.02</td>
+              <td style="padding: 6px;">1.00</td>
+              <td style="padding: 6px; font-weight: 700; color: #d32f2f;">0.510 (Misleading!)</td>
+              <td style="padding: 6px;">0.039 (Severe Penalty)</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          <strong>Analysis:</strong> Algorithm 3 trivially predicts positive for every single patient: its Recall is \(100\%\), but its Precision is an atrocious \(2\%\). The arithmetic mean yields \(\frac{0.02 + 1.0}{2} = 0.510\), deceptively ranking Algorithm 3 as the <em>best overall classifier</em>! (failing to penalize extreme imbalances between Precision and Recall).
+        </p>
+        <p>
+          The <strong>Harmonic Mean (\(F_1\)-Score)</strong>:
+          \[
+            F_1 = \frac{2}{\frac{1}{P} + \frac{1}{R}} = 2 \cdot \frac{P \cdot R}{P + R}, \quad 0 \le F_1 \le 1
+          \]
+          Because the harmonic mean is dominated by the minimum of the two terms, if either Precision or Recall collapses to zero, \(F_1\) is crushed to zero. Algorithm 1 is correctly selected as the superior, balanced model.
+        </p>
+      </div>
+
+      <!-- Section 10 -->
+      <h2 id="sec-roc-auc">10. Decision Threshold Tuning, ROC Curves &amp; Multi-Class One-vs-All</h2>
+      <p>
+        In probabilistic classification (such as Logistic Regression), the model outputs posterior probabilities \(h_\theta(x) = P(y=1 \mid x) \in [0, 1]\). Standard practice classifies \(\hat{y} = 1\) if \(h_\theta(x) \ge 0.5\). However, in asymmetric real-world domains, this threshold \(\tau\) can be strategically modulated:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Threshold Modulation Strategies</span>
+        <ul>
+          <li><strong>Conservative Precision Regime (\(\tau = 0.7\)):</strong>
+            We predict \(y=1\) only when confidence exceeds \(70\%\).<br>
+            <em>Clinical Rationale:</em> If medical treatment carries dangerous side effects, declare cancer only under high certainty.<br>
+            <em>Consequence:</em> False Positives drop \(\implies\) <strong>Precision increases, Recall decreases</strong>.
+          </li>
+          <li><strong>Aggressive Recall Regime (\(\tau = 0.3\)):</strong>
+            We predict \(y=1\) as long as confidence exceeds \(30\%\).<br>
+            <em>Clinical Rationale:</em> If missing an early-stage cancer is fatal (avoid False Negatives at all costs!).<br>
+            <em>Consequence:</em> False Negatives drop \(\implies\) <strong>Recall increases, Precision decreases</strong>.
+          </li>
+        </ul>
+      </div>
+
+      <h3 style="font-size: 1.15rem; margin-top: 1.5rem; color: var(--navy-primary);">The Receiver Operating Characteristic (ROC) Curve</h3>
+      <p>
+        Varying the decision threshold \(\tau\) continuously from \(1 \to 0\) traces a continuous parametric curve:
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 10.1 (The ROC Curve &amp; AUC Metric)</span>
+        The <strong>ROC Curve</strong> plots the True Positive Rate (\(\text{TPR} = \text{Recall}\)) against the False Positive Rate (\(\text{FPR} = 1 - \text{Specificity}\)) across all possible classification thresholds \(\tau \in [0, 1]\):
+        \[
+          \text{Y-axis: } \text{TPR} = \frac{\text{TP}}{\text{TP} + \text{FN}} \quad \text{vs.} \quad \text{X-axis: } \text{FPR} = \frac{\text{FP}}{\text{TN} + \text{FP}}
+        \]
+        <ul>
+          <li><strong>Point \((0, 0)\):</strong> Corresponds to threshold \(\tau = 1\) (predict all negative: \(\text{TPR} = 0, \text{FPR} = 0\)).</li>
+          <li><strong>Point \((1, 1)\):</strong> Corresponds to threshold \(\tau = 0\) (predict all positive: \(\text{TPR} = 1, \text{FPR} = 1\)).</li>
+          <li><strong>Point \((0, 1)\):</strong> The <strong>Ideal Classifier</strong> (the ideal operating point): \(100\%\) True Positive Rate and \(0\%\) False Positive Rate.</li>
+          <li><strong>The Diagonal Line (\(y = x\)):</strong> The performance of random guessing (no discriminative ability).</li>
+          <li><strong>Area Under the Curve (AUC):</strong> Measures overall ranking quality across all thresholds:
+            \[
+              0.5 \le \text{AUC} \le 1.0
+            \]
+            \(\text{AUC} = 1.0\) indicates perfect separability; \(\text{AUC} = 0.5\) indicates a completely worthless classifier.
+          </li>
+        </ul>
+      </div>
+
+      <div class="note-callout">
+        <span class="callout-title">Model Comparison: Logistic Regression vs. \(k\)-NN</span>
+        As noted on Slide 31: when evaluating algorithms on a benchmark dataset, plotting their ROC curves allows model comparison independent of threshold choice. A model whose ROC curve dominates another everywhere (higher AUC, such as Logistic Regression over \(k\)-NN) is unconditionally superior across all operational precision-recall requirements.
+      </div>
+
+      <h3 style="font-size: 1.15rem; margin-top: 1.5rem; color: var(--navy-primary);">Multi-Class Extension via One-vs-All</h3>
+      <p>
+        For classification problems with \(K > 2\) classes (e.g., classes \(\{0, 1, 2\}\)):
+      </p>
+      <ul>
+        <li><strong>Confusion Matrix:</strong> Expands to a \(K \times K\) matrix where entry \((i, j)\) denotes the count of samples with true class \(i\) predicted as class \(j\).</li>
+        <li><strong>One-vs-All ROC Curves:</strong> For each class \(c \in \{0, \dots, K-1\}\), binarize the problem by treating class \(c\) as the positive class and all remaining \(K-1\) classes combined as the negative class. Plot separate ROC curves for:
+          \[
+            \text{Class 0 vs. All}, \quad \text{Class 1 vs. All}, \quad \text{Class 2 vs. All}
+          \]
+          This reveals class-specific diagnostic performance (e.g., distinguishing whether a multi-class model is performing excellently on Class 2 while struggling with Class 1).
+        </li>
+      </ul>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-21.html">&larr; Lecture 21: Neural Networks &amp; Backpropagation</a>
+      <a href="./lecture-23.html">Lecture 23: Kernel Methods &amp; The Kernel Trick &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 12: Two-Sample Confidence Intervals: Difference of Means, Proportions &amp; Variances | Basics of Data Science</title>
+  <meta name="description" content="Rigorous MIT OCW style lecture notes on two-sample confidence intervals: difference of means with known and unknown variances, pooled t-procedure, Welch-Satterthwaite approximation, confidence intervals for proportions, sample size planning, difference of proportions, and chi-square intervals for variance.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+        <a href="../lecture%20slides/lecture%2312.1%20-%20difference%20of%20means%20known%20variances.pdf" target="_blank" rel="noopener" class="note-slide-link" title="Part 1: Diff of Means (Known Var)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+          <span>Slide 12.1</span>
+        </a>
+        <a href="../lecture%20slides/lecture%2312.2%20-%20difference%20of%20means%20unknown%20variances.pdf" target="_blank" rel="noopener" class="note-slide-link" title="Part 2: Diff of Means (Unknown Var)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+          <span>Slide 12.2</span>
+        </a>
+        <a href="../lecture%20slides/lecture%2312.3%20-%20confidence%20intervals%20for%20proportions.pdf" target="_blank" rel="noopener" class="note-slide-link" title="Part 3: Intervals for Proportions">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+          <span>Slide 12.3</span>
+        </a>
+        <a href="../lecture%20slides/lecture%2312.4%20-%20difference%20of%20proportions.pdf" target="_blank" rel="noopener" class="note-slide-link" title="Part 4: Diff of Proportions &amp; Variances">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+          <span>Slide 12.4</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 12: Two-Sample Confidence Intervals: Difference of Means, Proportions &amp; Variances</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Fall 2026</div>
+        <div class="note-meta-item"><strong>Readings:</strong> FDS Ch. 4; SFDS Ch. 3; Devore Ch. 9</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-intro-comparative">1. The Comparative Experimental Setup &amp; Point Estimation</a></li>
+        <li><a href="#sec-means-known-var">2. Difference of Means with Known Variances (\(\sigma_1^2, \sigma_2^2\))</a></li>
+        <li><a href="#sec-data-snooping">3. Methodological Warning: The Hazard of "Data Snooping"</a></li>
+        <li><a href="#sec-pooled-t">4. Difference of Means with Unknown Equal Variances: Pooled \(t\)-Interval</a></li>
+        <li><a href="#sec-welch-t">5. Difference of Means with Unknown Unequal Variances: Welch-Satterthwaite Procedure</a></li>
+        <li><a href="#sec-r-demo">6. Computational Implementation in R</a></li>
+        <li><a href="#sec-single-prop">7. Confidence Intervals for a Single Population Proportion</a></li>
+        <li><a href="#sec-prop-sample-size">8. Sample Size Determination for Proportions</a></li>
+        <li><a href="#sec-diff-prop">9. Difference of Two Independent Proportions &amp; A/B Testing</a></li>
+        <li><a href="#sec-ci-variance">10. Confidence Intervals for Population Variance and Standard Deviation (\(\chi^2\))</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-intro-comparative">1. The Comparative Experimental Setup &amp; Point Estimation</h2>
+      <p>
+        In empirical engineering, business intelligence, and modern data science, experimental design almost always revolves around <em>comparison</em> rather than isolated estimation:
+      </p>
+      <ul>
+        <li>Comparing the mean test scores of students across two distinct school districts.</li>
+        <li>Comparing the conversion rates of two UI layouts in an online A/B testing experiment.</li>
+        <li>Comparing the latency or throughput of two server routing architectures under identical simulated workloads.</li>
+      </ul>
+      <p>
+        Let \(X_1, X_2, \dots, X_{n_1}\) be a random sample of size \(n_1\) drawn from Population 1 with mean \(\mu_1\) and variance \(\sigma_1^2\).<br>
+        Let \(Y_1, Y_2, \dots, Y_{n_2}\) be an <em>independent</em> random sample of size \(n_2\) drawn from Population 2 with mean \(\mu_2\) and variance \(\sigma_2^2\).
+      </p>
+      <p>
+        The target parameter is the difference in population means \(\theta = \mu_1 - \mu_2\). Its natural point estimator is the difference between the two sample means:
+        \[
+          \hat{\theta} = \bar{X} - \bar{Y} = \frac{1}{n_1} \sum_{i=1}^{n_1} X_i - \frac{1}{n_2} \sum_{j=1}^{n_2} Y_j
+        \]
+      </p>
+      <div class="thm-box">
+        <span class="box-label">Proposition 1.1 (Expectation and Variance of the Estimator)</span>
+        By linearity of expectation:
+        \[
+          E[\bar{X} - \bar{Y}] = E[\bar{X}] - E[\bar{Y}] = \mu_1 - \mu_2
+        \]
+        Hence, \(\bar{X} - \bar{Y}\) is an <strong>unbiased estimator</strong> of \(\mu_1 - \mu_2\).<br>
+        Furthermore, since samples 1 and 2 are mutually independent, the covariance between \(\bar{X}\) and \(\bar{Y}\) is zero:
+        \[
+          \text{Var}(\bar{X} - \bar{Y}) = \text{Var}(\bar{X}) + \text{Var}(\bar{Y}) = \frac{\sigma_1^2}{n_1} + \frac{\sigma_2^2}{n_2}
+        \]
+        The standard error of the estimator is therefore:
+        \[
+          \sigma_{\bar{X} - \bar{Y}} = \sqrt{\frac{\sigma_1^2}{n_1} + \frac{\sigma_2^2}{n_2}}
+        \]
+      </div>
+
+      <!-- Section 2 -->
+      <h2 id="sec-means-known-var">2. Difference of Means with Known Variances (\(\sigma_1^2, \sigma_2^2\))</h2>
+      <p>
+        If both populations are normally distributed, or if both sample sizes are sufficiently large (\(n_1 \ge 30\) and \(n_2 \ge 30\)) so that the Central Limit Theorem applies, the sampling distribution of \(\bar{X} - \bar{Y}\) is normal:
+        \[
+          \bar{X} - \bar{Y} \sim \mathcal{N}\left(\mu_1 - \mu_2, \; \frac{\sigma_1^2}{n_1} + \frac{\sigma_2^2}{n_2}\right)
+        \]
+        Standardizing yields the pivotal quantity:
+        \[
+          Z = \frac{(\bar{X} - \bar{Y}) - (\mu_1 - \mu_2)}{\sqrt{\frac{\sigma_1^2}{n_1} + \frac{\sigma_2^2}{n_2}}} \sim \mathcal{N}(0, 1)
+        \]
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 2.1 (Two-Sample Z-Confidence Interval)</span>
+        A \(100(1-\alpha)\%\) confidence interval for \(\mu_1 - \mu_2\) when \(\sigma_1^2\) and \(\sigma_2^2\) are known is given by:
+        \[
+          (\bar{x}_1 - \bar{x}_2) \pm z_{\alpha/2} \sqrt{\frac{\sigma_1^2}{n_1} + \frac{\sigma_2^2}{n_2}}
+        \]
+        Similarly, the one-sided \(100(1-\alpha)\%\) lower and upper bounds are:
+        \[
+          \mu_1 - \mu_2 \ge (\bar{x}_1 - \bar{x}_2) - z_\alpha \sqrt{\frac{\sigma_1^2}{n_1} + \frac{\sigma_2^2}{n_2}}
+        \]
+        \[
+          \mu_1 - \mu_2 \le (\bar{x}_1 - \bar{x}_2) + z_\alpha \sqrt{\frac{\sigma_1^2}{n_1} + \frac{\sigma_2^2}{n_2}}
+        \]
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Worked Example: County A vs. County B 5th-Grade Standardized Exam</span>
+        A standardized reading examination is administered to 5th-grade students in two adjacent counties:
+        <ul>
+          <li><strong>County A:</strong> Sample size \(n_1 = 57\), sample mean \(\bar{x}_1 = 77.2\), known historical variance \(\sigma_1^2 = 15.3\).</li>
+          <li><strong>County B:</strong> Sample size \(n_2 = 63\), sample mean \(\bar{x}_2 = 75.3\), known historical variance \(\sigma_2^2 = 19.7\).</li>
+        </ul>
+        We wish to construct a \(99\%\) confidence interval for the difference in mean performance \(\mu_1 - \mu_2\).<br><br>
+        <strong>Step 1: Point Estimate and Standard Error</strong>
+        \[
+          \bar{x}_1 - \bar{x}_2 = 77.2 - 75.3 = 1.90
+        \]
+        \[
+          \text{SE} = \sqrt{\frac{\sigma_1^2}{n_1} + \frac{\sigma_2^2}{n_2}} = \sqrt{\frac{15.3}{57} + \frac{19.7}{63}} = \sqrt{0.26842 + 0.31270} = \sqrt{0.58112} \approx 0.76231
+        \]
+        <strong>Step 2: Critical Value and Margin of Error</strong><br>
+        For a \(99\%\) confidence level, \(\alpha = 0.01\), so \(\alpha/2 = 0.005\). The standard normal critical value is \(z_{0.005} \approx 2.56\) (or \(2.576\); using the lecture slide convention \(z = 2.56\)):
+        \[
+          \text{ME} = 2.56 \times 0.76231 \approx 1.9515
+        \]
+        <strong>Step 3: Confidence Interval</strong>
+        \[
+          1.90 \pm 1.9515 \implies (-0.0515, \; 3.8515)
+        \]
+        <strong>Interpretation:</strong> Because the interval contains zero (\(-0.0515 < 0 < 3.8515\)), we cannot conclude at the \(99\%\) confidence level that there is a statistically significant difference between the two counties' true mean scores.
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-data-snooping">3. Methodological Warning: The Hazard of "Data Snooping"</h2>
+      <div class="note-callout">
+        <strong>The Danger of "Data Snooping" (Post-Hoc Hypothesis Formulation):</strong><br>
+        In the previous example, observing \(\bar{x}_1 = 77.2 > \bar{x}_2 = 75.3\), a naive investigator might be tempted to claim: <em>"County A performed better, so let us compute a one-sided 99% lower bound \(\mu_1 - \mu_2 > \bar{x}_1 - \bar{x}_2 - z_{0.01}\text{SE} = 1.90 - 2.33(0.7623) = 1.90 - 1.776 = +0.124 > 0\), proving County A is superior!"</em><br><br>
+        <strong>Why this is statistically invalid:</strong> If you look at the sample data first to decide which direction or which group is labeled "1" and which is "2", you have performed <em>data snooping</em>. You have selected a one-sided test solely because the observed difference favoured that direction by random chance. Doing so distorts the nominal significance level—the true Type I error rate doubles because you would have made the analogous one-sided claim in the other direction had the sample means been reversed! One-sided hypotheses must be fixed <em>a priori</em> prior to observing data.
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-pooled-t">4. Difference of Means with Unknown Equal Variances: Pooled \(t\)-Interval</h2>
+      <p>
+        When the population variances \(\sigma_1^2\) and \(\sigma_2^2\) are unknown, and the sample sizes are small (\(n_1, n_2 < 30\)), the Central Limit Theorem cannot be invoked. If we assume that both populations are normally distributed and share an equal underlying variance:
+        \[
+          \sigma_1^2 = \sigma_2^2 = \sigma^2 \quad \text{(Homoscedasticity)}
+        \]
+        we can combine the information from both samples to form an optimal, unbiased estimator of \(\sigma^2\).
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 4.1 (Pooled Sample Variance \(S_p^2\))</span>
+        The pooled sample variance is the weighted average of the two sample variances \(S_1^2\) and \(S_2^2\), weighted by their respective degrees of freedom:
+        \[
+          S_p^2 = \frac{(n_1 - 1)S_1^2 + (n_2 - 1)S_2^2}{(n_1 - 1) + (n_2 - 1)} = \frac{\sum_{i=1}^{n_1}(X_i - \bar{X})^2 + \sum_{j=1}^{n_2}(Y_j - \bar{Y})^2}{n_1 + n_2 - 2}
+        \]
+        The pooled sample standard deviation is \(S_p = \sqrt{S_p^2}\).
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 4.2 (Distribution of the Pooled \(T\)-Statistic)</span>
+        Because the two samples are independent, the sum of independent chi-square random variables has degrees of freedom:
+        \[
+          \frac{(n_1 + n_2 - 2)S_p^2}{\sigma^2} = \frac{(n_1 - 1)S_1^2}{\sigma^2} + \frac{(n_2 - 1)S_2^2}{\sigma^2} \sim \chi^2(n_1 + n_2 - 2)
+        \]
+        Dividing the standard normal numerator by the independent square root of the chi-square variable over its degrees of freedom gives:
+        \[
+          T = \frac{(\bar{X} - \bar{Y}) - (\mu_1 - \mu_2)}{S_p \sqrt{\frac{1}{n_1} + \frac{1}{n_2}}} \sim t(n_1 + n_2 - 2)
+        \]
+        The resulting \(100(1-\alpha)\%\) pooled confidence interval is:
+        \[
+          (\bar{x}_1 - \bar{x}_2) \pm t_{\alpha/2, \; n_1 + n_2 - 2} \cdot S_p \sqrt{\frac{1}{n_1} + \frac{1}{n_2}}
+        \]
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Worked Example: Small Sample Comparison with Equal Variances</span>
+        Suppose two independent experiments yield the following summary statistics:
+        <ul>
+          <li>Sample 1: \(n_1 = 9\), \(\bar{x}_1 = 23.2\), \(s_1^2 = 4.3\)</li>
+          <li>Sample 2: \(n_2 = 8\), \(\bar{x}_2 = 24.7\), \(s_2^2 = 5.2\)</li>
+        </ul>
+        Construct a \(90\%\) confidence interval for \(\mu_1 - \mu_2\), assuming normal populations with equal variances.<br><br>
+        <strong>Step 1: Point Estimate and Degrees of Freedom</strong>
+        \[
+          \bar{x}_1 - \bar{x}_2 = 23.2 - 24.7 = -1.5
+        \]
+        \[
+          \text{df} = n_1 + n_2 - 2 = 9 + 8 - 2 = 15
+        \]
+        <strong>Step 2: Pooled Variance</strong>
+        \[
+          S_p^2 = \frac{(9 - 1)(4.3) + (8 - 1)(5.2)}{15} = \frac{8(4.3) + 7(5.2)}{15} = \frac{34.4 + 36.4}{15} = \frac{70.8}{15} = 4.72
+        \]
+        \[
+          S_p = \sqrt{4.72} \approx 2.17255
+        \]
+        <strong>Step 3: Standard Error</strong>
+        \[
+          \text{SE} = S_p \sqrt{\frac{1}{9} + \frac{1}{8}} = \sqrt{4.72 \left(\frac{1}{9} + \frac{1}{8}\right)} = \sqrt{4.72 \times 0.23611} = \sqrt{1.11444} \approx 1.05567
+        \]
+        <strong>Step 4: Critical Value and Interval</strong><br>
+        For a \(90\%\) interval, \(\alpha = 0.10 \implies \alpha/2 = 0.05\). From the Student's \(t\)-table with \(\text{df} = 15\):
+        \[
+          t_{0.05, \; 15} = 1.753
+        \]
+        \[
+          \text{ME} = 1.753 \times 1.05567 \approx 1.8506
+        \]
+        \[
+          -1.5 \pm 1.8506 \implies (-3.351, \; 0.351)
+        \]
+        Since \(0 \in (-3.351, 0.351)\), there is no statistically significant difference between \(\mu_1\) and \(\mu_2\) at the \(10\%\) significance level.
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-welch-t">5. Difference of Means with Unknown Unequal Variances: Welch-Satterthwaite Procedure</h2>
+      <p>
+        When \(\sigma_1^2 \ne \sigma_2^2\), pooling is mathematically invalid and can cause severely distorted confidence levels (especially when sample sizes are unbalanced, \(n_1 \ne n_2\)). This fundamental challenge is known in statistics as the <strong>Behrens-Fisher problem</strong>.
+      </p>
+      <p>
+        Under unequal variances, the natural standardized test statistic is:
+        \[
+          T^* = \frac{(\bar{X} - \bar{Y}) - (\mu_1 - \mu_2)}{\sqrt{\frac{S_1^2}{n_1} + \frac{S_2^2}{n_2}}}
+        \]
+        This statistic does <em>not</em> follow an exact Student's \(t\)-distribution. However, B. L. Welch (1938) and F. E. Satterthwaite (1946) proved that its distribution is exceptionally well approximated by a \(t\)-distribution with effective degrees of freedom \(\nu\).
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 5.1 (Welch-Satterthwaite Degrees of Freedom)</span>
+        The effective degrees of freedom \(\nu\) is given by:
+        \[
+          \nu = \frac{\left( \frac{S_1^2}{n_1} + \frac{S_2^2}{n_2} \right)^2}{\frac{(S_1^2/n_1)^2}{n_1 - 1} + \frac{(S_2^2/n_2)^2}{n_2 - 1}}
+        \]
+        Because \(\nu\) is generally not an integer, in manual calculations we conservatively round down to the nearest integer: \(\lfloor \nu \rfloor\).<br>
+        The Welch \(100(1-\alpha)\%\) confidence interval is:
+        \[
+          (\bar{x}_1 - \bar{x}_2) \pm t_{\alpha/2, \; \lfloor \nu \rfloor} \sqrt{\frac{S_1^2}{n_1} + \frac{S_2^2}{n_2}}
+        \]
+      </div>
+
+      <div class="proof-box">
+        <span class="box-label">Class Assignment 1: Solving the Previous Example via Welch's Method</span>
+        <em>Instructor's handwritten prompt on Slide 8:</em> "Solve the previous example (\(n_1 = 9, \bar{x}_1 = 23.2, s_1^2 = 4.3\) and \(n_2 = 8, \bar{x}_2 = 24.7, s_2^2 = 5.2\)) using Welch's method."<br><br>
+        <strong>Step 1: Compute Variance Components</strong>
+        \[
+          \frac{s_1^2}{n_1} = \frac{4.3}{9} \approx 0.47778, \quad \frac{s_2^2}{n_2} = \frac{5.2}{8} = 0.65000
+        \]
+        \[
+          \frac{s_1^2}{n_1} + \frac{s_2^2}{n_2} = 0.47778 + 0.65000 = 1.12778
+        \]
+        <strong>Step 2: Compute Satterthwaite Degrees of Freedom</strong>
+        \[
+          \text{Numerator} = (1.12778)^2 = 1.27189
+        \]
+        \[
+          \text{Denominator} = \frac{(0.47778)^2}{9 - 1} + \frac{(0.65000)^2}{8 - 1} = \frac{0.22827}{8} + \frac{0.42250}{7} = 0.028534 + 0.060357 = 0.088891
+        \]
+        \[
+          \nu = \frac{1.27189}{0.088891} \approx 14.308 \implies \lfloor \nu \rfloor = 14
+        \]
+        <em>Remark:</em> Notice that the Welch degrees of freedom (\(\nu = 14\)) is strictly smaller than the pooled degrees of freedom (\(15\)), penalizing our inference for not assuming equal variances.
+        <br><br>
+        <strong>Step 3: Construct the 90% Welch Interval</strong><br>
+        From the \(t\)-table with \(\text{df} = 14\), \(t_{0.05, \; 14} = 1.761\).
+        \[
+          \text{SE} = \sqrt{1.12778} \approx 1.06197
+        \]
+        \[
+          \text{ME} = 1.761 \times 1.06197 \approx 1.8701
+        \]
+        \[
+          -1.5 \pm 1.8701 \implies (-3.370, \; 0.370)
+        \]
+        The Welch interval is slightly wider than the pooled interval \((-3.351, 0.351)\), reflecting the additional uncertainty of heteroscedasticity.
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-r-demo">6. Computational Implementation in R</h2>
+      <p>
+        In practice, these calculations are executed in statistical computing packages. In <code>R</code>, the function <code>t.test()</code> implements Welch's test by default, and can perform the pooled test by setting <code>var.equal = TRUE</code>:
+      </p>
+      <pre><code># Simulate synthetic sample data
+x <- rnorm(10)
+y <- rnorm(14)
+
+# 1. Welch Two-Sample t-test (unequal variances, default)
+t.test(x, y, conf.level = 0.90)
+
+# 2. Classical Pooled Two-Sample t-test (equal variances assumed)
+t.test(x, y, var.equal = TRUE, conf.level = 0.90)</code></pre>
+
+      <!-- Section 7 -->
+      <h2 id="sec-single-prop">7. Confidence Intervals for a Single Population Proportion</h2>
+      <p>
+        Let \(X\) denote the number of successes in \(n\) independent Bernoulli trials with unknown probability \(p\), so \(X \sim \text{Binomial}(n, p)\). The sample proportion is:
+        \[
+          \hat{p} = \frac{X}{n}
+        \]
+        We know that \(E[\hat{p}] = p\) and \(\text{Var}(\hat{p}) = \frac{p(1-p)}{n}\). By the Central Limit Theorem:
+        \[
+          Z = \frac{\hat{p} - p}{\sqrt{\frac{p(1-p)}{n}}} \xrightarrow{d} \mathcal{N}(0, 1)
+        \]
+      </p>
+
+      <div class="note-callout">
+        <strong>The "3-Sigma" Normality Check:</strong><br>
+        To ensure the normal approximation to the binomial distribution is valid, the distribution must not have probability mass truncated at 0 or 1. The slide requirement specifies the <strong>3-sigma rule</strong>:
+        \[
+          \left[ \hat{p} - 3\sqrt{\frac{\hat{p}(1-\hat{p})}{n}}, \; \hat{p} + 3\sqrt{\frac{\hat{p}(1-\hat{p})}{n}} \right] \subset [0, 1]
+        \]
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 7.1 (Exact Quadratic vs. Standard Wald Interval)</span>
+        The probability condition \(P(-z_{\alpha/2} < Z < z_{\alpha/2}) = 1 - \alpha\) leads to the inequality:
+        \[
+          \left( \frac{\hat{p} - p}{\sqrt{\frac{p(1-p)}{n}}} \right)^2 \le z_{\alpha/2}^2 \iff (\hat{p} - p)^2 \le z_{\alpha/2}^2 \frac{p(1-p)}{n}
+        \]
+        Expanding and rearranging as a quadratic in \(p\):
+        \[
+          p^2 \left( 1 + \frac{z_{\alpha/2}^2}{n} \right) - p \left( 2\hat{p} + \frac{z_{\alpha/2}^2}{n} \right) + \hat{p}^2 \le 0
+        \]
+        Solving this quadratic yields the <strong>Wilson Score Interval</strong>.<br><br>
+        If instead we substitute the sample estimate \(\hat{p}\) directly into the standard error denominator (the <em>Wald approximation</em>), we obtain the standard formula:
+        \[
+          \hat{p} \pm z_{\alpha/2} \sqrt{\frac{\hat{p}(1-\hat{p})}{n}}
+        \]
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Worked Example: Political Mayoral Poll</span>
+        In an election survey, \(n = 500\) randomly selected voters are interviewed, and \(x = 320\) state they support Candidate A.<br><br>
+        <strong>Step 1: Point Estimate and 3-Sigma Check</strong>
+        \[
+          \hat{p} = \frac{320}{500} = \frac{16}{25} = 0.64
+        \]
+        \[
+          \text{SE} = \sqrt{\frac{0.64(1 - 0.64)}{500}} = \sqrt{\frac{0.64 \times 0.36}{500}} = \sqrt{\frac{0.2304}{500}} = \sqrt{0.0004608} \approx 0.021466
+        \]
+        Check: \(\hat{p} \pm 3 \times \text{SE} = 0.64 \pm 3(0.021466) = 0.64 \pm 0.06440 = [0.5756, \; 0.7044] \subset [0, 1]\). The approximation is valid.<br><br>
+        <strong>Step 2: 95% Confidence Interval Calculation</strong><br>
+        With \(\alpha = 0.05\), \(z_{0.025} = 1.96\):
+        \[
+          \text{ME} = 1.96 \times 0.021466 \approx 0.04207
+        \]
+        \[
+          0.64 \pm 0.04207 \implies (0.5979, \; 0.6821)
+        \]
+        We are \(95\%\) confident that the candidate's true support in the electorate lies between \(59.79\%\) and \(68.21\%\).
+      </div>
+
+      <!-- Section 8 -->
+      <h2 id="sec-prop-sample-size">8. Sample Size Determination for Proportions</h2>
+      <p>
+        Suppose an investigator desires a specified margin of error \(E\) with confidence \(1 - \alpha\):
+        \[
+          E = z_{\alpha/2} \sqrt{\frac{p(1-p)}{n}} \implies n = \frac{z_{\alpha/2}^2 \cdot p(1-p)}{E^2}
+        \]
+        Since \(p\) is unknown before the survey is conducted, we observe that the parabolic function \(g(p) = p(1-p)\) achieves its absolute maximum at \(p = 0.5\), where \(p(1-p) = 0.25 = \frac{1}{4}\).
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Proposition 8.1 (Conservative Sample Size Formula)</span>
+        To guarantee that the margin of error does not exceed \(E\), regardless of the true value of \(p\), choose:
+        \[
+          n \ge \left\lceil \frac{z_{\alpha/2}^2}{4 E^2} \right\rceil
+        \]
+        For example, for a \(95\%\) confidence level (\(z_{0.025} = 1.96\)) and a \(3\%\) margin of error (\(E = 0.03\)):
+        \[
+          n \ge \frac{(1.96)^2}{4(0.03)^2} = \frac{3.8416}{0.0036} \approx 1067.11 \implies n = 1068
+        \]
+      </div>
+
+      <!-- Section 9 -->
+      <h2 id="sec-diff-prop">9. Difference of Two Independent Proportions &amp; A/B Testing</h2>
+      <p>
+        Let \(X_1 \sim \text{Binomial}(n_1, p_1)\) and \(X_2 \sim \text{Binomial}(n_2, p_2)\) be two independent samples with sample proportions \(\hat{p}_1 = X_1/n_1\) and \(\hat{p}_2 = X_2/n_2\).
+      </p>
+      <div class="thm-box">
+        <span class="box-label">Theorem 9.1 (Confidence Interval for \(p_1 - p_2\))</span>
+        By independence:
+        \[
+          E[\hat{p}_1 - \hat{p}_2] = p_1 - p_2, \quad \text{Var}(\hat{p}_1 - \hat{p}_2) = \frac{p_1(1-p_1)}{n_1} + \frac{p_2(1-p_2)}{n_2}
+        \]
+        The large-sample \(100(1-\alpha)\%\) confidence interval is:
+        \[
+          (\hat{p}_1 - \hat{p}_2) \pm z_{\alpha/2} \sqrt{\frac{\hat{p}_1(1-\hat{p}_1)}{n_1} + \frac{\hat{p}_2(1-\hat{p}_2)}{n_2}}
+        \]
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Worked Example: Comparing Candidate Support in Two Geographic Regions</span>
+        A campaign conducts polling in two regions:
+        <ul>
+          <li><strong>Region 1:</strong> Sample size \(n_1 = 500\), supporters \(x_1 = 320 \implies \hat{p}_1 = \frac{320}{500} = 0.6400\)</li>
+          <li><strong>Region 2:</strong> Sample size \(n_2 = 420\), supporters \(x_2 = 302 \implies \hat{p}_2 = \frac{302}{420} = \frac{151}{210} \approx 0.7190\)</li>
+        </ul>
+        Construct a \(90\%\) confidence interval for the difference \(p_1 - p_2\).<br><br>
+        <strong>Step 1: Point Estimate and Variance Components</strong>
+        \[
+          \hat{p}_1 - \hat{p}_2 = 0.6400 - 0.7190 = -0.0790
+        \]
+        \[
+          \frac{\hat{p}_1(1-\hat{p}_1)}{n_1} = \frac{0.64 \times 0.36}{500} = \frac{0.2304}{500} = 0.0004608
+        \]
+        \[
+          \frac{\hat{p}_2(1-\hat{p}_2)}{n_2} = \frac{0.7190 \times 0.2810}{420} = \frac{0.20204}{420} \approx 0.0004810
+        \]
+        \[
+          \text{SE} = \sqrt{0.0004608 + 0.0004810} = \sqrt{0.0009418} \approx 0.03069
+        \]
+        <strong>Step 2: 90% Confidence Interval</strong><br>
+        For \(90\%\) confidence, \(\alpha = 0.10 \implies z_{0.05} = 1.645\).
+        \[
+          \text{ME} = 1.645 \times 0.03069 \approx 0.05048
+        \]
+        \[
+          -0.0790 \pm 0.0505 \implies (-0.1295, \; -0.0285)
+        \]
+        <strong>Conclusion:</strong> Since the upper bound \(-0.0285 < 0\), the entire \(90\%\) confidence interval lies strictly below zero. We conclude that Candidate A has a statistically significantly higher proportion of support in Region 2 than in Region 1.
+      </div>
+
+      <!-- Section 10 -->
+      <h2 id="sec-ci-variance">10. Confidence Intervals for Population Variance and Standard Deviation (\(\chi^2\))</h2>
+      <p>
+        In quality engineering and reliability analysis, estimating the spread or variability is as critical as estimating the center. Let \(X_1, \dots, X_n\) be a random sample of size \(n\) from a normal population \(\mathcal{N}(\mu, \sigma^2)\).
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 10.1 (Pivotal Quantity for Variance)</span>
+        The pivotal quantity:
+        \[
+          Q = \frac{(n-1)S^2}{\sigma^2} \sim \chi^2(n-1)
+        \]
+        Because the Chi-Square distribution is asymmetric (skewed right with support on \([0, \infty)\)), critical values \(\chi_{1-\alpha/2, n-1}^2\) and \(\chi_{\alpha/2, n-1}^2\) are determined separately:
+        \[
+          P\left( \chi_{1-\alpha/2, \; n-1}^2 < \frac{(n-1)S^2}{\sigma^2} < \chi_{\alpha/2, \; n-1}^2 \right) = 1 - \alpha
+        \]
+        Inverting the inequality yields the exact \(100(1-\alpha)\%\) two-sided confidence interval for \(\sigma^2\):
+        \[
+          \frac{(n-1)S^2}{\chi_{\alpha/2, \; n-1}^2} < \sigma^2 < \frac{(n-1)S^2}{\chi_{1-\alpha/2, \; n-1}^2}
+        \]
+        Taking square roots gives the confidence interval for the population standard deviation \(\sigma\):
+        \[
+          \sqrt{\frac{(n-1)S^2}{\chi_{\alpha/2, \; n-1}^2}} < \sigma < \sqrt{\frac{(n-1)S^2}{\chi_{1-\alpha/2, \; n-1}^2}}
+        \]
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Worked Example: Potato Chip Fill Weight Variability</span>
+        A quality control manager at a snack food packaging facility collects a random sample of \(n = 20\) bags of potato chips and finds a sample variance of \(s^2 = 0.51 \text{ oz}^2\). Assuming that bag fill weights follow a normal distribution, find \(95\%\) confidence intervals for \(\sigma\).<br><br>
+        Here, \(n - 1 = 19\) degrees of freedom, and \((n-1)s^2 = 19 \times 0.51 = 9.69\).<br><br>
+        <strong>1. Two-Sided 95% Confidence Interval:</strong><br>
+        From the \(\chi^2\)-distribution with \(\text{df} = 19\):
+        \[
+          \chi_{0.975, \; 19}^2 = 8.90652, \quad \chi_{0.025, \; 19}^2 = 32.85233
+        \]
+        Setting up the inequality:
+        \[
+          8.90652 < \frac{(20 - 1)(0.51)}{\sigma^2} < 32.85233
+        \]
+        \[
+          0.91915 < \frac{1}{\sigma^2} < 3.39033 \implies 0.29496 < \sigma^2 < 1.08797
+        \]
+        Taking square roots:
+        \[
+          0.54310 < \sigma < 1.04306
+        \]
+        <br>
+        <strong>2. One-Sided Bounds (Slide 14):</strong><br>
+        <ul>
+          <li><strong>Lower-Bounded 95% Interval:</strong> Using \(\chi_{0.05, 19}^2 = 30.14353\):
+            \[
+              0 < \frac{19(0.51)}{\sigma^2} < 30.14353 \implies \sigma^2 > \frac{9.69}{30.14353} = 0.32146 \implies \mathbf{0.56698 < \sigma < \infty}
+            \]
+          </li>
+          <li><strong>Upper-Bounded 95% Interval:</strong> Using \(\chi_{0.95, 19}^2 = 10.11701\):
+            \[
+              10.11701 < \frac{19(0.51)}{\sigma^2} < \infty \implies \sigma^2 < \frac{9.69}{10.11701} = 0.95779 \implies \mathbf{0 < \sigma < 0.97867}
+            \]
+            <em>Pedagogical note on slide typo:</em> On Slide 14, the slide formula displays \((19-1)(0.51)\) in the numerator of this step, but calculates the numerical output as \(\sqrt{9.69 / 10.11701} = 0.97867\), confirming that the correct numerator \((20-1)s^2 = 19 \times 0.51 = 9.69\) was used.
+          </li>
+        </ul>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-11.html">&larr; Lecture 11: Confidence Intervals &amp; Student's t</a>
+      <a href="./lecture-13.html">Lecture 13: Introduction to Artificial Intelligence &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

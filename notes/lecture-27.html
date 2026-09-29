@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 27: Principal Component Analysis (PCA) &amp; Linear Discriminant Analysis (LDA) | Basics of Data Science</title>
+  <meta name="description" content="Stanford CS231n / MIT OCW style comprehensive lecture notes on dimensionality reduction, PCA variance maximization, SVD, reconstruction, explained variance, data leakage prevention, Fisher's Linear Discriminant Analysis (LDA), and Kernel Discriminant Analysis (KDA).">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2326&amp;27%20-%20gaussian%20mixtures%20em%20and%20pca.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 26&amp;27 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 27: Principal Component Analysis (PCA) &amp; Fisher's Linear Discriminant Analysis (LDA)</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Fall Semester 2026</div>
+        <div class="note-meta-item"><strong>Primary Deck:</strong> Lecture #26&amp;27 (Slides 22–70)</div>
+        <div class="note-meta-item"><strong>Readings:</strong> PML-Intro Ch. 20; Strang (Linear Algebra &amp; Learning from Data); ESL Ch. 4 &amp; 14</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-dim-reduction-mot">1. Foundations &amp; Motivations of Dimensionality Reduction</a></li>
+        <li><a href="#sec-pca-formulation">2. Principal Component Analysis (PCA): Dual Perspectives</a></li>
+        <li><a href="#sec-pca-derivation">3. Mathematical Derivation: Lagrange Multipliers &amp; Eigenvalue Problem</a></li>
+        <li><a href="#sec-pca-algorithm">4. The Complete Computational Algorithm via SVD &amp; Reconstruction</a></li>
+        <li><a href="#sec-choosing-k">5. Choosing the Number of Components \(k\) via Singular Values</a></li>
+        <li><a href="#sec-best-practices">6. Best Practices, Applications &amp; Avoiding Critical Pitfalls</a></li>
+        <li><a href="#sec-fisher-lda">7. Supervised Dimensionality Reduction: Fisher's Linear Discriminant (Two-Class)</a></li>
+        <li><a href="#sec-multiclass-lda">8. Multi-Class LDA (\(C > 2\)) &amp; The Determinant Ratio Criterion</a></li>
+        <li><a href="#sec-lda-assumptions">9. Assumptions, Limitations &amp; When LDA Fails</a></li>
+        <li><a href="#sec-synthesis-pipeline">10. Grand Synthesis: PCA + LDA Pipeline, GDA, and QDA</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+
+      <!-- Section 1 -->
+      <section id="sec-dim-reduction-mot">
+        <h2>1. Foundations &amp; Motivations of Dimensionality Reduction</h2>
+        <p>
+          Slide 22 introduces <strong>Dimensionality Reduction</strong>, one of the cornerstones of unsupervised representation learning. In modern real-world datasets, feature dimensions \(n\) frequently range into thousands or millions (e.g., raw pixel arrays, genomic sequences, text vocabularies).
+        </p>
+
+        <div class="note-callout">
+          <strong>Core Motivations for Dimensionality Reduction:</strong>
+          <ol>
+            <li><strong>Data Compression:</strong> Storing high-dimensional data in compact representations, reducing memory and disk footprints (Slide 24 shows compressing two highly correlated features—e.g., <em>pilot skill</em> and <em>pilot enjoyment</em>—from \(\mathbb{R}^2\) down to a single latent coordinate \(z \in \mathbb{R}\); Slide 26 demonstrates compressing \(\mathbb{R}^3 \to \mathbb{R}^2\) and \(10{,}000 \to 1{,}000\)).</li>
+            <li><strong>Data Visualization:</strong> Human sensory perception is constrained to 2D and 3D. When analyzing a 50-variable dataset (Slides 27–29: Country economic indicators including GDP, per-capita GDP, HDI, life expectancy, poverty index, etc.), projecting from \(\mathbb{R}^{50} \to \mathbb{R}^2\) reveals macroscopic global structure, identifying country clusters and salient outliers (e.g., Singapore and the USA).</li>
+            <li><strong>Computational Acceleration:</strong> Reducing dimensions from \(300 \to 50\) or \(10{,}000 \to 1{,}000\) decreases the computational complexity of training subsequent machine learning models by orders of magnitude.</li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Section 2 -->
+      <section id="sec-pca-formulation">
+        <h2>2. Principal Component Analysis (PCA): Dual Perspectives</h2>
+        <p>
+          Given an unlabelled dataset \(\{x^{(1)}, \dots, x^{(m)}\}\) where \(x^{(i)} \in \mathbb{R}^n\), <strong>Principal Component Analysis (PCA)</strong> seeks a lower \(k\)-dimensional linear subspace spanned by orthonormal basis vectors \(u_1, \dots, u_k \in \mathbb{R}^n\) (Slide 30–31).
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">Theorem 2.1 (The Fundamental Duality of PCA — Slide 36)</span>
+          <div class="note-callout" style="margin-bottom: 8px; border-left: 4px solid #dc2626;">
+            <strong>Fundamental Dual Equivalence:</strong> Maximizing the variance of projected coordinates is mathematically identical to minimizing the sum of squared orthogonal projection errors.
+          </div>
+          PCA can be defined through two distinct mathematical formulations that are provably equivalent:
+          <ol>
+            <li><strong>Maximum Variance Perspective:</strong> Find orthonormal directions \(u_1, \dots, u_k\) such that the variance of the projected data points is maximized.</li>
+            <li><strong>Minimum Reconstruction Error Perspective:</strong> Find a \(k\)-dimensional hyperplane such that the sum of squared orthogonal distances between the original points \(x^{(i)}\) and their projected points \(x_{\text{approx}}^{(i)}\) is minimized.</li>
+          </ol>
+        </div>
+
+        <div class="note-callout">
+          <strong>Fundamental Distinction: PCA is NOT Linear Regression (Slides 32–33):</strong><br>
+          Students often confuse PCA with Ordinary Least Squares (OLS) regression:
+          <ul>
+            <li><strong>Linear Regression:</strong> Treats the target \(y\) as special. It minimizes the <em>vertical</em> Euclidean distance \((y^{(i)} - \theta^T x^{(i)})^2\) between true values and the regression line.</li>
+            <li><strong>PCA:</strong> Treats all features \(x_1, \dots, x_n\) symmetrically with no designated response. It minimizes the <em>orthogonal (perpendicular)</em> Euclidean distance from each sample point to the projection subspace.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 3 -->
+      <section id="sec-pca-derivation">
+        <h2>3. Mathematical Derivation: Lagrange Multipliers &amp; Eigenvalue Problem</h2>
+        <p>
+          Slides 34–35 present the rigorous derivation of the first principal component \(u \in \mathbb{R}^n\) under the unit-norm constraint \(\|u\| = 1\).
+        </p>
+
+        <div class="proof-box">
+          <span class="box-label">Step-by-Step Derivation (Slides 34 &amp; 35)</span>
+          Assume the dataset has been zero-centered such that sample mean \(\mu = \frac{1}{m}\sum x^{(i)} = 0\).<br>
+          The scalar projection of a sample \(x^{(i)}\) onto a unit vector \(u\) (\(u^T u = 1\)) is \(x^{(i)T} u\). The variance of the projected data points is:
+          \[
+            \begin{aligned}
+              \text{Var}(u) &= \frac{1}{m} \sum_{i=1}^m \left( x^{(i)T} u \right)^2 \\
+              &= \frac{1}{m} \sum_{i=1}^m u^T x^{(i)} x^{(i)T} u \\
+              &= u^T \left( \frac{1}{m} \sum_{i=1}^m x^{(i)} x^{(i)T} \right) u \\
+              &= u^T \Sigma u
+            \end{aligned}
+          \]
+          where \(\Sigma = \frac{1}{m} \sum_{i=1}^m x^{(i)} x^{(i)T} \in \mathbb{R}^{n \times n}\) is the empirical covariance matrix.
+          <br><br>
+          We maximize the projected variance subject to the normalization constraint:
+          \[
+            \max_u \quad u^T \Sigma u \quad \text{subject to} \quad u^T u = 1
+          \]
+          <div class="note-callout" style="margin: 10px 0; border-left: 4px solid #1e40af;">
+            <strong>Lagrange Derivation:</strong> Constrained variance maximization yields the eigensystem \(\Sigma u = \lambda u\), where \(u\) is the dominant eigenvector of \(\Sigma\).
+          </div>
+          Formulating the Lagrangian with multiplier \(\lambda\):
+          \[
+            \mathcal{L}(u, \lambda) = u^T \Sigma u - \lambda(u^T u - 1)
+          \]
+          Taking the gradient with respect to \(u\) and equating to zero:
+          \[
+            \nabla_u \mathcal{L} = 2 \Sigma u - 2 \lambda u = 0 \implies \Sigma u = \lambda u
+          \]
+          This reveals that \(u\) <strong>must be an eigenvector of the covariance matrix \(\Sigma\)</strong>, with corresponding eigenvalue \(\lambda\)!
+          <br><br>
+          To determine which eigenvector maximizes variance, substitute \(\Sigma u = \lambda u\) back into the variance objective:
+          \[
+            u^T \Sigma u = u^T (\lambda u) = \lambda (u^T u) = \lambda
+          \]
+          Therefore, the projected variance is exactly equal to the eigenvalue \(\lambda\). To maximize variance, we choose \(u_1\) as the eigenvector corresponding to the <strong>largest eigenvalue \(\lambda_1\)</strong>!
+        </div>
+
+        <div class="thm-box">
+          <span class="box-label">Generalization to \(k\) Dimensions (Slide 36)</span>
+          <div class="note-callout" style="margin-bottom: 8px; border-left: 4px solid #15803d;">
+            <strong>Subspace Selection:</strong> To reduce dimensionality from \(n\) to \(k\), select \(u_1, u_2, \dots, u_k\) as the eigenvectors corresponding to the \(k\) largest eigenvalues of \(\Sigma\). These vectors define the principal orthogonal projection axes.
+          </div>
+          To reduce data to \(k\) dimensions while maintaining mutual orthogonality (\(u_i^T u_j = 0\) for \(i \ne j\)), we select the \(k\) eigenvectors \(u_1, \dots, u_k\) corresponding to the top \(k\) eigenvalues \(\lambda_1 \ge \lambda_2 \ge \dots \ge \lambda_k > 0\).
+        </div>
+      </section>
+
+      <!-- Section 4 -->
+      <section id="sec-pca-algorithm">
+        <h2>4. The Complete Computational Algorithm via SVD &amp; Reconstruction</h2>
+        <p>
+          Slides 38–41 formalize the full computational algorithm using matrix notation and Singular Value Decomposition (SVD).
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Algorithm 4.1 (Complete PCA Pipeline — Slide 40)</span>
+          <ol>
+            <li>
+              <strong>Mean Normalization &amp; Feature Scaling:</strong><br>
+              Compute feature means: \(\mu_j = \frac{1}{m} \sum_{i=1}^m x_j^{(i)}\).<br>
+              Replace each feature: \(x_j^{(i)} := x_j^{(i)} - \mu_j\).<br>
+              If features are on different scales (e.g., GDP in dollars vs. life expectancy in years), scale by sample standard deviation: \(x_j^{(i)} := \frac{x_j^{(i)} - \mu_j}{s_j}\).
+            </li>
+            <li>
+              <strong>Assemble Centered Data Matrix:</strong><br>
+              Stack centered samples as rows:
+              \[
+                X = \begin{bmatrix} (x^{(1)})^T \\ (x^{(2)})^T \\ \vdots \\ (x^{(m)})^T \end{bmatrix} \in \mathbb{R}^{m \times n}
+              \]
+            </li>
+            <li>
+              <strong>Compute Empirical Covariance Matrix:</strong><br>
+              \[
+                \Sigma = \frac{1}{m} X^T X \in \mathbb{R}^{n \times n}
+              \]
+            </li>
+            <li>
+              <strong>Singular Value Decomposition (SVD):</strong><br>
+              Compute `[U, S, V] = svd(Sigma);`. The columns of \(U \in \mathbb{R}^{n \times n}\) are the eigenvectors sorted in descending order of their corresponding singular values / eigenvalues:
+              \[
+                U = \begin{bmatrix} | & | & & | \\ u^{(1)} & u^{(2)} & \dots & u^{(n)} \\ | & | & & | \end{bmatrix} \in \mathbb{R}^{n \times n}
+              \]
+            </li>
+            <li>
+              <strong>Form Truncated Projection Matrix:</strong><br>
+              Extract the first \(k\) columns:
+              \[
+                U_{\text{reduce}} = \begin{bmatrix} | & & | \\ u^{(1)} & \dots & u^{(k)} \\ | & & | \end{bmatrix} \in \mathbb{R}^{n \times k}
+              \]
+            </li>
+            <li>
+              <strong>Project Data to Low-Dimensional Space:</strong><br>
+              For a single point \(x \in \mathbb{R}^n\):
+              \[
+                z = U_{\text{reduce}}^T x \in \mathbb{R}^k
+              \]
+              In vectorized form across the entire dataset:
+              \[
+                Z = X U_{\text{reduce}} \in \mathbb{R}^{m \times k}
+              \]
+            </li>
+          </ol>
+        </div>
+
+        <div class="def-box" style="background: #f8fafc; border-color: #94a3b8;">
+          <span class="box-label">Reconstruction / Decompression (Slide 41)</span>
+          To reconstruct the high-dimensional point from its compressed representation \(z \in \mathbb{R}^k\):
+          \[
+            x_{\text{approx}} = U_{\text{reduce}} z \in \mathbb{R}^n
+          \]
+          Notice the dimensions: \((n \times k) \times (k \times 1) = n \times 1\). The reconstructed vector \(x_{\text{approx}}\) is the exact orthogonal projection of the original point \(x\) onto the subspace spanned by the \(k\) principal components!
+        </div>
+      </section>
+
+      <!-- Section 5 -->
+      <section id="sec-choosing-k">
+        <h2>5. Choosing the Number of Components \(k\) via Singular Values</h2>
+        <p>
+          How do we choose the optimal target dimension \(k\)? Slides 42–44 formalize the <strong>Explained Variance Ratio</strong> criterion.
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">Definition 5.1 (Projection Error vs. Total Variation — Slide 42)</span>
+          Define:
+          <ul>
+            <li><strong>Average Squared Projection Error (Distortion):</strong>
+              \[
+                J = \frac{1}{m} \sum_{i=1}^m \|x^{(i)} - x_{\text{approx}}^{(i)}\|^2
+              \]
+            </li>
+            <li><strong>Total Variation in Data:</strong>
+              \[
+                TV = \frac{1}{m} \sum_{i=1}^m \|x^{(i)}\|^2
+              \]
+            </li>
+          </ul>
+          We seek the smallest integer \(k\) such that the relative projection error is below a chosen tolerance \(\epsilon\):
+          \[
+            \frac{\frac{1}{m} \sum_{i=1}^m \|x^{(i)} - x_{\text{approx}}^{(i)}\|^2}{\frac{1}{m} \sum_{i=1}^m \|x^{(i)}\|^2} \le 0.01 \quad \iff \quad \text{99\% of variance is retained}
+          \]
+          Common industry thresholds:
+          <ul>
+            <li>\(\le 0.01 \implies 99\%\) variance retained.</li>
+            <li>\(\le 0.05 \implies 95\%\) variance retained.</li>
+            <li>\(\le 0.10 \implies 90\%\) variance retained.</li>
+          </ul>
+        </div>
+
+        <div class="thm-box" style="background: #eff6ff; border-color: #93c5fd;">
+          <span class="box-label" style="color: #1e40af;">Computational Shortcut via SVD Diagonal (Slides 43–44)</span>
+          Computing \(U_{\text{reduce}}, z^{(i)},\) and \(x_{\text{approx}}^{(i)}\) repeatedly for every candidate \(k \in \{1, 2, \dots, n\}\) would be horribly inefficient.
+          <br><br>
+          From the SVD `[U, S, V] = svd(Sigma)`, the matrix \(S \in \mathbb{R}^{n \times n}\) is diagonal with descending singular values \(S_{11} \ge S_{22} \ge \dots \ge S_{nn} \ge 0\). Remarkably:
+          \[
+            \frac{\frac{1}{m} \sum_{i=1}^m \|x^{(i)} - x_{\text{approx}}^{(i)}\|^2}{\frac{1}{m} \sum_{i=1}^m \|x^{(i)}\|^2} = 1 - \frac{\sum_{i=1}^k S_{ii}}{\sum_{i=1}^n S_{ii}}
+          \]
+          Therefore, retaining \(99\%\) of variance is algebraically equivalent to checking:
+          \[
+            \frac{\sum_{i=1}^k S_{ii}}{\sum_{i=1}^n S_{ii}} \ge 0.99
+          \]
+          We compute SVD <strong>only once</strong>, sum the diagonal of \(S\), and instantly pick the smallest \(k\) satisfying the ratio!
+        </div>
+      </section>
+
+      <!-- Section 6 -->
+      <section id="sec-best-practices">
+        <h2>6. Best Practices, Applications &amp; Avoiding Critical Pitfalls</h2>
+
+        <div class="thm-box" style="background: #fff1f2; border-color: #fda4af;">
+          <span class="box-label" style="color: #9f1239;">Critical Warning 1: Data Leakage in PCA Preprocessing (Slide 45)</span>
+          In supervised workflows with dataset \(\{(x^{(1)}, y^{(1)}), \dots, (x^{(m)}, y^{(m)})\}\):
+          <br><br>
+          <strong>Rule:</strong> The transformation mapping \(x \to z = U_{\text{reduce}}^T (x - \mu)\) <strong>must be computed solely on the TRAINING set</strong>!
+          <br><br>
+          Do NOT compute PCA on the combined dataset including test or cross-validation sets. Once \(\mu_{\text{train}}\) and \(U_{\text{reduce, train}}\) are obtained from training data alone, apply the exact same transformation to cross-validation samples \(x_{\text{cv}}\) and test samples \(x_{\text{test}}\). Violating this creates subtle, catastrophic data leakage.
+        </div>
+
+        <div class="note-callout">
+          <strong>Critical Warning 2: Bad Use of PCA: Preventing Overfitting (Slide 47):</strong><br>
+          A frequent fallacy is using PCA to reduce features to avoid overfitting. The reasoning seems plausible: fewer features means a simpler hypothesis class, which reduces variance.<br>
+          <strong>Why this is flawed:</strong> PCA reduces dimensionality <em>completely blindly without ever inspecting the target labels \(y\)</em>! It discards directions of low variance. However, the subtle signal that distinguishes classes might align precisely with one of those discarded low-variance directions!
+          <br><br>
+          <em>Correct Practice:</em> To address overfitting, keep all features and use <strong>regularization</strong> (\(L_2\) Ridge penalty \(\frac{\lambda}{2m} \sum \theta_j^2\) or \(L_1\) Lasso). Regularization uses the labels to downweight irrelevant features gracefully.
+          <br><br>
+          <strong>Rule of Thumb (Slide 48):</strong> Before attempting PCA, always train your baseline model on the original, raw data \(x^{(i)}\). Only adopt PCA if raw training is computationally intractable or memory-bound.
+        </div>
+
+        <div class="ex-box">
+          <span class="box-label">Applications &amp; Kernel PCA (Slide 46)</span>
+          <ul>
+            <li><strong>Eigenfaces in Computer Vision:</strong> Compressing facial photographs from \(100 \times 100 = 10{,}000\) pixels down to \(k = 1{,}000\) principal components (reducing dimensionality by an order of magnitude while preserving discriminative fidelity).</li>
+            <li><strong>Noise Filtering:</strong> Discarding trailing principal components with negligible eigenvalues effectively strips uncorrelated sensor noise.</li>
+            <li><strong>Kernel PCA:</strong> By applying a non-linear feature map \(x \to \phi(x)\), PCA can discover non-linear manifolds through kernel evaluations \(K(x^{(i)}, x^{(j)})\).</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 7 -->
+      <section id="sec-fisher-lda">
+        <h2>7. Supervised Dimensionality Reduction: Fisher's Linear Discriminant (Two-Class)</h2>
+        <p>
+          Slides 50–62 introduce <strong>Linear Discriminant Analysis (LDA)</strong>, also known as <em>Fisher's Linear Discriminant</em>.
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Supervised vs. Unsupervised Dimensionality Reduction (Slide 51)</span>
+          <ul>
+            <li><strong>PCA is Unsupervised:</strong> It ignores class labels and seeks directions that are efficient for <em>representation</em> (maximizing total variance).</li>
+            <li><strong>LDA is Supervised:</strong> It explicitly uses class labels to seek directions that are efficient for <em>discrimination</em> (maximizing class separability).</li>
+          </ul>
+          Slide 51 &amp; Slide 54 illustrate that projecting onto the direction of maximum variance (PCA) can completely overlap two distinct classes, whereas LDA finds the direction separating them cleanly!
+        </div>
+
+        <div class="proof-box">
+          <span class="box-label">Fisher's Criterion Formulation for Two Classes (Slides 55–60)</span>
+          Let dataset \(\mathcal{D}\) be partitioned into two classes \(\mathcal{C}_1\) and \(\mathcal{C}_2\) of sizes \(N_1\) and \(N_2\). We project each point onto a unit vector \(w \in \mathbb{R}^n\):
+          \[
+            y = w^T x
+          \]
+          <ol>
+            <li>
+              <strong>Class Means in Original Space:</strong> \(\mu_1 = \frac{1}{N_1}\sum_{x \in \mathcal{C}_1} x\), \quad \(\mu_2 = \frac{1}{N_2}\sum_{x \in \mathcal{C}_2} x\).<br>
+              <strong>Projected Class Means:</strong> \(\tilde{\mu}_1 = w^T \mu_1\), \quad \(\tilde{\mu}_2 = w^T \mu_2\).
+            </li>
+            <li>
+              <strong>Between-Class Separation:</strong> The distance between projected means is:
+              \[
+                (\tilde{\mu}_1 - \tilde{\mu}_2)^2 = (w^T \mu_1 - w^T \mu_2)^2 = w^T (\mu_1 - \mu_2)(\mu_1 - \mu_2)^T w = w^T S_B w
+              \]
+              where \(S_B = (\mu_1 - \mu_2)(\mu_1 - \mu_2)^T \in \mathbb{R}^{n \times n}\) is the <strong>Between-Class Scatter Matrix</strong> (Slide 59).
+            </li>
+            <li>
+              <strong>Within-Class Scatter:</strong> To avoid class overlap, the variance of projected points within each class must be minimized (Slide 57–58):
+              \[
+                \tilde{s}_1^2 = \sum_{y \in \mathcal{C}_1} (y - \tilde{\mu}_1)^2 = w^T S_1 w, \quad \tilde{s}_2^2 = \sum_{y \in \mathcal{C}_2} (y - \tilde{\mu}_2)^2 = w^T S_2 w
+              \]
+              where \(S_i = \sum_{x \in \mathcal{C}_i} (x - \mu_i)(x - \mu_i)^T\). The total within-class scatter is:
+              \[
+                \tilde{s}_1^2 + \tilde{s}_2^2 = w^T (S_1 + S_2) w = w^T S_W w
+              \]
+              where \(S_W = S_1 + S_2 \in \mathbb{R}^{n \times n}\) is the <strong>Within-Class Scatter Matrix</strong>.
+            </li>
+          </ol>
+          <strong>Fisher's Objective:</strong> Maximize the ratio of between-class separation to within-class spread (Slide 60):
+          \[
+            \max_w \quad J(w) = \frac{(\tilde{\mu}_1 - \tilde{\mu}_2)^2}{\tilde{s}_1^2 + \tilde{s}_2^2} = \frac{w^T S_B w}{w^T S_W w}
+          \]
+          Differentiating \(J(w)\) with respect to \(w\) and setting to zero yields the generalized eigenvalue problem:
+          \[
+            S_B w = J(w) S_W w \implies S_W^{-1} S_B w = \lambda w
+          \]
+          Since \(S_B w = (\mu_1 - \mu_2)(\mu_1 - \mu_2)^T w\) is always aligned in the direction of \((\mu_1 - \mu_2)\), the scalar factor \((\mu_1 - \mu_2)^T w\) merely scales \(w\). Therefore, the optimal projection vector is:
+          \[
+            w^* = S_W^{-1} (\mu_1 - \mu_2)
+          \]
+          <div class="note-callout" style="margin-top: 8px; border-left: 4px solid #1e40af;">
+            <strong>Optimal Projection Direction:</strong> The optimal projection vector \(w^*\) is the eigenvector corresponding to the maximum eigenvalue of \(S_W^{-1} S_B\).
+          </div>
+        </div>
+
+        <div class="ex-box">
+          <span class="box-label">Numerical Example from Slide 61</span>
+          Consider two 2D classes (\(n = 2\)) with 5 samples each:
+          \[
+            X_1 = \begin{bmatrix} 4 & 2 \\ 2 & 4 \\ 2 & 3 \\ 3 & 6 \\ 4 & 4 \end{bmatrix}, \quad
+            X_2 = \begin{bmatrix} 9 & 10 \\ 6 & 8 \\ 9 & 5 \\ 8 & 7 \\ 10 & 8 \end{bmatrix}
+          \]
+          We compute the class centroids \(\mu_1 = \begin{bmatrix} 3.0 \\ 3.8 \end{bmatrix}\) and \(\mu_2 = \begin{bmatrix} 8.4 \\ 7.6 \end{bmatrix}\).<br>
+          Computing scatter matrices \(S_1, S_2 \implies S_W = S_1 + S_2\), inverting \(S_W\), and multiplying by \((\mu_1 - \mu_2)\) gives the optimal 1D discriminant projection line \(w^* = S_W^{-1}(\mu_1 - \mu_2)\).
+        </div>
+      </section>
+
+      <!-- Section 8 -->
+      <section id="sec-multiclass-lda">
+        <h2>8. Multi-Class LDA (\(C > 2\)) &amp; The Determinant Ratio Criterion</h2>
+        <p>
+          Slides 63–67 generalize Fisher's method to \(C > 2\) classes. In this setting, the projection is performed by a matrix \(W \in \mathbb{R}^{n \times (C-1)}\), reducing the dimension from \(n\) to at most \(C - 1\).
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Multi-Class Scatter Matrices (Slide 65)</span>
+          Let \(\mu = \frac{1}{N}\sum_{i=1}^N x = \frac{1}{N}\sum_{c=1}^C N_c \mu_c\) be the global sample mean across all \(N\) observations.
+          <ul>
+            <li><strong>Within-Class Scatter Matrix:</strong>
+              \[
+                S_W = \sum_{c=1}^C S_c = \sum_{c=1}^C \sum_{x \in \mathcal{C}_c} (x - \mu_c)(x - \mu_c)^T
+              \]
+            </li>
+            <li><strong>Between-Class Scatter Matrix:</strong>
+              \[
+                S_B = \sum_{c=1}^C N_c (\mu_c - \mu)(\mu_c - \mu)^T
+              \]
+            </li>
+          </ul>
+        </div>
+
+        <div class="thm-box">
+          <span class="box-label">The Determinant Ratio Criterion (Slide 67)</span>
+          For projection matrix \(W = [w_1 \mid w_2 \mid \dots \mid w_{C-1}] \in \mathbb{R}^{n \times (C-1)}\), the projected scatter matrices are:
+          \[
+            \tilde{S}_W = W^T S_W W, \quad \tilde{S}_B = W^T S_B W
+          \]
+          Because scalar division is undefined for matrices, the multi-class Fisher criterion maximizes the ratio of determinants (measuring hyper-ellipsoidal scatter volumes):
+          \[
+            J(W) = \frac{|\tilde{S}_B|}{|\tilde{S}_W|} = \frac{|W^T S_B W|}{|W^T S_W W|}
+          \]
+          Setting \(\frac{dJ}{dW} = 0\) yields the generalized eigenvalue equation:
+          \[
+            S_W^{-1} S_B w_i = \lambda_i w_i \quad (i = 1, \dots, C-1)
+          \]
+          <div class="note-callout" style="margin-top: 8px; border-left: 4px solid #b91c1c;">
+            <strong>Multi-Class Projection Columns:</strong> The columns of \(W^*\) are the \(C-1\) eigenvectors corresponding to the \(C-1\) largest eigenvalues of \(S_W^{-1} S_B\).
+          </div>
+          The columns of the optimal projection matrix \(W^*\) are the \(C - 1\) eigenvectors corresponding to the \(C - 1\) largest eigenvalues of \(S_W^{-1} S_B\)!
+        </div>
+      </section>
+
+      <!-- Section 9 -->
+      <section id="sec-lda-assumptions">
+        <h2>9. Assumptions, Limitations &amp; When LDA Fails</h2>
+        <p>
+          Slide 69 details the core theoretical assumptions and failure modes of Linear Discriminant Analysis.
+        </p>
+
+        <div class="thm-box" style="background: #fffbeb; border-color: #fde047;">
+          <span class="box-label" style="color: #854d0e;">Core Theoretical Assumptions &amp; Pathologies (Slide 69)</span>
+          <div class="note-callout" style="margin-bottom: 8px; border-left: 4px solid #1e3a8a;">
+            <strong>Gaussian Class-Conditional Assumption:</strong> Linear Discriminant Analysis formally assumes each class is normally distributed with a shared covariance matrix.
+          </div>
+          <ol>
+            <li><strong>Gaussian Assumption:</strong> LDA assumes each class is normally distributed: \(p(x \mid y = c) \sim \mathcal{N}(\mu_c, \Sigma)\).</li>
+            <li><strong>Equal Covariance Matrices (Homoscedasticity):</strong> Crucially, LDA assumes all classes share the identical covariance matrix \(\Sigma_1 = \dots = \Sigma_C = \Sigma\).</li>
+            <li><strong>Maximum Subspace Rank:</strong> Because \(S_B\) is the sum of \(C\) rank-1 outer products with constraint \(\sum N_c(\mu_c - \mu) = 0\), the rank of \(S_B\) is at most \(C - 1\). Therefore, <strong>the maximum number of dimensions LDA can reduce data to is \(C - 1\)</strong>! For binary classification (\(C = 2\)), LDA can only project to a 1D line!</li>
+          </ol>
+          <div class="note-callout" style="margin-top: 10px; border-left: 4px solid #dc2626;">
+            <strong>Failure Mode (Variance Discrepancies):</strong> When class differences stem from variance structure rather than mean separation (i.e. \(\mu_1 \approx \mu_2\)), between-class scatter vanishes (\(S_B \approx 0\)), causing LDA to fail completely.
+          </div>
+          <strong>When LDA Fails:</strong> If two classes share the same mean (\(\mu_1 = \mu_2\)) but differ significantly in variance (e.g., a tight inner sphere surrounded by an outer ring), the between-class scatter vanishes:
+          \[
+            S_B = (\mu_1 - \mu_2)(\mu_1 - \mu_2)^T = 0
+          \]
+          LDA collapses completely and is utterly unable to separate the classes!
+        </div>
+      </section>
+
+      <!-- Section 10 -->
+      <section id="sec-synthesis-pipeline">
+        <h2>10. Grand Synthesis: PCA + LDA Pipeline, GDA, and QDA</h2>
+        <p>
+          Slide 70 concludes Lecture 27 with an overarching synthesis connecting LDA, PCA, GDA, and QDA into an unified engineering taxonomy.
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">The PCA + LDA Two-Stage Pipeline (Slide 70)</span>
+          <div class="note-callout" style="margin-bottom: 8px; border-left: 4px solid #0f766e;">
+            <strong>Small Sample Size Solution (Fisherfaces):</strong> When feature dimension exceeds sample count (\(n > N\)), \(S_W\) is singular. The canonical solution is a PCA-LDA pipeline: first apply PCA to reduce dimension to \(N - C\), then perform LDA.
+          </div>
+          In high-dimensional regimes where the number of features exceeds the sample size (\(n > m\), such as computer vision where each image has \(10{,}000\) pixels but only 500 images exist), the within-class scatter matrix \(S_W\) is rank-deficient and <strong>singular</strong>. Its inverse \(S_W^{-1}\) does not exist!
+          <br><br>
+          <strong>The Solution (The Fisherfaces Paradigm):</strong>
+          <ol>
+            <li>Apply unsupervised <strong>PCA</strong> to project the raw \(n\)-dimensional data down to an intermediate dimension \(m - C\) where the covariance matrix is guaranteed to be full-rank.</li>
+            <li>Apply supervised <strong>LDA</strong> on the PCA-projected features to compress further to \(C - 1\) highly discriminative coordinates!</li>
+          </ol>
+        </div>
+
+        <div class="def-box">
+          <span class="box-label">Taxonomy of Generative Classifiers: LDA vs. QDA (Slide 70)</span>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid #cbd5e1; text-align: left;">
+                <th style="padding: 8px;">Model</th>
+                <th style="padding: 8px;">Covariance Assumption</th>
+                <th style="padding: 8px;">Decision Boundary</th>
+                <th style="padding: 8px;">Parameter Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 8px;"><strong>Linear Discriminant Analysis (LDA)</strong></td>
+                <td style="padding: 8px;">\(\Sigma_1 = \Sigma_2 = \dots = \Sigma_k\) (Equal)</td>
+                <td style="padding: 8px;"><strong>Linear (Hyperplane)</strong></td>
+                <td style="padding: 8px;">\(O(n^2 + k \cdot n)\)</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 8px;"><strong>Quadratic Discriminant Analysis (QDA)</strong></td>
+                <td style="padding: 8px;">\(\Sigma_k\) separate for each class (Unequal)</td>
+                <td style="padding: 8px;"><strong>Quadratic (Conic Surface)</strong></td>
+                <td style="padding: 8px;">\(O(k \cdot n^2)\)</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 12px; margin-bottom: 0;">
+            <em>Pipeline Summary (Slide 70):</em> For high-dimensional data, the optimal workflow is:
+            \[
+              \text{High Dimensional Inputs } x \in \mathbb{R}^n \xrightarrow{\text{PCA}} z \in \mathbb{R}^{n'} \xrightarrow{\text{LDA}} \tilde{z} \in \mathbb{R}^{C-1} \xrightarrow{\text{GDA}} \hat{y}
+            \]
+          </p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-26.html">&larr; Lecture 26: Gaussian Mixtures &amp; EM Algorithm</a>
+      <a href="./lecture-28.html">Lecture 28: Independent Component Analysis (ICA) &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 24: Support Vector Machines: Duality, Soft Margin &amp; Multiclass | Basics of Data Science</title>
+  <meta name="description" content="In-depth Stanford CS229 &amp; MIT OCW style lecture notes on Support Vector Machines: Geometric and functional margins, primal QP, Lagrange duality, Wolfe dual derivation, KKT conditions, soft-margin slack formulation, box constraints, multiclass classification, and SVM vs Logistic Regression diagnostics.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2324%20-%20support%20vector%20machines.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 24 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 24: Support Vector Machines: Duality, Soft Margin &amp; Multiclass</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Fall 2026</div>
+        <div class="note-meta-item"><strong>Readings:</strong> PML-Intro Ch. 17; ESL Ch. 12; Boyd &amp; Vandenberghe (Convex Optimization) Ch. 5; CS229 SVM Notes</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-confidence-margins">1. Prediction Confidence &amp; The Concept of Margins</a></li>
+        <li><a href="#sec-hyperplanes-geometry">2. Geometry of Separating Hyperplanes</a></li>
+        <li><a href="#sec-functional-margin">3. Functional Margin w.r.t. a Point and a Dataset</a></li>
+        <li><a href="#sec-geometric-margin">4. Geometric Margin: Rigorous Orthogonal Projection Derivation</a></li>
+        <li><a href="#sec-primal-qp">5. The Optimal Margin Classifier as Convex Quadratic Programming (QP)</a></li>
+        <li><a href="#sec-lagrange-duality">6. Foundations of Lagrange Duality: Primal, Dual &amp; KKT Conditions</a></li>
+        <li><a href="#sec-svm-dual-derivation">7. Full Derivation of the SVM Dual Problem</a></li>
+        <li><a href="#sec-support-vectors-b">8. Support Vectors, Complementary Slackness &amp; Recovering \(b^*\)</a></li>
+        <li><a href="#sec-soft-margin-slack">9. Soft-Margin SVM for Non-Separable Data &amp; Box Constraints</a></li>
+        <li><a href="#sec-multiclass-svm">10. Multiclass Classification: One-vs-All (OvA)</a></li>
+        <li><a href="#sec-svm-vs-logreg">11. Decision Guide: SVMs vs. Logistic Regression vs. Neural Networks</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <section id="sec-confidence-margins">
+        <h2>1. Prediction Confidence &amp; The Concept of Margins</h2>
+        <p>
+          Recall the logistic regression hypothesis:
+          \[
+            h_\theta(x) = \sigma(\theta^T x) = \frac{1}{1 + e^{-\theta^T x}}
+          \]
+          The standard decision threshold classifies an input as follows:
+          \[
+            \begin{aligned}
+              h_\theta(x) \ge 0.5 &\iff \theta^T x \ge 0 \implies \hat{y} = 1 \\
+              h_\theta(x) < 0.5 &\iff \theta^T x < 0 \implies \hat{y} = 0 \text{ (or } -1\text{)}
+            \end{aligned}
+          \]
+        </p>
+
+        <div class="note-callout">
+          <span class="box-label">Geometric Intuition: High Confidence Class Boundaries</span>
+          <p>
+            Consider fitting a classifier where for every positive sample (\(y^{(i)}=1\)), we obtain \(\theta^T x^{(i)} \gg 0\), and for every negative sample (\(y^{(i)}=-1\)), we obtain \(\theta^T x^{(i)} \ll 0\). Under such conditions, prediction confidence is robustly maximized:
+          </p>
+          <p>
+            A sample that lies far away from the separating boundary (\(|\theta^T x| \gg 0\)) is classified with very high certainty. Even under measurement noise or perturbations, its predicted class remains stable. Conversely, a sample situated dangerously close to the boundary (\(|\theta^T x| \approx 0\)) has very low confidence; the slightest variation in parameters or input features can flip its classification. This motivates designing a classifier that explicitly pushes the decision boundary as far away from <em>all</em> data points as possible.
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 2 -->
+      <section id="sec-hyperplanes-geometry">
+        <h2>2. Geometry of Separating Hyperplanes</h2>
+        <p>
+          Throughout Support Vector Machine theory, we adopt symmetric binary labels:
+          \[
+            y \in \{-1, +1\}
+          \]
+          where \(y = +1\) denotes the positive class and \(y = -1\) denotes the negative class.
+        </p>
+        <p>
+          A hyperplane in a \(d\)-dimensional input space \(\mathbb{R}^d\) is defined by the set of points satisfying:
+          \[
+            w_0 + w_1 x_1 + w_2 x_2 + \dots + w_d x_d = 0
+          \]
+          Separating the intercept \(b = w_0\) from the weight vector \(w = [w_1, \dots, w_d]^T \in \mathbb{R}^d\), this becomes:
+          \[
+            w^T x + b = 0
+          \]
+          The classifier makes predictions via the sign function \(g(z)\):
+          \[
+            h_{w, b}(x) = g(w^T x + b) = \begin{cases} +1 & \text{if } w^T x + b \ge 0 \\ -1 & \text{if } w^T x + b < 0 \end{cases}
+          \]
+          where \(g(z) = 1\) for \(z \ge 0\) and \(g(z) = -1\) for \(z < 0\).
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Geometric Properties of the Hyperplane</span>
+          <ul>
+            <li><strong>Orthogonality:</strong> The weight vector \(w\) is strictly perpendicular (normal) to every line lying entirely within the hyperplane: if \(x_1, x_2\) satisfy \(w^T x_1 + b = 0\) and \(w^T x_2 + b = 0\), then \(w^T (x_1 - x_2) = 0\).</li>
+            <li><strong>Signed Distance from Origin:</strong> The perpendicular distance from the origin \(\mathbf{0}\) to the hyperplane is given by \(\frac{b}{\|w\|_2}\).</li>
+            <li><strong>Space Partitioning:</strong> The hyperplane partitions \(\mathbb{R}^d\) into two disjoint half-spaces: a positive region \(\{x : w^T x + b > 0\}\) and a negative region \(\{x : w^T x + b < 0\}\).</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 3 -->
+      <section id="sec-functional-margin">
+        <h2>3. Functional Margin w.r.t. a Point and a Dataset</h2>
+
+        <div class="def-box">
+          <span class="box-label">Definition 3.1: Functional Margin of an Example</span>
+          Given a training sample \((x^{(i)}, y^{(i)})\), the <strong>functional margin</strong> of the parameter pair \((w, b)\) with respect to this sample is:
+          \[
+            \hat{\gamma}^{(i)} \triangleq y^{(i)} (w^T x^{(i)} + b)
+          \]
+        </div>
+
+        <p>
+          Examining the sign and magnitude of \(\hat{\gamma}^{(i)}\):
+        </p>
+        <ul>
+          <li>If \(y^{(i)} = +1\), we want \(w^T x^{(i)} + b \gg 0\) for a confident positive prediction.</li>
+          <li>If \(y^{(i)} = -1\), we want \(w^T x^{(i)} + b \ll 0\) for a confident negative prediction.</li>
+          <li>In both cases, a correct prediction yields \(\hat{\gamma}^{(i)} > 0\), and large values represent confident correct classifications!</li>
+        </ul>
+
+        <div class="def-box">
+          <span class="box-label">Definition 3.2: Functional Margin of a Dataset</span>
+          Given a training dataset \(S = \{(x^{(i)}, y^{(i)})\}_{i=1}^m\), the functional margin of the hyperplane \((w, b)\) with respect to \(S\) is the minimum functional margin across all training samples:
+          \[
+            \hat{\gamma} \triangleq \min_{i=1, \dots, m} \hat{\gamma}^{(i)} = \min_{i=1, \dots, m} y^{(i)} (w^T x^{(i)} + b)
+          \]
+        </div>
+
+        <div class="note-callout">
+          <span class="box-label">The Scale Invariance Flaw of Functional Margin</span>
+          <p>
+            Notice that if we replace \(w\) with \(2w\) and \(b\) with \(2b\), the physical decision boundary does not change at all:
+            \[
+              g(2w^T x + 2b) = g(2(w^T x + b)) = g(w^T x + b)
+            \]
+            Yet, the functional margin doubles: \(\hat{\gamma}^{(i)} \to 2\hat{\gamma}^{(i)}\)! By arbitrarily scaling \(w\) and \(b\) by a scalar \(k \to \infty\), we could make the functional margin arbitrarily large without changing the decision boundary by a millimeter. This shows that functional margin alone cannot serve as an objective function without a scale normalization constraint.
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 4 -->
+      <section id="sec-geometric-margin">
+        <h2>4. Geometric Margin: Rigorous Orthogonal Projection Derivation</h2>
+        <p>
+          To obtain a physically meaningful measure that is invariant to arbitrary parameter rescaling, we must compute the true Euclidean perpendicular distance from a data point to the hyperplane.
+        </p>
+
+        <div class="proof-box">
+          <span class="box-label">Derivation: Distance from Point \(x^{(i)}\) to Hyperplane \(w^T x + b = 0\)</span>
+          Let \(A\) be a positive training point \(x^{(i)}\) (so \(y^{(i)} = +1\)), and let \(B\) be the orthogonal projection of point \(A\) onto the hyperplane \(\mathcal{P} = \{x \mid w^T x + b = 0\}\).
+          <p>
+            The unit vector orthogonal to the hyperplane is \(\frac{w}{\|w\|_2}\). Since point \(B\) is obtained by moving from \(A\) in the direction perpendicular to the hyperplane by distance \(\gamma^{(i)}\):
+            \[
+              B = x^{(i)} - \gamma^{(i)} \frac{w}{\|w\|_2}
+            \]
+            Since point \(B\) lies on the hyperplane, its coordinates must satisfy the hyperplane equation:
+            \[
+              w^T B + b = 0 \implies w^T \left( x^{(i)} - \gamma^{(i)} \frac{w}{\|w\|_2} \right) + b = 0
+            \]
+            Distributing the dot product:
+            \[
+              w^T x^{(i)} - \gamma^{(i)} \frac{w^T w}{\|w\|_2} + b = 0
+            \]
+            Recall that \(w^T w = \|w\|_2^2\). Therefore:
+            \[
+              \frac{w^T w}{\|w\|_2} = \frac{\|w\|_2^2}{\|w\|_2} = \|w\|_2
+            \]
+            Substituting this back gives:
+            \[
+              w^T x^{(i)} - \gamma^{(i)} \|w\|_2 + b = 0 \implies \gamma^{(i)} \|w\|_2 = w^T x^{(i)} + b
+            \]
+            Solving for the distance \(\gamma^{(i)}\):
+            \[
+              \gamma^{(i)} = \frac{w^T x^{(i)} + b}{\|w\|_2} = \left(\frac{w}{\|w\|_2}\right)^T x^{(i)} + \frac{b}{\|w\|_2}
+            \]
+          </p>
+        </div>
+
+        <div class="def-box">
+          <span class="box-label">Definition 4.1: The Geometric Margin</span>
+          Generalizing to both positive (\(y^{(i)} = +1\)) and negative (\(y^{(i)} = -1\)) samples:
+          \[
+            \gamma^{(i)} \triangleq y^{(i)} \left( \left(\frac{w}{\|w\|_2}\right)^T x^{(i)} + \frac{b}{\|w\|_2} \right) = \frac{\hat{\gamma}^{(i)}}{\|w\|_2}
+          \]
+          The geometric margin of the dataset \(S\) is the minimum geometric margin across all training samples:
+          \[
+            \gamma \triangleq \min_{i=1, \dots, m} \gamma^{(i)}
+          \]
+          Notice that multiplying \(w\) and \(b\) by any positive scalar \(k > 0\) multiplies both numerator and denominator by \(k\), leaving \(\gamma^{(i)}\) completely unchanged. The geometric margin is <strong>scale-invariant</strong>.
+        </div>
+      </section>
+
+      <!-- Section 5 -->
+      <section id="sec-primal-qp">
+        <h2>5. The Optimal Margin Classifier as Convex Quadratic Programming (QP)</h2>
+        <p>
+          Assuming the dataset is linearly separable, we wish to find the hyperplane \((w, b)\) that maximizes the geometric margin \(\gamma\):
+          \[
+            \begin{aligned}
+              \max_{\gamma, w, b} \quad & \gamma \\
+              \text{subject to} \quad & y^{(i)}(w^T x^{(i)} + b) \ge \gamma, \quad i = 1, \dots, m \\
+              & \|w\|_2 = 1
+            \end{aligned}
+          \]
+        </p>
+
+        <div class="note-callout">
+          <span class="box-label">Eliminating the Non-Convex Norm Constraint</span>
+          <p>
+            The constraint \(\|w\|_2 = 1\) is non-convex (it represents a spherical shell, not a convex ball). However, using the identity \(\gamma = \frac{\hat{\gamma}}{\|w\|}\), we can rewrite the optimization problem as:
+            \[
+              \begin{aligned}
+                \max_{\hat{\gamma}, w, b} \quad & \frac{\hat{\gamma}}{\|w\|_2} \\
+                \text{subject to} \quad & y^{(i)}(w^T x^{(i)} + b) \ge \hat{\gamma}, \quad i = 1, \dots, m
+              \end{aligned}
+            \]
+            Here, the objective function \(\frac{\hat{\gamma}}{\|w\|}\) is non-convex. However, recall that the scale of \(w\) and \(b\) is completely arbitrary! We can introduce the scaling constraint that fixes the functional margin on the closest points to 1:
+            \[
+              \hat{\gamma} = 1
+            \]
+            Substituting \(\hat{\gamma} = 1\) into our objective, maximizing \(\frac{1}{\|w\|_2}\) is mathematically identical to minimizing \(\|w\|_2\), which is equivalent to minimizing \(\frac{1}{2}\|w\|_2^2\).
+          </p>
+        </div>
+
+        <div class="thm-box">
+          <span class="box-label">The Primal Optimization Problem for Hard-Margin SVM</span>
+          \[
+            \begin{aligned}
+              \min_{w, b} \quad & \frac{1}{2} \|w\|_2^2 \\
+              \text{subject to} \quad & y^{(i)}(w^T x^{(i)} + b) \ge 1, \quad \forall i = 1, \dots, m
+            \end{aligned}
+          \]
+          <p>
+            This is a canonical <strong>Convex Quadratic Program (QP)</strong>:
+          </p>
+          <ul>
+            <li>The objective \(\frac{1}{2} w^T w\) is strictly convex with a positive definite Hessian matrix \(I\).</li>
+            <li>The constraints \(1 - y^{(i)}(w^T x^{(i)} + b) \le 0\) are strictly affine (linear).</li>
+            <li>Standard QP solvers guarantee finding the unique global minimum!</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 6 -->
+      <section id="sec-lagrange-duality">
+        <h2>6. Foundations of Lagrange Duality: Primal, Dual &amp; KKT Conditions</h2>
+        <p>
+          While standard QP solvers can optimize the primal problem directly in \(O(d^3)\) time, formulating the <strong>Lagrange Dual</strong> unlocks two immense advantages:
+        </p>
+        <ol>
+          <li>It reveals that the optimal classifier depends only on a tiny subset of data: the <strong>Support Vectors</strong>.</li>
+          <li>It expresses the entire algorithm in terms of inner products \(\langle x^{(i)}, x^{(j)} \rangle\), directly enabling the <strong>Kernel Trick</strong>!</li>
+        </ol>
+
+        <h3>6.1 The General Primal Problem</h3>
+        <p>
+          Consider a general constrained optimization problem:
+          \[
+            \begin{aligned}
+              \min_w \quad & f(w) \\
+              \text{subject to} \quad & g_i(w) \le 0, \quad i = 1, \dots, k \\
+              & h_i(w) = 0, \quad i = 1, \dots, l
+            \end{aligned}
+          \]
+          Define the <strong>Generalized Lagrangian</strong>:
+          \[
+            \mathcal{L}(w, \alpha, \beta) = f(w) + \sum_{i=1}^k \alpha_i g_i(w) + \sum_{i=1}^l \beta_i h_i(w)
+          \]
+          where \(\alpha_i \ge 0\) and \(\beta_i \in \mathbb{R}\) are Lagrange multipliers.
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">The Primal Objective Function</span>
+          Define \(\theta_{\mathcal{P}}(w) \triangleq \max_{\alpha, \beta : \alpha_i \ge 0} \mathcal{L}(w, \alpha, \beta)\).
+          <p>
+            If \(w\) violates any constraint:
+          </p>
+          <ul>
+            <li>If \(g_i(w) > 0\), setting \(\alpha_i \to \infty\) makes \(\mathcal{L} \to \infty\).</li>
+            <li>If \(h_i(w) \ne 0\), choosing \(\beta_i\) with the same sign as \(h_i(w)\) and \(\beta_i \to \infty\) makes \(\mathcal{L} \to \infty\).</li>
+          </ul>
+          <p>
+            If \(w\) satisfies all constraints (\(g_i(w) \le 0, h_i(w) = 0\)), the maximum occurs when \(\alpha_i g_i(w) = 0\), so \(\theta_{\mathcal{P}}(w) = f(w)\). Hence:
+            \[
+              \theta_{\mathcal{P}}(w) = \begin{cases} f(w) & \text{if } w \text{ is feasible} \\ +\infty & \text{otherwise} \end{cases}
+            \]
+            Therefore, the primal problem \(\min_w f(w)\) subject to constraints is identically:
+            \[
+              p^* = \min_w \theta_{\mathcal{P}}(w) = \min_w \max_{\alpha \ge 0, \beta} \mathcal{L}(w, \alpha, \beta)
+            \]
+          </p>
+        </div>
+
+        <h3>6.2 The Dual Problem &amp; Duality Gap</h3>
+        <p>
+          Swapping the order of minimization and maximization yields the <strong>Dual Problem</strong>:
+          \[
+            d^* = \max_{\alpha \ge 0, \beta} \theta_{\mathcal{D}}(\alpha, \beta) = \max_{\alpha \ge 0, \beta} \min_w \mathcal{L}(w, \alpha, \beta)
+          \]
+          <strong>Weak Duality:</strong> It is always true that:
+          \[
+            d^* \le p^*
+          \]
+          (The maximum of a minimum is always less than or equal to the minimum of a maximum).
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">Strong Duality &amp; The Karush-Kuhn-Tucker (KKT) Conditions</span>
+          If \(f\) and \(g_i\) are convex, \(h_i\) are affine, and the constraints are strictly feasible (Slater's condition: \(\exists w\) such that \(g_i(w) < 0 \; \forall i\)), then <strong>Strong Duality</strong> holds:
+          \[
+            d^* = p^*
+          \]
+          Moreover, \(w^*\) and \((\alpha^*, \beta^*)\) are solutions to the primal and dual problems if and only if they satisfy the <strong>KKT conditions</strong>:
+          <ol>
+            <li><strong>Primal Feasibility:</strong> \(g_i(w^*) \le 0\) for \(i=1\dots k\), and \(h_i(w^*) = 0\) for \(i=1\dots l\).</li>
+            <li><strong>Dual Feasibility:</strong> \(\alpha_i^* \ge 0\) for \(i=1\dots k\).</li>
+            <li><strong>Stationarity:</strong> \(\nabla_w \mathcal{L}(w^*, \alpha^*, \beta^*) = \mathbf{0}\).</li>
+            <li><strong>Complementary Slackness:</strong>
+              \[
+                \alpha_i^* g_i(w^*) = 0 \quad \text{for all } i = 1, \dots, k
+              \]
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Section 7 -->
+      <section id="sec-svm-dual-derivation">
+        <h2>7. Full Derivation of the SVM Dual Problem</h2>
+        <p>
+          Let us apply Lagrange duality to the SVM hard-margin primal problem:
+          \[
+            \min_{w, b} \frac{1}{2} w^T w \quad \text{s.t.} \quad 1 - y^{(i)}(w^T x^{(i)} + b) \le 0, \quad i = 1 \dots m
+          \]
+          The Lagrangian is given by slide 25 (equation 21):
+          \[
+            \mathcal{L}(w, b, \alpha) = \frac{1}{2} \|w\|^2 - \sum_{i=1}^m \alpha_i \left[ y^{(i)}(w^T x^{(i)} + b) - 1 \right]
+          \]
+        </p>
+
+        <div class="proof-box">
+          <span class="box-label">Step 1: Minimizing \(\mathcal{L}\) with respect to \(w\) and \(b\)</span>
+          Setting the gradient with respect to \(w\) to zero:
+          \[
+            \nabla_w \mathcal{L} = w - \sum_{i=1}^m \alpha_i y^{(i)} x^{(i)} = 0 \implies w = \sum_{i=1}^m \alpha_i y^{(i)} x^{(i)} \quad \text{(Equation 22)}
+          \]
+          Setting the partial derivative with respect to \(b\) to zero:
+          \[
+            \frac{\partial \mathcal{L}}{\partial b} = -\sum_{i=1}^m \alpha_i y^{(i)} = 0 \implies \sum_{i=1}^m \alpha_i y^{(i)} = 0 \quad \text{(Equation 23)}
+          \]
+        </div>
+
+        <div class="proof-box">
+          <span class="box-label">Step 2: Substituting \(w\) and \(\sum \alpha_i y^{(i)} = 0\) back into \(\mathcal{L}\)</span>
+          Substitute \(w = \sum_{i=1}^m \alpha_i y^{(i)} x^{(i)}\) into the Lagrangian:
+          \[
+            \begin{aligned}
+              \mathcal{L}(w, b, \alpha) &= \frac{1}{2} w^T w - \sum_{i=1}^m \alpha_i y^{(i)} w^T x^{(i)} - b \sum_{i=1}^m \alpha_i y^{(i)} + \sum_{i=1}^m \alpha_i \\
+              &= \frac{1}{2} \left(\sum_{i=1}^m \alpha_i y^{(i)} x^{(i)}\right)^T \left(\sum_{j=1}^m \alpha_j y^{(j)} x^{(j)}\right) - \sum_{i=1}^m \alpha_i y^{(i)} \left( \sum_{j=1}^m \alpha_j y^{(j)} x^{(j)} \right)^T x^{(i)} - b(0) + \sum_{i=1}^m \alpha_i \\
+              &= \frac{1}{2} \sum_{i=1}^m \sum_{j=1}^m \alpha_i \alpha_j y^{(i)} y^{(j)} (x^{(i)})^T x^{(j)} - \sum_{i=1}^m \sum_{j=1}^m \alpha_i \alpha_j y^{(i)} y^{(j)} (x^{(i)})^T x^{(j)} + \sum_{i=1}^m \alpha_i \\
+              &= \sum_{i=1}^m \alpha_i - \frac{1}{2} \sum_{i=1}^m \sum_{j=1}^m y^{(i)} y^{(j)} \alpha_i \alpha_j \langle x^{(i)}, x^{(j)} \rangle
+            \end{aligned}
+          \]
+        </div>
+
+        <div class="thm-box">
+          <span class="box-label">Theorem 7.1: The SVM Dual Optimization Problem</span>
+          \[
+            \begin{aligned}
+              \max_{\alpha} \quad & W(\alpha) = \sum_{i=1}^m \alpha_i - \frac{1}{2} \sum_{i=1}^m \sum_{j=1}^m y^{(i)} y^{(j)} \alpha_i \alpha_j \langle x^{(i)}, x^{(j)} \rangle \\
+              \text{subject to} \quad & \alpha_i \ge 0, \quad i = 1, \dots, m \\
+              & \sum_{i=1}^m \alpha_i y^{(i)} = 0
+            \end{aligned}
+          \]
+          <p>
+            <strong>Crucial Insight:</strong> In this dual formulation, the data points \(x^{(i)}\) appear <em>exclusively inside the pairwise inner product</em> \(\langle x^{(i)}, x^{(j)} \rangle\). To kernelize the SVM, we simply substitute:
+            \[
+              \langle x^{(i)}, x^{(j)} \rangle \longrightarrow K(x^{(i)}, x^{(j)})
+            \]
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 8 -->
+      <section id="sec-support-vectors-b">
+        <h2>8. Support Vectors, Complementary Slackness &amp; Recovering \(b^*\)</h2>
+
+        <h3>8.1 Sparsity of Support Vectors</h3>
+        <p>
+          Recall the KKT complementary slackness condition:
+          \[
+            \alpha_i^* \left[ y^{(i)}((w^*)^T x^{(i)} + b^*) - 1 \right] = 0 \quad \forall i = 1, \dots, m
+          \]
+        </p>
+
+        <div class="note-callout">
+          <span class="box-label">Key Property: Sparsity of Support Vectors</span>
+          <p>
+            By the KKT complementary slackness condition \(\alpha_i^* [y^{(i)}(w^{*T} x^{(i)} + b^*) - 1] = 0\), non-zero dual coefficients exist only on active constraints:
+          </p>
+          <ul>
+            <li>If point \(x^{(i)}\) lies strictly outside the margin (\(y^{(i)}(w^T x^{(i)} + b) > 1\)), then the bracket is strictly positive, forcing \(\alpha_i^* = 0\)!</li>
+            <li>Therefore, \(\alpha_i^* > 0\) can occur <strong>only</strong> if \(y^{(i)}(w^T x^{(i)} + b) = 1\) &mdash; precisely the points lying directly on the margin boundaries!</li>
+          </ul>
+        </div>
+
+        <p>
+          To predict the class of a new query sample \(x\):
+          \[
+            h_{w, b}(x) = \text{sign}\left( (w^*)^T x + b^* \right) = \text{sign}\left( \sum_{i \in \text{SV}} \alpha_i^* y^{(i)} \langle x^{(i)}, x \rangle + b^* \right)
+          \]
+          All training samples that are not Support Vectors contribute zero to the summation!
+
+        <h3>8.2 Recovering the Optimal Intercept \(b^*\)</h3>
+        <p>
+          Once \(\alpha^*\) and \(w^* = \sum_{i \in \text{SV}} \alpha_i y^{(i)} x^{(i)}\) are computed, slide 28 provides the closed-form calculation for \(b^*\):
+          \[
+            b^* = -\frac{\max_{i: y^{(i)}=-1} (w^*)^T x^{(i)} + \min_{i: y^{(i)}=+1} (w^*)^T x^{(i)}}{2}
+          \]
+          This places the decision boundary exactly halfway between the closest positive and negative support vectors.
+        </p>
+      </section>
+
+      <!-- Section 9 -->
+      <section id="sec-soft-margin-slack">
+        <h2>9. Soft-Margin SVM for Non-Separable Data &amp; Box Constraints</h2>
+        <p>
+          If data is not linearly separable, or if we want to guard against sensitivity to outliers (as shown in slide 31 where a single outlier drastically shifts the separating line), we introduce <strong>slack variables</strong> \(\xi_i \ge 0\).
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Soft-Margin Primal Problem (\(\ell_1\) Regularization)</span>
+          \[
+            \begin{aligned}
+              \min_{w, b, \xi} \quad & \frac{1}{2} \|w\|^2 + C \sum_{i=1}^m \xi_i \\
+              \text{subject to} \quad & y^{(i)}(w^T x^{(i)} + b) \ge 1 - \xi_i, \quad i = 1, \dots, m \\
+              & \xi_i \ge 0, \quad i = 1, \dots, m
+            \end{aligned}
+          \]
+        </div>
+
+        <div class="proof-box">
+          <span class="box-label">Derivation of the Soft-Margin Dual Box Constraint</span>
+          The generalized Lagrangian with multipliers \(\alpha_i \ge 0\) and \(r_i \ge 0\) is (Slide 30):
+          \[
+            \mathcal{L}(w, b, \xi, \alpha, r) = \frac{1}{2} w^T w + C \sum_{i=1}^m \xi_i - \sum_{i=1}^m \alpha_i \left[ y^{(i)}(w^T x^{(i)} + b) - 1 + \xi_i \right] - \sum_{i=1}^m r_i \xi_i
+          \]
+          Taking the partial derivative with respect to the slack variable \(\xi_i\):
+          \[
+            \frac{\partial \mathcal{L}}{\partial \xi_i} = C - \alpha_i - r_i = 0 \implies \alpha_i = C - r_i
+          \]
+          Since the Lagrange multiplier \(r_i \ge 0\), this directly implies:
+          \[
+            \alpha_i \le C
+          \]
+          Combining this with \(\alpha_i \ge 0\) yields the famous <strong>Box Constraint</strong>:
+          \[
+            0 \le \alpha_i \le C \quad \forall i = 1, \dots, m
+          \]
+        </div>
+
+        <div class="thm-box">
+          <span class="box-label">Theorem 9.1: The Soft-Margin SVM Dual</span>
+          \[
+            \begin{aligned}
+              \max_\alpha \quad & W(\alpha) = \sum_{i=1}^m \alpha_i - \frac{1}{2} \sum_{i,j=1}^m y^{(i)} y^{(j)} \alpha_i \alpha_j K(x^{(i)}, x^{(j)}) \\
+              \text{subject to} \quad & 0 \le \alpha_i \le C, \quad i = 1, \dots, m \\
+              & \sum_{i=1}^m \alpha_i y^{(i)} = 0
+            \end{aligned}
+          \]
+        </div>
+
+        <div class="note-callout">
+          <span class="box-label">Diagnostic Summary: The Effect of Hyperparameter \(C\)</span>
+          <p>
+            As highlighted on slide 34:
+          </p>
+          <ul>
+            <li><strong>Large \(C\) (\(C \uparrow\)):</strong> High penalty on slacks \(\xi_i\). Margin is narrow. Fewer margin violations permitted \(\implies\) <strong>Fewer Support Vectors, Low Bias, High Variance (Risk of Overfitting)</strong>.</li>
+            <li><strong>Small \(C\) (\(C \downarrow\)):</strong> Low penalty on violations. Margin is wide. More points violate the margin \(\implies\) <strong>More Support Vectors, High Bias, Low Variance (Risk of Underfitting)</strong>.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 10 -->
+      <section id="sec-multiclass-svm">
+        <h2>10. Multiclass Classification: One-vs-All (OvA)</h2>
+        <p>
+          SVM is inherently a binary classifier. When targets belong to \(K > 2\) classes (\(y \in \{1, 2, \dots, K\}\)), the canonical approach is <strong>One-vs-All (OvA)</strong>, also called <strong>One-vs-Rest (OvR)</strong> (Slide 38):
+        </p>
+        <ol>
+          <li>For each class \(k \in \{1, \dots, K\}\), train a binary SVM where samples from class \(k\) are labeled \(+1\) and all other samples from classes \(j \ne k\) are labeled \(-1\).</li>
+          <li>This yields \(K\) distinct hyperplanes parameterized by \((\theta^{(1)}, \dots, \theta^{(K)})\).</li>
+          <li>For an unseen test point \(x_{\text{test}}\), evaluate the continuous decision function under all \(K\) models and assign the class with the maximum confidence score:
+            \[
+              \hat{y} = \arg\max_{k \in \{1, \dots, K\}} h_\theta^{(k)}(x_{\text{test}}) = \arg\max_{k \in \{1, \dots, K\}} \left( (\theta^{(k)})^T x_{\text{test}} \right)
+            \]
+          </li>
+        </ol>
+      </section>
+
+      <!-- Section 11 -->
+      <section id="sec-svm-vs-logreg">
+        <h2>11. Decision Guide: SVMs vs. Logistic Regression vs. Neural Networks</h2>
+        <p>
+          An essential engineering consideration is the direct correspondence between regularized models:
+        </p>
+
+        <div class="note-callout">
+          <span class="box-label">Parameter Equivalence: \(C \sim 1/\lambda\)</span>
+          <p>
+            Comparing the objective functions of \(L_2\)-regularized Logistic Regression and soft-margin SVM reveals the reciprocal role of their hyperparameters:
+            <br>
+            In Logistic Regression, the cost is \(J(\theta) + \frac{\lambda}{2}\|\theta\|^2\). In SVM, the cost is \(\frac{1}{2}\|w\|^2 + C \sum \xi_i\). Thus:
+            \[
+              C \longleftrightarrow \frac{1}{\lambda}
+            \]
+            A large \(C\) corresponds to weak regularization (\(\lambda \to 0\)), whereas a small \(C\) corresponds to heavy regularization (\(\lambda \to \infty\)).
+          </p>
+        </div>
+
+        <table class="academic-table">
+          <thead>
+            <tr>
+              <th>Dimensionality Regime</th>
+              <th>Typical Scale</th>
+              <th>Recommended Model</th>
+              <th>Engineering Rationale</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>\(n\) large relative to \(m\)</strong></td>
+              <td>\(n = 10,000, \; m = 10 \dots 1,000\)</td>
+              <td><strong>Logistic Regression or Linear SVM (no kernel)</strong></td>
+              <td>In high dimensions, data is already linearly separable. Non-linear kernels add severe risk of overfitting and waste computational resources.</td>
+            </tr>
+            <tr>
+              <td><strong>\(n\) small, \(m\) intermediate</strong></td>
+              <td>\(n = 1 \dots 1,000, \; m = 10 \dots 10,000\)</td>
+              <td><strong>SVM with Gaussian (RBF) Kernel</strong></td>
+              <td>Gaussian kernel efficiently forms complex, highly non-linear boundaries. Sample size \(m\) is small enough that computing the \(m \times m\) Gram matrix is fast.</td>
+            </tr>
+            <tr>
+              <td><strong>\(n\) small, \(m\) very large</strong></td>
+              <td>\(n = 1 \dots 1,000, \; m = 50,000 \dots 1,000,000+\)</td>
+              <td><strong>Manual Feature Engineering + Logistic Regression / Linear SVM</strong></td>
+              <td>Gaussian kernel SVM scales as \(O(m^2)\) in memory and \(O(m^3)\) in training time, becoming completely intractable for \(m > 50,000\). Manually adding polynomial features with a linear model scales as \(O(m)\).</td>
+            </tr>
+            <tr>
+              <td><strong>Universal Alternative</strong></td>
+              <td>Any regime</td>
+              <td><strong>Deep Neural Networks</strong></td>
+              <td>Likely to perform well across all regimes, but may require more tuning, larger training times, and can get trapped in local optima due to non-convex loss surfaces.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-23.html">&larr; Lecture 23: Kernel Methods &amp; The Kernel Trick</a>
+      <a href="./lecture-25.html">Lecture 25: SVM Duality &amp; K-Means Clustering &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

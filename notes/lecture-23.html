@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 23: Kernel Methods, The Kernel Trick &amp; Support Vector Classifiers | Basics of Data Science</title>
+  <meta name="description" content="Comprehensive MIT OCW / Stanford CS229 style lecture notes on Kernel Methods, the Kernel Trick, Dual LMS updates, Mercer's Theorem, Landmark RBFs, Geometric Margins, and Support Vector Classifiers (SVC).">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2323%20-%20kernel%20methods%20and%20the%20kernel%20trick.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 23 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 23: Kernel Methods, The Kernel Trick &amp; Support Vector Classifiers</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Fall 2026</div>
+        <div class="note-meta-item"><strong>Readings:</strong> ESL Ch. 5 &amp; 12; CS229 Lecture Notes (Kernels &amp; SVMs); Sch&ouml;lkopf &amp; Smola</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-feature-maps">1. Non-Linear Feature Mappings (\(\phi(x)\)) &amp; Dimensionality Explosion</a></li>
+        <li><a href="#sec-dual-lms">2. Dual Representation of Linear Models &amp; Dual LMS Updates</a></li>
+        <li><a href="#sec-kernel-trick">3. The Kernel Trick &amp; Inner Product Computation</a></li>
+        <li><a href="#sec-canonical-kernels">4. Canonical Kernels: Polynomial &amp; Gaussian RBF</a></li>
+        <li><a href="#sec-infinite-rbf">5. Infinite-Dimensional Feature Space of Gaussian RBF</a></li>
+        <li><a href="#sec-mercer-theorem">6. Mercer's Theorem &amp; Positive Semi-Definite Gram Matrices</a></li>
+        <li><a href="#sec-landmarks">7. Similarity Metric Perspective &amp; Landmark Representation</a></li>
+        <li><a href="#sec-margins-hyperplanes">8. Hyperplanes, Margins, and Confidence in Classification</a></li>
+        <li><a href="#sec-mmc">9. The Maximal Margin Classifier (MMC) &amp; Support Vectors</a></li>
+        <li><a href="#sec-svc-soft-margin">10. Support Vector Classifiers (SVC) &amp; Slack Budget (\(C\))</a></li>
+        <li><a href="#sec-svm-synthesis">11. The Grand Taxonomy: MMC \(\to\) SVC \(\to\) SVM</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <section id="sec-feature-maps">
+        <h2>1. Non-Linear Feature Mappings (\(\phi(x)\)) &amp; Dimensionality Explosion</h2>
+        <p>
+          In linear regression and linear classification, our hypothesis assumes linearity directly over the input coordinates \(x \in \mathbb{R}^d\):
+          \[
+            h_\theta(x) = \theta_0 + \theta_1 x_1 + \dots + \theta_d x_d = \theta^T x
+          \]
+          However, real-world data science problems routinely present complex non-linear manifolds that no flat hyperplane can separate or fit. The classical paradigm to overcome this limitation is to map the raw input vector \(x \in \mathbb{R}^d\) into a high-dimensional (or even infinite-dimensional) <strong>feature space</strong> \(\mathcal{H}\) via a non-linear vector-valued map:
+          \[
+            \phi: \mathbb{R}^d \to \mathbb{R}^p \quad (p \gg d)
+          \]
+          Once mapped, we fit a linear model over \(\phi(x)\):
+          \[
+            h_\theta(x) = \theta^T \phi(x) = \sum_{j=1}^p \theta_j \phi_j(x)
+          \]
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Example: 1D Input to Cubic Polynomial Feature Space</span>
+          Consider a 1-dimensional input feature \(x \in \mathbb{R}\). We define the cubic polynomial feature map:
+          \[
+            \phi(x) = \begin{bmatrix} 1 \\ x \\ x^2 \\ x^3 \end{bmatrix} \in \mathbb{R}^4
+          \]
+          The hypothesis evaluated in this feature space becomes:
+          \[
+            h_\theta(x) = \theta^T \phi(x) = \theta_0 + \theta_1 x + \theta_2 x^2 + \theta_3 x^3
+          \]
+          While \(h_\theta(x)\) produces a highly expressive, non-linear cubic curve in the original attribute space \(\mathbb{R}\), it remains <em>strictly linear</em> with respect to the parameter vector \(\theta \in \mathbb{R}^4\)!
+        </div>
+
+        <div class="note-callout">
+          <span class="box-label">The Curse of Dimensionality in Explicit Feature Mappings</span>
+          <p>
+            When \(x \in \mathbb{R}^d\) contains multiple features, expanding all monomial interactions up to degree \(k\) causes a catastrophic combinatorial explosion in dimensionality. For degree \(k \le 3\):
+            \[
+              p = \binom{d + k}{k} \approx O(d^3)
+            \]
+            For an image patch with \(d = 1000\) pixels, computing degree-3 polynomial features yields \(p \approx \frac{1000^3}{6} \approx 1.6 \times 10^8\) dimensions. Storing, computing, and optimizing \(\theta \in \mathbb{R}^{1.6 \times 10^8}\) is intractable. This computational barrier motivates the <strong>Dual Representation</strong> and the <strong>Kernel Trick</strong>.
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 2 -->
+      <section id="sec-dual-lms">
+        <h2>2. Dual Representation of Linear Models &amp; Dual LMS Updates</h2>
+        <p>
+          Let us examine Least Mean Squares (LMS) gradient descent on a dataset of \(m\) training examples \(\{(x^{(i)}, y^{(i)})\}_{i=1}^m\) where features are mapped via \(\phi(x) \in \mathbb{R}^p\). The batch cost function is:
+          \[
+            J(\theta) = \frac{1}{2} \sum_{i=1}^m \left(y^{(i)} - \theta^T \phi(x^{(i)})\right)^2
+          \]
+          The gradient descent parameter update rule is:
+          \[
+            \theta := \theta + \alpha \sum_{i=1}^m \left(y^{(i)} - \theta^T \phi(x^{(i)})\right) \phi(x^{(i)})
+          \]
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">The Dual Representation Theorem for LMS</span>
+          Suppose the parameter vector is initialized to zero: \(\theta^{(0)} = \mathbf{0}\). Then after any number of iterations, \(\theta\) must lie entirely within the linear span of the transformed training inputs:
+          \[
+            \theta = \sum_{i=1}^m \beta_i \phi(x^{(i)})
+          \]
+          where \(\beta = [\beta_1, \beta_2, \dots, \beta_m]^T \in \mathbb{R}^m\) is a vector of \(m\) dual coefficients (one coefficient per training sample).
+        </div>
+
+        <div class="proof-box">
+          <span class="box-label">Derivation: Inductive Step for Dual LMS</span>
+          Substitute the dual expansion \(\theta = \sum_{j=1}^m \beta_j \phi(x^{(j)})\) into the prediction for sample \(i\):
+          \[
+            \theta^T \phi(x^{(i)}) = \left( \sum_{j=1}^m \beta_j \phi(x^{(j)}) \right)^T \phi(x^{(i)}) = \sum_{j=1}^m \beta_j \langle \phi(x^{(j)}), \phi(x^{(i)}) \rangle
+          \]
+          Define the <strong>Gram Matrix</strong> (Kernel Matrix) \(K \in \mathbb{R}^{m \times m}\) such that:
+          \[
+            K_{ij} = \langle \phi(x^{(i)}), \phi(x^{(j)}) \rangle = \phi(x^{(i)})^T \phi(x^{(j)})
+          \]
+          Then the model's prediction on the \(i\)-th training instance is the \(i\)-th row of the matrix-vector product \(K \beta\):
+          \[
+            \theta^T \phi(x^{(i)}) = (K \beta)_i
+          \]
+          Now, looking at the batch LMS update rule:
+          \[
+            \theta^{(\text{new})} = \theta^{(\text{old})} + \alpha \sum_{i=1}^m \left(y^{(i)} - (K \beta)_i \right) \phi(x^{(i)})
+          \]
+          Equating this to \(\sum_{i=1}^m \beta_i^{(\text{new})} \phi(x^{(i)})\), we obtain the exact vectorized update rule for the dual parameters \(\beta \in \mathbb{R}^m\):
+          \[
+            \beta := \beta + \alpha \left(\vec{y} - K \beta\right)
+          \]
+          where \(\vec{y} = [y^{(1)}, \dots, y^{(m)}]^T \in \mathbb{R}^m\).
+        </div>
+
+        <p>
+          To compute the hypothesis on an unseen query point \(x \in \mathbb{R}^d\), we never need \(\theta\) explicitly:
+          \[
+            h_\theta(x) = \theta^T \phi(x) = \left( \sum_{i=1}^m \beta_i \phi(x^{(i)}) \right)^T \phi(x) = \sum_{i=1}^m \beta_i \langle \phi(x^{(i)}), \phi(x) \rangle
+          \]
+        </p>
+
+        <div class="note-callout">
+          <span class="box-label">Dimensionality Comparison: Primal vs. Dual Formulations</span>
+          <p>
+            In the primal formulation, the parameter vector \(\theta \in \mathbb{R}^p\) scales with the feature dimension, which may be millions of dimensions or even infinite. In the dual representation, we optimize the dual vector \(\beta \in \mathbb{R}^m\), whose dimension depends strictly on the <strong>number of training examples</strong> (\(m\)):
+            \[
+              \text{Primal parameter: } \theta \in \mathbb{R}^p \quad \longleftrightarrow \quad \text{Dual parameter: } \beta \in \mathbb{R}^m
+            \]
+            Furthermore, both model training and evaluation depend strictly on <strong>inner products</strong> between input pairs:
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 3 -->
+      <section id="sec-kernel-trick">
+        <h2>3. The Kernel Trick &amp; Inner Product Computation</h2>
+        <p>
+          The realization that both the optimization of \(\beta\) and the evaluation of \(h_\theta(x)\) depend exclusively on pairwise inner products \(\langle \phi(x), \phi(z) \rangle\) gives birth to the <strong>Kernel Trick</strong>.
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Definition 3.1: The Kernel Function</span>
+          Given an implicit or explicit feature map \(\phi: \mathcal{X} \to \mathcal{H}\), the corresponding <strong>Kernel function</strong> \(K: \mathcal{X} \times \mathcal{X} \to \mathbb{R}\) evaluates the inner product between transformed vectors in \(\mathcal{H}\):
+          \[
+            K(x, z) \triangleq \langle \phi(x), \phi(z) \rangle = \phi(x)^T \phi(z)
+          \]
+        </div>
+
+        <p>
+          <strong>The Core Insight:</strong> In many cases, \(K(x, z)\) can be evaluated in closed form in \(O(d)\) arithmetic operations in the original input space, completely bypassing the construction, storage, and computation of the \(p\)-dimensional vector \(\phi(x)\).
+        </p>
+      </section>
+
+      <!-- Section 4 -->
+      <section id="sec-canonical-kernels">
+        <h2>4. Canonical Kernels: Polynomial &amp; Gaussian RBF</h2>
+
+        <h3>4.1 The Homogeneous &amp; Inhomogeneous Polynomial Kernels</h3>
+        <p>
+          Consider the quadratic polynomial kernel for \(x, z \in \mathbb{R}^2\):
+          \[
+            K(x, z) = (x^T z)^2
+          \]
+          Expanding algebraically:
+          \[
+            K(x, z) = (x_1 z_1 + x_2 z_2)^2 = x_1^2 z_1^2 + 2 x_1 x_2 z_1 z_2 + x_2^2 z_2^2
+          \]
+          This equals the inner product \(\phi(x)^T \phi(z)\) where:
+          \[
+            \phi(x) = \begin{bmatrix} x_1^2 \\ \sqrt{2} x_1 x_2 \\ x_2^2 \end{bmatrix}, \quad \phi(z) = \begin{bmatrix} z_1^2 \\ \sqrt{2} z_1 z_2 \\ z_2^2 \end{bmatrix}
+          \]
+          Evaluating \(\phi(x)\) and \(\phi(z)\) explicitly and computing their dot product requires \(O(d^2)\) time. In contrast, calculating \((x^T z)^2\) takes only \(O(d)\) operations (one dot product plus one scalar squaring)!
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">General Polynomial Kernel</span>
+          For arbitrary dimension \(d\), degree \(k \ge 1\), and intercept \(c \ge 0\):
+          \[
+            K(x, z) = (x^T z + c)^k
+          \]
+          For \(k=2\), expanding \((x^T z + c)^2 = (x^T z)^2 + 2c(x^T z) + c^2\) captures:
+          <ul>
+            <li>All quadratic interaction terms: \(x_i x_j\) with scaling \(\sqrt{2}\) for \(i \ne j\) and \(1\) for \(i=j\).</li>
+            <li>All linear terms: \(\sqrt{2c}\, x_i\).</li>
+            <li>A constant bias term: \(c\).</li>
+          </ul>
+          The resulting feature space dimensionality is \(p = \binom{d+2}{2} = \frac{(d+2)(d+1)}{2}\), yet evaluating the kernel takes merely \(O(d)\) time!
+        </div>
+
+        <h3>4.2 The Gaussian Radial Basis Function (RBF) Kernel</h3>
+        <p>
+          The most widely used non-linear kernel in machine learning is the Gaussian RBF kernel:
+          \[
+            K(x, z) = \exp\left( -\frac{\|x - z\|^2}{2\sigma^2} \right) = \exp\left( -\gamma \|x - z\|^2 \right)
+          \]
+          where \(\sigma > 0\) is the Gaussian bandwidth (standard deviation) and \(\gamma = \frac{1}{2\sigma^2}\) controls the decay rate.
+        </p>
+      </section>
+
+      <!-- Section 5 -->
+      <section id="sec-infinite-rbf">
+        <h2>5. Infinite-Dimensional Feature Space of Gaussian RBF</h2>
+        <p>
+          What explicit feature map \(\phi(x)\) corresponds to the Gaussian RBF kernel? We prove that \(\phi(x)\) resides in an <strong>infinite-dimensional Hilbert space</strong> \(\ell_2\).
+        </p>
+
+        <div class="proof-box">
+          <span class="box-label">Mathematical Proof: Infinite-Dimensional Expansion</span>
+          Consider scalar inputs \(x, z \in \mathbb{R}\) with bandwidth \(\sigma = 1\). Expand the squared Euclidean difference:
+          \[
+            \|x - z\|^2 = x^2 - 2xz + z^2
+          \]
+          Substituting into the kernel definition:
+          \[
+            K(x, z) = \exp\left(-\frac{x^2 - 2xz + z^2}{2}\right) = \exp\left(-\frac{x^2}{2}\right) \exp\left(-\frac{z^2}{2}\right) \exp(xz)
+          \]
+          Recall the Taylor series expansion of the exponential function: \(\exp(u) = \sum_{k=0}^\infty \frac{u^k}{k!}\). Applying this to \(\exp(xz)\):
+          \[
+            K(x, z) = e^{-x^2/2} e^{-z^2/2} \sum_{k=0}^\infty \frac{(xz)^k}{k!} = \sum_{k=0}^\infty \left( e^{-x^2/2} \frac{x^k}{\sqrt{k!}} \right) \left( e^{-z^2/2} \frac{z^k}{\sqrt{k!}} \right)
+          \]
+          Rewriting this infinite sum as a vector inner product:
+          \[
+            K(x, z) = \phi(x)^T \phi(z)
+          \]
+          where the explicit feature map \(\phi(x)\) is the <strong>infinite-dimensional vector</strong>:
+          \[
+            \phi(x) = e^{-x^2/2} \begin{bmatrix}
+              1 \\
+              x \\
+              \frac{x^2}{\sqrt{2!}} \\
+              \frac{x^3}{\sqrt{3!}} \\
+              \vdots \\
+              \frac{x^k}{\sqrt{k!}} \\
+              \vdots
+            \end{bmatrix} \in \mathbb{R}^\infty
+          \]
+          <strong>Profound Conclusion:</strong> Computing with the Gaussian RBF kernel allows us to perform exact linear regression or classification in an <em>infinite-dimensional</em> feature space containing polynomial terms of every conceivable order \(k \in \{0, 1, 2, \dots, \infty\}\), while executing in mere \(O(d)\) time!
+        </div>
+      </section>
+
+      <!-- Section 6 -->
+      <section id="sec-mercer-theorem">
+        <h2>6. Mercer's Theorem &amp; Positive Semi-Definite Gram Matrices</h2>
+        <p>
+          Given a candidate mathematical function \(K(x, z)\), how can we guarantee that there exists a valid Hilbert feature space \(\mathcal{H}\) and mapping \(\phi(x)\) such that \(K(x, z) = \langle \phi(x), \phi(z) \rangle\)?
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Definition 6.1: The Gram Matrix</span>
+          Given an arbitrary collection of \(m\) data points \(\{x^{(1)}, \dots, x^{(m)}\}\), the <strong>Gram Matrix</strong> (or Kernel Matrix) \(K \in \mathbb{R}^{m \times m}\) is defined element-wise by:
+          \[
+            K_{ij} = K(x^{(i)}, x^{(j)})
+          \]
+        </div>
+
+        <div class="thm-box">
+          <span class="box-label">Theorem 6.1: Mercer's Condition</span>
+          A symmetric function \(K: \mathcal{X} \times \mathcal{X} \to \mathbb{R}\) (where \(K(x, z) = K(z, x)\)) is a valid Mercer Kernel if and only if for any finite set of points \(\{x^{(1)}, \dots, x^{(m)}\}\), the resulting Gram matrix \(K\) is <strong>Positive Semi-Definite (PSD)</strong>:
+          \[
+            z^T K z \ge 0 \quad \forall z \in \mathbb{R}^m
+          \]
+        </div>
+
+        <div class="proof-box">
+          <span class="box-label">Proof: Necessity of Positive Semi-Definiteness</span>
+          If \(K\) is a valid kernel, then by definition \(K(x^{(i)}, x^{(j)}) = \phi(x^{(i)})^T \phi(x^{(j)}) = \sum_k \phi_k(x^{(i)}) \phi_k(x^{(j)})\). Let \(z \in \mathbb{R}^m\) be an arbitrary non-zero vector. Then:
+          \[
+            \begin{aligned}
+              z^T K z &= \sum_{i=1}^m \sum_{j=1}^m z_i z_j K_{ij} \\
+              &= \sum_{i=1}^m \sum_{j=1}^m z_i z_j \left( \sum_k \phi_k(x^{(i)}) \phi_k(x^{(j)}) \right) \\
+              &= \sum_k \left( \sum_{i=1}^m z_i \phi_k(x^{(i)}) \right) \left( \sum_{j=1}^m z_j \phi_k(x^{(j)}) \right) \\
+              &= \sum_k \left( \sum_{i=1}^m z_i \phi_k(x^{(i)}) \right)^2 \ge 0
+            \end{aligned}
+          \]
+          Because the sum of squared real terms is always non-negative, \(z^T K z \ge 0\) is always satisfied!
+        </div>
+      </section>
+
+      <!-- Section 7 -->
+      <section id="sec-landmarks">
+        <h2>7. Similarity Metric Perspective &amp; Landmark Representation</h2>
+        <p>
+          Beyond linear algebra and dot products, kernels can be interpreted intuitively as <strong>generalized similarity metrics</strong>:
+        </p>
+        <ul>
+          <li><strong>Identity:</strong> If \(x = z\), then \(\|x - z\| = 0 \implies K(x, x) = \exp(0) = 1\) (maximum similarity).</li>
+          <li><strong>Orthogonality / Divergence:</strong> As \(\|x - z\| \to \infty\), \(K(x, z) \to 0\) (zero similarity).</li>
+        </ul>
+
+        <div class="def-box">
+          <span class="box-label">The Landmark Formulation</span>
+          Suppose we manually select reference points in feature space called <strong>landmarks</strong> \(l^{(1)}, l^{(2)}, \dots \in \mathbb{R}^d\). For any sample \(x\), we construct a new feature vector based on its similarity to each landmark:
+          \[
+            f_1 = K(x, l^{(1)}) = \exp\left(-\frac{\|x - l^{(1)}\|^2}{2\sigma^2}\right), \quad f_2 = K(x, l^{(2)}) = \exp\left(-\frac{\|x - l^{(2)}\|^2}{2\sigma^2}\right), \quad \dots
+          \]
+          <p>
+            <strong>Role of Bandwidth \(\sigma^2\):</strong>
+          </p>
+          <ul>
+            <li><strong>Small \(\sigma^2\) (e.g. \(\sigma^2 = 0.5\)):</strong> The Gaussian falls off extremely steeply. Only points immediately adjacent to landmark \(l^{(1)}\) have \(f_1 \approx 1\). This yields high variance, sharp non-linear boundaries, and risk of overfitting.</li>
+            <li><strong>Large \(\sigma^2\) (e.g. \(\sigma^2 = 3\)):</strong> The Gaussian bell is wide and flat. Even distant points retain moderate similarity \(f_1 > 0\). This yields high bias, smoother boundaries, and higher regularization.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 8 -->
+      <section id="sec-margins-hyperplanes">
+        <h2>8. Hyperplanes, Margins, and Confidence in Classification</h2>
+        <p>
+          We now turn our attention from kernelized regression to <strong>classification</strong>, establishing the mathematical foundations of Support Vector Machines.
+        </p>
+
+        <h3>8.1 Geometry of a Separating Hyperplane</h3>
+        <p>
+          In a \(d\)-dimensional input space, a hyperplane is defined algebraically by:
+          \[
+            w_0 + w_1 x_1 + w_2 x_2 + \dots + w_d x_d = 0
+          \]
+          In vector notation, partitioning the intercept (bias) \(b = w_0 = \theta_0\) and weight vector \(w = [w_1, \dots, w_d]^T \in \mathbb{R}^d\):
+          \[
+            w^T x + b = 0
+          \]
+          The vector \(w\) is orthogonal (perpendicular) to the hyperplane, and \(b / \|w\|\) determines the signed distance from the origin.
+        </p>
+
+        <h3>8.2 Margins &amp; Prediction Confidence</h3>
+        <p>
+          In binary classification, let targets be labeled \(y \in \{-1, +1\}\). A linear classifier makes predictions via the sign of the linear combination:
+          \[
+            h_{w, b}(x) = \text{sign}(w^T x + b)
+          \]
+          A sample \(x^{(i)}\) is correctly classified if and only if:
+          \[
+            y^{(i)} (w^T x^{(i)} + b) > 0
+          \]
+        </p>
+
+        <div class="note-callout">
+          <span class="box-label">Slide 30 Inspection: Connection to Logistic Regression Confidence</span>
+          <p>
+            Recall in logistic regression, \(h_\theta(x) = \sigma(\theta^T x) = \frac{1}{1 + e^{-\theta^T x}}\):
+            \[
+              \begin{aligned}
+                \sigma(\theta^T x) > 0.5 &\iff \theta^T x > 0 \implies \hat{y} = 1 \\
+                \sigma(\theta^T x) < 0.5 &\iff \theta^T x < 0 \implies \hat{y} = 0 \text{ (or } -1 \text{)}
+              \end{aligned}
+            \]
+            To classify with <em>high confidence</em>, we desire:
+            \[
+              \begin{aligned}
+                \text{If } y = +1 &\implies w^T x + b \gg 0 \\
+                \text{If } y = -1 &\implies w^T x + b \ll 0
+              \end{aligned}
+            \]
+            Examining three points \(A, B, C\) relative to the boundary:
+            <ul>
+              <li><strong>Point A (Far away):</strong> \(|w^T x_A + b| \gg 0\). We are extremely confident in our prediction. Perturbing \(x_A\) slightly will never change its classification.</li>
+              <li><strong>Point B (Intermediate):</strong> Confident, but closer to the decision boundary.</li>
+              <li><strong>Point C (Very close):</strong> \(|w^T x_C + b| \approx 0\). Very low confidence. Even tiny noise in data collection or slight rotation of the boundary flips the predicted class!</li>
+            </ul>
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 9 -->
+      <section id="sec-mmc">
+        <h2>9. The Maximal Margin Classifier (MMC) &amp; Support Vectors</h2>
+        <p>
+          If training data is linearly separable, infinitely many separating hyperplanes satisfy \(y^{(i)}(w^T x^{(i)} + b) > 0\) for all \(i = 1 \dots m\). Which one is optimal?
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Definition 9.1: The Geometric Margin</span>
+          The perpendicular distance from any point \(x^{(i)}\) to the hyperplane \(w^T x + b = 0\) is:
+          \[
+            \gamma^{(i)} = \frac{y^{(i)} (w^T x^{(i)} + b)}{\|w\|_2}
+          \]
+          The <strong>margin</strong> of the dataset, denoted \(M\), is the minimum perpendicular distance from any training point to the separating hyperplane:
+          \[
+            M = \min_{i=1 \dots m} \frac{y^{(i)} (w^T x^{(i)} + b)}{\|w\|_2}
+          \]
+          <p>
+          <p>
+            <strong>Geometric Margin:</strong> The margin represents the minimum perpendicular Euclidean distance from any sample point \(x^{(i)}\) to the decision hyperplane.
+          </p>
+        </div>
+
+        <div class="thm-box">
+          <span class="box-label">Optimization Formulation: Maximal Margin Classifier (MMC)</span>
+          We seek the hyperplane that maximizes this minimum distance \(M\):
+          \[
+            \begin{aligned}
+              \max_{w_0, w_1, \dots, w_n, M} \quad & M \\
+              \text{subject to} \quad & \sum_{j=1}^n w_j^2 = 1 \quad (\|w\|_2 = 1) \\
+              & y^{(i)} (w_0 + w_1 x_1^{(i)} + \dots + w_n x_n^{(i)}) \ge M, \quad \forall i = 1 \dots m
+            \end{aligned}
+          \]
+          <p>
+            <strong>Why enforce \(\sum_{j=1}^n w_j^2 = 1\)?</strong><br>
+            Enforcing the scale normalization \(\|w\|_2 = 1\) guarantees that the functional margin corresponds to the true Euclidean perpendicular distance. Without fixing the scale of \(w\), multiplying all weights by an arbitrary scalar \(k > 0\) leaves the physical hyperplane \(k(w^T x + b) = 0\) unchanged while scaling the algebraic product arbitrarily.
+          </p>
+        </div>
+
+        <div class="def-box">
+          <span class="box-label">Definition 9.2: Support Vectors (SV)</span>
+          The points that achieve the equality \(y^{(i)}(w^T x^{(i)} + b) = M\) lie directly on the margin boundaries. These critical points are named <strong>Support Vectors</strong>.
+          <p>
+            If any training point not on the margin boundary is moved slightly (or deleted entirely), the optimal Maximal Margin Hyperplane (MMH) <em>does not move at all</em>. The solution is completely determined and "supported" by the support vectors alone!
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 10 -->
+      <section id="sec-svc-soft-margin">
+        <h2>10. Support Vector Classifiers (SVC) &amp; Slack Budget (\(C\))</h2>
+        <p>
+          The Maximal Margin Classifier suffers from two severe practical flaws:
+        </p>
+        <ol>
+          <li><strong>Linear Inseparability:</strong> If the data cannot be perfectly partitioned by a line/plane, no feasible solution exists (\(M\) cannot be positive).</li>
+          <li><strong>Extreme Sensitivity to Outliers:</strong> Even if separable, a single outlier can dramatically tilt the hyperplane (as illustrated on slide 27, shifting the separating line from a balanced blue orientation to an overfitted, unstable red orientation).</li>
+        </ol>
+
+        <div class="thm-box">
+          <span class="box-label">The Soft Margin Support Vector Classifier (Cortes &amp; Vapnik)</span>
+          To build a robust classifier that tolerates noise and yields better generalization, we introduce non-negative <strong>slack variables</strong> \(\epsilon_1, \epsilon_2, \dots, \epsilon_m \ge 0\):
+          \[
+            \begin{aligned}
+              \max_{w, b, \epsilon, M} \quad & M \\
+              \text{subject to} \quad & \sum_{j=1}^n w_j^2 = 1 \\
+              & y^{(i)} (w^T x^{(i)} + b) \ge M(1 - \epsilon_i), \quad \forall i = 1 \dots m \\
+              & \epsilon_i \ge 0, \quad \sum_{i=1}^m \epsilon_i \le C
+            \end{aligned}
+          \]
+          where \(C > 0\) is a user-defined slack budget parameter.
+        </div>
+
+        <h3>10.1 Complete Taxonomy of the Slack Variable \(\epsilon_i\)</h3>
+        <p>
+          Geometric interpretation of slack variables \(\xi_i\):
+        </p>
+        <table class="academic-table">
+          <thead>
+            <tr>
+              <th>Value of Slack \(\epsilon_i\)</th>
+              <th>Geometric Location</th>
+              <th>Status of Observation \(x^{(i)}\)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(\epsilon_i = 0\)</td>
+              <td>Correctly classified, on or outside margin boundary</td>
+              <td>Correctly classified, outside or strictly on the margin boundary. Satisfies \(y^{(i)}(w^T x^{(i)} + b) \ge M\).</td>
+            </tr>
+            <tr>
+              <td>\(\epsilon_i > 0\)</td>
+              <td>Margin violation (inside margin boundary)</td>
+              <td><strong>Margin violation:</strong> Point has penetrated the margin buffer (\(y^{(i)}(w^T x^{(i)} + b) < M\)).</td>
+            </tr>
+            <tr>
+              <td>\(0 < \epsilon_i \le 1\)</td>
+              <td>Correctly classified but within margin band (\(0 < \xi_i < 1\))</td>
+              <td>Inside margin, but on the correct side of the hyperplane. Still correctly classified!</td>
+            </tr>
+            <tr>
+              <td>\(\epsilon_i > 1\)</td>
+              <td>Misclassified on wrong side of hyperplane (\(\xi_i > 1\))</td>
+              <td><strong>Misclassified:</strong> Point has crossed the decision boundary onto the incorrect side.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>10.2 The Role of the Budget Parameter \(C\)</h3>
+        <div class="note-callout">
+          <span class="box-label">The Bias-Variance Trade-off Governed by \(C\)</span>
+          <p>
+            The parameter \(C = \sum_{i=1}^m \epsilon_i\) limits the total distance by which observations can violate the margin:
+          </p>
+          <ul>
+            <li><strong>When \(C = 0\):</strong> No slack is permitted (\(\epsilon_i = 0 \; \forall i\)). This collapses back to the rigid <strong>Maximal Margin Classifier (MMC)</strong>. Only possible if data is linearly separable.</li>
+            <li><strong>When \(C\) is Large (\(C \uparrow\)):</strong>
+              <ul>
+                <li>We tolerate wider and more frequent margin violations.</li>
+                <li>The margin \(M\) becomes wider (\(M \uparrow\)).</li>
+                <li>More data points lie inside the margin or violate it \(\implies\) <strong>Number of Support Vectors increases</strong>.</li>
+                <li>The decision boundary becomes less sensitive to individual data points \(\implies\) <strong>Bias increases (\(\text{bias} \uparrow\)), Variance decreases (\(\text{var} \downarrow\))</strong>.</li>
+              </ul>
+            </li>
+            <li><strong>When \(C\) is Small (\(C \downarrow\)):</strong>
+              <ul>
+                <li>Violations are strictly penalized.</li>
+                <li>The margin \(M\) becomes narrower (\(M \downarrow\)).</li>
+                <li>Fewer points violate the margin \(\implies\) <strong>Number of Support Vectors decreases</strong>.</li>
+                <li>The hyperplane is tightly fitted to individual boundary points \(\implies\) <strong>Bias decreases (\(\text{bias} \downarrow\)), Variance increases (\(\text{var} \uparrow\))</strong> (risk of overfitting).</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 11 -->
+      <section id="sec-svm-synthesis">
+        <h2>11. The Grand Taxonomy: MMC \(\to\) SVC \(\to\) SVM</h2>
+        <p>
+          Slide 29 outlines the elegant conceptual hierarchy that unifies maximum-margin learning:
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">Three Stages of Support Vector Architecture</span>
+          <ol>
+            <li><strong>1. Maximal Margin Classifier (MMC):</strong>
+              <br>Hard-margin linear classifier. Assumes strict linear separability; maximizes the perpendicular geometric margin \(M\). Highly sensitive to individual boundary points.
+            </li>
+            <li><strong>2. Support Vector Classifier (SVC):</strong>
+              <br>Soft-margin linear classifier. Introduces slack variables \(\epsilon_i \ge 0\) and budget \(C\). Tolerates non-separable noise and robustly classifies non-separable datasets.
+            </li>
+            <li><strong>3. Support Vector Machine (SVM):</strong>
+              <br><strong>Support Vector Classifier + Kernel Trick (\(x \longrightarrow \phi(x)\))</strong>.
+              <br>By substituting inner products \(\langle x^{(i)}, x^{(j)} \rangle\) with a non-linear Mercer kernel \(K(x^{(i)}, x^{(j)})\), the soft-margin linear classifier finds non-linear, complex decision boundaries in high-dimensional or infinite-dimensional Hilbert spaces with optimal computational efficiency!
+            </li>
+          </ol>
+        </div>
+
+        <div class="note-callout">
+          <span class="box-label">Foundational Takeaway for Lecture 24</span>
+          <p>
+            The stage is now set for Lecture 24, where we will derive the exact <strong>Lagrangian Duality</strong>, Karush-Kuhn-Tucker (KKT) conditions, dual quadratic programming formulation, and the famous hinge loss formulation \(\min_w \frac{1}{2}\|w\|^2 + C \sum \max(0, 1 - y^{(i)}(w^T x^{(i)} + b))\).
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-22.html">&larr; Lecture 22: ML Diagnostics &amp; Debugging</a>
+      <a href="./lecture-24.html">Lecture 24: Support Vector Machines &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

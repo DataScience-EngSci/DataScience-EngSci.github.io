@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 20: Naive Bayes, Bayesian Inference &amp; Foundations of Neural Networks | Basics of Data Science</title>
+  <meta name="description" content="MIT OCW / Stanford CS231n style lecture notes on Naive Bayes classification, Laplace smoothing, Bayesian inference and MAP estimation, conjugate priors, and the biological and mathematical foundations of Artificial Neural Networks.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2320%20-%20naive%20bayes%20and%20neural%20networks.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 20 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 20: Naive Bayes, Bayesian Inference &amp; Foundations of Neural Networks</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Fall 2026</div>
+        <div class="note-meta-item"><strong>Readings:</strong> Murphy PML-1 Ch. 9 &amp; 13; Goodfellow et al. Deep Learning Ch. 6; Hastie ESL Ch. 6 &amp; 11</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-generative-discrete">1. Discrete Generative Learning &amp; The Naive Bayes Classifier</a></li>
+        <li><a href="#sec-text-classification">2. Text Classification (Spam Filtering) &amp; Analytical MLE</a></li>
+        <li><a href="#sec-extensions-smoothing">3. Feature Extensions &amp; Laplace Add-One Smoothing</a></li>
+        <li><a href="#sec-bayesian-inference">4. Bayesian Parameter Estimation &amp; Uncertainty Modeling</a></li>
+        <li><a href="#sec-map-regularization">5. MAP Estimation, Regularization &amp; Conjugate Priors</a></li>
+        <li><a href="#sec-motivation-nn">6. Motivation for Neural Networks &amp; The "One Learning Algorithm" Hypothesis</a></li>
+        <li><a href="#sec-neuron-model">7. The Mathematical Neuron: Perceptron &amp; Activation Functions</a></li>
+        <li><a href="#sec-stacking-mlp">8. Stacking Neurons, Multi-Layer Perceptrons &amp; Non-Linearity Collapse</a></li>
+        <li><a href="#sec-representation-dimensions">9. Learned Feature Maps &amp; Layer Dimension Theorems</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-generative-discrete">1. Discrete Generative Learning &amp; The Naive Bayes Classifier</h2>
+      <p>
+        In Lecture 18, we established the distinction between <em>discriminative models</em> (which directly model the conditional distribution \(p(y \mid x)\)) and <em>generative models</em> (which model the joint distribution \(p(x, y) = p(x \mid y) p(y)\) and invert it via Bayes' rule). While Gaussian Discriminant Analysis (GDA) handled continuous inputs \(x \in \mathbb{R}^d\), many foundational problems in machine learning involve discrete inputs—most notably natural language, document filtering, genomics, and discrete categorical attributes.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">The Curse of Full Categorical Modeling</span>
+        Suppose each input vector \(x = [x_1, x_2, \dots, x_n]^T\) consists of \(n\) binary features, \(x_j \in \{0, 1\}\). If we model the class-conditional density \(p(x \mid y)\) as an unconstrained discrete multinomial distribution over all possible feature configurations:
+        \[
+          |\{0, 1\}^n| = 2^n \text{ distinct outcomes}
+        \]
+        Specifying this distribution requires estimating \(2^n - 1\) independent parameters for each class! For a modest vocabulary of \(n = 50{,}000\) words in email spam filtering, \(2^{50{,}000}\) exceeds the number of elementary particles in the observable universe. Full parameterization is completely intractable.
+      </div>
+
+      <p>
+        To make high-dimensional discrete learning computationally and statistically tractable, we introduce the celebrated <strong>Naive Bayes assumption</strong>.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 1.1 (The Naive Bayes Conditional Independence Assumption)</span>
+        The Naive Bayes model posits that the individual feature dimensions \(x_1, x_2, \dots, x_n\) are <strong>mutually conditionally independent given the class label \(y\)</strong>:
+        \[
+          p(x_1, x_2, \dots, x_n \mid y) = \prod_{j=1}^n p(x_j \mid y)
+        \]
+        <div class="note-callout">
+          <strong>Why is it called "Naive"?</strong> In natural language and real-world data, features are notoriously correlated. For example, in an email containing the word <em>"mortgage"</em>, the probability of observing the word <em>"loan"</em> is vastly higher than in a random email. The assumption that words appear independently of one another given the spam label is demonstrably false. Nonetheless, in practice, Naive Bayes often performs extraordinarily well because classification depends only on the <em>argmax</em> of the posterior odds rather than calibrated probabilities!
+        </div>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Parameter Complexity Reduction</span>
+        <p>
+          Under the Naive Bayes assumption, instead of modeling all \(2^n\) configurations simultaneously, we only need to estimate the univariate marginal parameters for each feature:
+        </p>
+        \[
+          \phi_{j \mid y=1} = p(x_j = 1 \mid y = 1), \quad \phi_{j \mid y=0} = p(x_j = 1 \mid y = 0), \quad \phi_y = p(y = 1)
+        \]
+        <p>
+          For \(n\) binary features and binary classification \(y \in \{0, 1\}\), the total parameter count drops exponentially from \(2^n - 1\) to:
+        </p>
+        \[
+          2n + 1 \text{ parameters}
+        \]
+        <p>
+          <em>(Conditional Independence: Conditioned on class \(y\), features \(X_1, \dots, X_n\) are statistically independent \(\implies\) parameter complexity is \(\mathcal{O}(n)\), requiring only \(2n+1\) parameters).</em>
+        </p>
+      </div>
+
+      <!-- Section 2 -->
+      <h2 id="sec-text-classification">2. Text Classification (Spam Filtering) &amp; Analytical MLE</h2>
+      <p>
+        Consider building an email spam filter. We compile an indexed vocabulary dictionary containing \(n\) words:
+      </p>
+      \[
+        \text{Dictionary} = [\text{a}, \dots, \text{aardvark}, \dots, \text{buy}, \dots, \text{discount}, \dots, \text{viagra}, \dots, \text{zyzzyva}]^T
+      \]
+      <p>
+        Each incoming email message is encoded as a binary vector \(x \in \{0, 1\}^n\), where:
+      </p>
+      \[
+        x_j = \mathbf{1}\{\text{word } j \text{ appears in the email}\}
+      \]
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 2.1 (Maximum Likelihood Estimates for Multivariate Bernoulli Naive Bayes)</span>
+        Given \(m\) independent training samples \(\{(x^{(i)}, y^{(i)})\}_{i=1}^m\) where \(y^{(i)} \in \{0, 1\}\), the joint log-likelihood of the dataset is:
+        \[
+          \ell(\phi) = \sum_{i=1}^m \ln p(x^{(i)}, y^{(i)}) = \sum_{i=1}^m \left[ \sum_{j=1}^n \ln p(x_j^{(i)} \mid y^{(i)}) + \ln p(y^{(i)}) \right]
+        \]
+        Substituting the Bernoulli parameterizations \(p(x_j \mid y) = \phi_{j \mid y}^{x_j} (1 - \phi_{j \mid y})^{1 - x_j}\) and \(p(y) = \phi_y^y (1 - \phi_y)^{1 - y}\), maximizing \(\ell(\phi)\) with respect to each parameter yields closed-form empirical counting solutions:
+        \[
+          \phi_{j \mid y=1} = \frac{\sum_{i=1}^m \mathbf{1}\{x_j^{(i)} = 1 \land y^{(i)} = 1\}}{\sum_{i=1}^m \mathbf{1}\{y^{(i)} = 1\}}
+        \]
+        \[
+          \phi_{j \mid y=0} = \frac{\sum_{i=1}^m \mathbf{1}\{x_j^{(i)} = 1 \land y^{(i)} = 0\}}{\sum_{i=1}^m \mathbf{1}\{y^{(i)} = 0\}}
+        \]
+        \[
+          \phi_y = \frac{\sum_{i=1}^m \mathbf{1}\{y^{(i)} = 1\}}{m}
+        \]
+        <p>
+          <em>(Interpretation: \(\phi_{j \mid y=1}\) represents the empirical fraction of spam emails containing word \(j\)).</em>
+        </p>
+      </div>
+
+      <p>
+        To classify a newly arrived test email \(x_{\text{test}}\), we apply Bayes' rule to compute the posterior class probability:
+      </p>
+      \[
+        p(y = 1 \mid x_{\text{test}}) = \frac{p(x_{\text{test}} \mid y = 1) p(y = 1)}{p(x_{\text{test}})} = \frac{\left( \prod_{j=1}^n p(x_j \mid y=1) \right) p(y=1)}{\left( \prod_{j=1}^n p(x_j \mid y=1) \right) p(y=1) + \left( \prod_{j=1}^n p(x_j \mid y=0) \right) p(y=0)}
+      \]
+      <p>
+        The decision rule predicts spam whenever \(p(y = 1 \mid x_{\text{test}}) > 0.5\), or equivalently when the log-odds ratio is positive:
+      </p>
+      \[
+        \ln \frac{p(y = 1 \mid x_{\text{test}})}{p(y = 0 \mid x_{\text{test}})} = \sum_{j=1}^n \ln \frac{p(x_j \mid y=1)}{p(x_j \mid y=0)} + \ln \frac{p(y=1)}{p(y=0)} > 0
+      \]
+
+      <!-- Section 3 -->
+      <h2 id="sec-extensions-smoothing">3. Feature Extensions &amp; Laplace Add-One Smoothing</h2>
+
+      <h3>Generalizing to Categorical Features</h3>
+      <p>
+        What if an input feature is discrete but can take on \(k_j\) discrete levels instead of being binary, \(x_j \in \{1, 2, \dots, k_j\}\)?
+      </p>
+      <div class="note-callout">
+        <strong>Generalization to Discrete Multi-Valued Features:</strong> If feature \(x_j\) takes values in a discrete set \(\{1, \dots, k_j\}\) rather than \(\{0, 1\}\), we replace the Bernoulli likelihood with a <strong>Categorical (Multinomial)</strong> distribution:
+        \[
+          p(x_j = l \mid y = c) = \phi_{j, l \mid y=c}, \quad \text{with } \sum_{l=1}^{k_j} \phi_{j, l \mid y=c} = 1
+        \]
+      </div>
+
+      <h3>Handling Continuous Features: Discretization &amp; KDE</h3>
+      <p>
+        If features are continuous (e.g. house area, temperature), two standard approaches exist within the Naive Bayes framework:
+      </p>
+      <ol>
+        <li>
+          <strong>Discretization / Binning:</strong> Discretize the continuous domain into bins (e.g. Area: \(50\text{--}60\,\text{m}^2 \to \text{Bin } 1\), \(60\text{--}70\,\text{m}^2 \to \text{Bin } 2\), etc.), reducing the problem back to categorical Naive Bayes.
+        </li>
+        <li>
+          <strong>Gaussian Naive Bayes (or KDE):</strong> Model each continuous feature as a 1D univariate normal distribution \(x_j \mid y = c \sim \mathcal{N}(\mu_{jc}, \sigma_{jc}^2)\). Notice that unlike GDA (which fits a full \(d \times d\) covariance matrix), Gaussian Naive Bayes strictly forces the covariance matrix to be diagonal: \(\Sigma = \text{diag}(\sigma_1^2, \dots, \sigma_d^2)\).
+        </li>
+      </ol>
+
+      <h3>The Zero-Frequency Pathology &amp; Laplace Smoothing</h3>
+      <p>
+        Suppose an incoming email contains an unusual word that never appeared in any training email (for example, <em>"Naimark"</em>). Under standard MLE:
+      </p>
+      \[
+        \phi_{\text{Naimark} \mid y=1} = \frac{0}{\sum \mathbf{1}\{y=1\}} = 0, \quad \phi_{\text{Naimark} \mid y=0} = \frac{0}{\sum \mathbf{1}\{y=0\}} = 0
+      \]
+      <p>
+        When evaluating the class-conditional probability product:
+      </p>
+      \[
+        p(x \mid y) = \prod_{j=1}^n p(x_j \mid y) = \dots \times 0 \times \dots = 0
+      \]
+      <p>
+        The posterior probability becomes an indeterminate \(\frac{0}{0}\)! Even if every single other word in the email screamed "SPAM" with overwhelming certainty, that single zero completely obliterates all accumulated evidence.
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 3.1 (Laplace Add-One Smoothing)</span>
+        To guarantee non-zero probabilities, we inject uniform pseudo-counts (equivalent to a uniform Dirichlet / Beta prior). For a binary feature:
+        \[
+          \phi_{j \mid y=1} = \frac{\sum_{i=1}^m \mathbf{1}\{x_j^{(i)} = 1 \land y^{(i)} = 1\} + 1}{\sum_{i=1}^m \mathbf{1}\{y^{(i)} = 1\} + 2}
+        \]
+        More generally, for any discrete random variable taking on \(k\) distinct categories:
+        \[
+          p(z = l) = \frac{\text{count}(z = l) + 1}{\sum_{j=1}^k \text{count}(z = j) + k}
+        \]
+        <p>
+          <em>(Multi-Class Laplace Smoothing: For a \(k\)-ary feature, add \(1\) to the numerator and \(k\) to the denominator).</em>
+        </p>
+        This ensures \(\phi > 0\) everywhere, eliminates numerical crashes, and asymptotically converges to the true empirical frequency as sample size \(m \to \infty\).
+      </div>
+
+      <div class="note-callout">
+        <strong>Modern Generative Paradigms:</strong> Slide 10 emphasizes that while Naive Bayes represents the foundational discrete generative model, modern deep generative learning encompasses <strong>GANs (Generative Adversarial Networks)</strong> and <strong>VAEs (Variational Autoencoders)</strong>, which model complex, high-dimensional distributions without restrictive independence assumptions.
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-bayesian-inference">4. Bayesian Parameter Estimation &amp; Uncertainty Modeling</h2>
+      <p>
+        Up to this point, our estimation philosophy has been strictly <em>frequentist</em>: the parameter \(\theta\) is viewed as a fixed, unknown constant, and we sought a point estimate \(\hat{\theta}_{\text{MLE}}\) that maximized the likelihood of observed data.
+      </p>
+      <p>
+        In the <strong>Bayesian philosophy</strong>, parameter uncertainty is explicitly modeled by treating \(\theta\) as a <strong>random variable</strong> governed by a probability distribution.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">The Bayesian Update Equation</span>
+        Given a prior distribution \(p(\theta)\) encapsulating our initial beliefs before seeing the dataset, and a likelihood \(p(y \mid X, \theta) = \prod_{i=1}^m p(y^{(i)} \mid x^{(i)}, \theta)\), Bayes' theorem computes the full <strong>posterior distribution</strong> over parameters:
+        \[
+          p(\theta \mid X, y) = \frac{p(y \mid X, \theta) p(\theta)}{p(y \mid X)} = \frac{\prod_{i=1}^m p(y^{(i)} \mid x^{(i)}, \theta) p(\theta)}{\int_\theta \prod_{i=1}^m p(y^{(i)} \mid x^{(i)}, \theta) p(\theta) \, d\theta}
+        \]
+      </div>
+
+      <div class="note-callout">
+        <strong>Entropy Reduction &amp; Posterior Computation</strong><br>
+        In high-dimensional models, the posterior distribution over parameters is rarely available in closed form and must be approximated:
+        <ol>
+          <li><strong>Numerical / Sampling Methods:</strong> Markov Chain Monte Carlo (MCMC) and Gibbs Sampling.</li>
+          <li><strong>Analytical Approximations:</strong> Variational Inference (VI).</li>
+        </ol>
+        Typically, the prior distribution is chosen to be diffuse (uniform or high-variance Gaussian), representing <em>high initial entropy</em> (uncertainty):
+        \[
+          \text{Entropy} = \mathbb{E}[-\ln p(\theta)] = \langle -\ln p(\theta) \rangle
+        \]
+        Conditioning on evidence \((x^{(i)}, y^{(i)})\) concentrates probability mass, yielding a posterior distribution for \(	heta\) with <em>substantially reduced entropy</em> whose mode defines \(	heta_{\text{MAP}}\).
+      </div>
+
+      <h3>Prediction: Point Estimation vs. Fully Bayesian Integration</h3>
+      <p>
+        How do we predict the output \(y_{\text{test}}\) for an unseen input \(x_{\text{test}}\)? (Slide 13):
+      </p>
+      <ul>
+        <li>
+          <strong>MAP Point Estimate:</strong> Choose the single parameter vector that maximizes posterior density:
+          \[
+            \theta_{\text{MAP}} = \arg\max_\theta p(\theta \mid X, y) \implies y_{\text{test}} = \arg\max_y p(y \mid x_{\text{test}}, \theta_{\text{MAP}})
+          \]
+        </li>
+        <li>
+          <strong>Fully Bayesian Prediction:</strong> Instead of committing to a single \(\theta_{\text{opt}}\), marginalize across <em>all possible parameter values</em>, weighting each model by its posterior probability:
+          \[
+            p(y \mid x_{\text{test}}, X, y) = \int_\theta p(y \mid x_{\text{test}}, \theta) p(\theta \mid X, y) \, d\theta
+          \]
+          \[
+            y_{\text{test}} = \arg\max_y \int_\theta p(y \mid x_{\text{test}}, \theta) p(\theta \mid X, y) \, d\theta
+          \]
+        </li>
+      </ul>
+
+      <!-- Section 5 -->
+      <h2 id="sec-map-regularization">5. MAP Estimation, Regularization &amp; Conjugate Priors</h2>
+
+      <h3>Bayesian Linear Regression Derivation</h3>
+      <p>
+        Let us work out the analytical posterior distribution for linear regression (Slides 14–15):
+      </p>
+      \[
+        y = X\theta + \epsilon, \quad \epsilon \sim \mathcal{N}(0, I) \implies p(y \mid X, \theta) \propto \exp\left(-\frac{1}{2}(y - X\theta)^T (y - X\theta)\right)
+      \]
+      <p>
+        Assume a Gaussian prior over the parameters:
+      </p>
+      \[
+        \theta \sim \mathcal{N}(\mu_0, \Lambda_0), \quad \Lambda_0 = \text{diag}(\lambda_0) \implies p(\theta) \propto \exp\left(-\frac{1}{2}(\theta - \mu_0)^T \Lambda_0^{-1} (\theta - \mu_0)\right)
+      \]
+      <p>
+        The posterior density is proportional to the product of likelihood and prior:
+      </p>
+      \[
+        p(\theta \mid X, y) \propto p(y \mid X, \theta) p(\theta) \propto \exp\left(-\frac{1}{2} \left[ (y - X\theta)^T(y - X\theta) + (\theta - \mu_0)^T \Lambda_0^{-1} (\theta - \mu_0) \right]\right)
+      \]
+      <p>
+        Completing the square in the quadratic exponent proves that the posterior is also Gaussian:
+      </p>
+      \[
+        p(\theta \mid X, y) = \mathcal{N}(\mu_m, \Lambda_m)
+      \]
+      <div class="thm-box">
+        <span class="box-label">Theorem 5.1 (Posterior Parameters for Bayesian Linear Regression)</span>
+        \[
+          \Lambda_m = \left( X^T X + \Lambda_0^{-1} \right)^{-1}
+        \]
+        \[
+          \mu_m = \Lambda_m \left( X^T y + \Lambda_0^{-1} \mu_0 \right)
+        \]
+        <div class="proof-box">
+          <strong>Connection to Ridge Regression Normal Equations (Bayesian Interpretation):</strong><br>
+          Suppose we set a zero-mean isotropic prior \(\mu_0 = 0\) and covariance \(\Lambda_0 = \frac{1}{\alpha} I\) (so \(\Lambda_0^{-1} = \alpha I\)). Then the posterior mean becomes:
+          \[
+            \mu_m = \left( X^T X + \alpha I \right)^{-1} X^T y
+          \]
+          This is <strong>identical to the Ridge Regression Normal Equation</strong>! Since the posterior is a symmetric bell-shaped Gaussian, its mode equals its mean:
+          \[
+            \theta_{\text{MAP}} = \arg\max_\theta p(\theta \mid X, y) = \mu_m
+          \]
+        </div>
+      </div>
+
+      <h3>The Fundamental Equivalence: MAP as Regularization</h3>
+      <p>
+        Taking the log of the posterior objective (Slides 16–17):
+      </p>
+      \[
+        \theta_{\text{MAP}} = \arg\max_\theta \left[ \ln p(y \mid X, \theta) + \ln p(\theta) \right]
+      \]
+      <p>
+        The prior term \(\ln p(\theta)\) acts directly as the <strong>regularization penalty</strong>!
+      </p>
+      <ul>
+        <li>
+          <strong>Gaussian Prior:</strong> \(p(\theta) \sim \mathcal{N}\left(0, \frac{1}{\lambda} I\right) \implies \ln p(\theta) = -\frac{\lambda}{2} \|\theta\|_2^2 + \text{const}\), generating <strong>\(L_2\) Ridge Regularization</strong> (Smoothness).
+        </li>
+        <li>
+          <strong>Laplace Prior:</strong> \(p(\theta) \propto \exp\left(-\lambda \|\theta\|_1\right) \implies \ln p(\theta) = -\lambda \|\theta\|_1 + \text{const}\), generating <strong>\(L_1\) Lasso Regularization</strong> (Sparsity).
+        </li>
+      </ul>
+
+      <div class="note-callout">
+        <strong>Bias-Variance Insight (Regularization Perspective):</strong><br>
+        Compared to unconstrained Maximum Likelihood (which places zero prior constraint on \(	heta\)), the MAP estimator acts as an informative prior that substantially <strong>reduces estimator variance</strong> at the cost of a slight increase in bias, providing a Bayesian foundation for regularization to prevent overfitting.
+      </div>
+
+      <h3>The Concept of Conjugate Priors</h3>
+      <p>
+        In general Bayesian inference, computing the normalizing denominator \(\int p(y \mid X, \theta) p(\theta) d\theta\) requires solving an intractable high-dimensional integral. A prior is called a <strong>conjugate prior</strong> for a likelihood family if the resulting posterior distribution belongs to the exact same functional family as the prior (Slide 18).
+      </p>
+      <div class="def-box">
+        <span class="box-label">Conjugate Prior Pairs</span>
+        <ul>
+          <li><strong>Gaussian Likelihood + Gaussian Prior \(\implies\) Gaussian Posterior:</strong> Normal is self-conjugate.</li>
+          <li><strong>Poisson Likelihood + Gamma Prior \(\implies\) Gamma Posterior:</strong> Gamma is conjugate for Poisson.</li>
+          <li><strong>Bernoulli Likelihood + Beta Prior \(\implies\) Beta Posterior:</strong> Beta is conjugate for Bernoulli.</li>
+          <li><strong>Multinomial Likelihood + Dirichlet Prior \(\implies\) Dirichlet Posterior:</strong> Dirichlet is conjugate for Multinomial.</li>
+        </ul>
+        <em>With conjugate priors, posterior inference requires zero numerical integration—we simply update the algebraic hyper-parameters!</em>
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-motivation-nn">6. Motivation for Neural Networks &amp; The "One Learning Algorithm" Hypothesis</h2>
+      <p>
+        Linear models, logistic regression, and Naive Bayes are fundamentally constrained by linear decision boundaries (or fixed feature transformations). When data is non-linearly separable, classical machine learning relied on handcrafted polynomial features.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Failure of Handcrafted Polynomial Expansions in High Dimensions</span>
+        Suppose we have \(n = 100\) tabular features (\(x_1 = \text{size}, x_2 = \text{\# bedrooms}, \dots\)). To learn a non-linear quadratic boundary, we include all pairwise cross-terms:
+        \[
+          g\left(\theta_0 + \sum_{i=1}^n \theta_i x_i + \sum_{i=1}^n \sum_{j \ge i}^n \theta_{ij} x_i x_j + \dots\right)
+        \]
+        The number of quadratic terms is \(\approx \frac{n^2}{2} \approx 5{,}000\).<br><br>
+        Now consider a tiny computer vision task: classifying a small \(50 \times 50\) RGB car image (Slide 21):
+        \[
+          50 \times 50 \text{ pixels} \times 3 \text{ channels (RGB)} = 7{,}500 \text{ features}
+        \]
+        The number of pairwise features \(x_i x_j\) explodes to:
+        \[
+          \frac{(7{,}500)^2}{2} \approx 28{,}125{,}000 \text{ features} \implies \approx 3\text{M} \text{ to } 28\text{M parameters!}
+        \]
+        Handcrafting non-linear features in raw sensory spaces (images, audio, video) leads to an insurmountable parameter explosion and disastrous overfitting. We need models that <strong>learn their own non-linear feature representations automatically</strong>.
+      </div>
+
+      <h3>The "One Learning Algorithm" Hypothesis</h3>
+      <p>
+        In Slides 22–23, the course highlights revolutionary neurobiology experiments (e.g. Metin &amp; Frost, 1989; Roe et al., 1990) exploring the auditory and somatosensory cortex:
+      </p>
+      <div class="thm-box">
+        <span class="box-label">Biological Rewiring Experiments</span>
+        When scientists surgically disconnected the visual inputs from the visual cortex and re-routed optic nerve signals directly into the <strong>auditory cortex</strong>, the auditory tissue did not fail—instead, <strong>the auditory cortex learned to see!</strong><br><br>
+        Similarly, re-routing optic signals into the <strong>somatosensory cortex</strong> resulted in the somatosensory cortex learning to process vision.<br><br>
+        <strong>Implication:</strong> The human neocortex does not run hundreds of specialized, hardcoded algorithms for hearing, seeing, and touch. Instead, the brain appears to execute <strong>one general-purpose learning algorithm</strong> capable of processing whatever sensory stream is fed into it. Artificial Neural Networks are designed as computational models inspired by this unified architecture.
+      </div>
+
+      <!-- Section 7 -->
+      <h2 id="sec-neuron-model">7. The Mathematical Neuron: Perceptron &amp; Activation Functions</h2>
+      <p>
+        A biological neuron (Slide 24) consists of a <em>cell body (soma)</em>, <em>nucleus</em>, receiving tree-like <em>dendrites</em>, an <em>axon hillock</em> where electrical impulses accumulate, an <em>axon</em> transmitting the signal, and <em>synaptic terminals</em> interfacing with downstream cells.
+      </p>
+      <p>
+        The mathematical model of an artificial neuron (Slides 25–26, 36–37) abstracts this process:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 7.1 (Mathematical Single Neuron)</span>
+        A single neuron receives an input vector \(x \in \mathbb{R}^d\), computes a weighted affine combination (pre-activation \(z\)), and applies a non-linear activation function \(g(z)\):
+        \[
+          z = w^T x + b = \sum_{j=1}^d w_j x_j + b = \theta^T X \quad (\text{with } x_0 = 1, \theta_0 = b)
+        \]
+        \[
+          a = g(z) = g\left(w^T x + b\right)
+        \]
+        where \(w\) represents synaptic weights, \(b\) is the threshold bias, and \(a\) is the activation output.
+      </div>
+
+      <h3>Comparison of Fundamental Single-Neuron Models</h3>
+      <ul>
+        <li>
+          <strong>The Perceptron (Slide 37):</strong> Threshold activation function:
+          \[
+            \hat{y} = \begin{cases} 1 & \text{if } w^T x + b \ge 0 \\ 0 & \text{if } w^T x + b < 0 \end{cases}
+          \]
+        </li>
+        <li>
+          <strong>The Logistic Unit (Slide 26, 36):</strong> Sigmoid activation:
+          \[
+            h_\theta(x) = \sigma(w^T x + b) = \frac{1}{1 + e^{-(w^T x + b)}}
+          \]
+          A single neuron with a sigmoid activation is mathematically equivalent to <strong>Logistic Regression</strong>.
+        </li>
+        <li>
+          <strong>Regression Unit with ReLU (Slide 25):</strong>
+          \[
+            h_\theta(x) = \max(0, w^T x + b)
+          \]
+          Used for non-negative continuous regression (e.g. house price prediction).
+        </li>
+      </ul>
+
+      <h3>Catalog of Non-Linear Activation Functions (Slides 32, 40, 41)</h3>
+      <table class="academic-table" style="width:100%; margin: 1.5rem 0; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+            <th style="padding: 8px;">Function</th>
+            <th style="padding: 8px;">Formula</th>
+            <th style="padding: 8px;">Derivative \(g'(z)\)</th>
+            <th style="padding: 8px;">Output Range</th>
+            <th style="padding: 8px;">Key Characteristics &amp; Applications</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 8px;"><strong>Sigmoid</strong></td>
+            <td style="padding: 8px;">\(\sigma(z) = \frac{1}{1 + e^{-z}}\)</td>
+            <td style="padding: 8px;">\(\sigma(z)(1 - \sigma(z))\)</td>
+            <td style="padding: 8px;">\((0, 1)\)</td>
+            <td style="padding: 8px;">Historical default; saturates at extremes causing vanishing gradients.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 8px;"><strong>Tanh</strong></td>
+            <td style="padding: 8px;">\(\tanh(z) = \frac{e^z - e^{-z}}{e^z + e^{-z}}\)</td>
+            <td style="padding: 8px;">\(1 - \tanh^2(z)\)</td>
+            <td style="padding: 8px;">\((-1, 1)\)</td>
+            <td style="padding: 8px;">Zero-centered activations; still suffers from vanishing gradients.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 8px;"><strong>ReLU</strong></td>
+            <td style="padding: 8px;">\(\max(0, z) = z \mathbf{1}_{z > 0}\)</td>
+            <td style="padding: 8px;">\(\mathbf{1}_{z > 0}\)</td>
+            <td style="padding: 8px;">\([0, \infty)\)</td>
+            <td style="padding: 8px;">Non-saturating for \(z > 0\), highly efficient gradient flow; risk of "dying ReLU".</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 8px;"><strong>Leaky ReLU</strong></td>
+            <td style="padding: 8px;">\(\max(z, \gamma z), \gamma \in (0, 1)\)</td>
+            <td style="padding: 8px;">\(\begin{cases} 1 & z > 0 \\ \gamma & z \le 0 \end{cases}\)</td>
+            <td style="padding: 8px;">\((-\infty, \infty)\)</td>
+            <td style="padding: 8px;">Prevents dead neurons by ensuring a small non-zero slope for negative inputs.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 8px;"><strong>GELU</strong></td>
+            <td style="padding: 8px;">\(\frac{z}{2}\left[1 + \text{erf}\left(\frac{z}{\sqrt{2}}\right)\right]\)</td>
+            <td style="padding: 8px;">Smooth curve</td>
+            <td style="padding: 8px;">\([-0.17, \infty)\)</td>
+            <td style="padding: 8px;">Foundational in modern Transformers, BERT, GPT, and language models.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 8px;"><strong>Softplus</strong></td>
+            <td style="padding: 8px;">\(\frac{1}{\beta}\ln(1 + e^{\beta z}), \beta > 0\)</td>
+            <td style="padding: 8px;">\(\frac{1}{1 + e^{-\beta z}}\)</td>
+            <td style="padding: 8px;">\((0, \infty)\)</td>
+            <td style="padding: 8px;">Smooth, infinitely differentiable continuous approximation to ReLU.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Section 8 -->
+      <h2 id="sec-stacking-mlp">8. Stacking Neurons, Multi-Layer Perceptrons &amp; Non-Linearity Collapse</h2>
+
+      <h3>Intuitive House Price Prediction Example (Slides 27–28)</h3>
+      <p>
+        Consider predicting house price \(y\) from four features: Size (\(x_1\)), # Bedrooms (\(x_2\)), Zip Code (\(x_3\)), and Wealth index (\(x_4\)).
+      </p>
+      <p>
+        A human domain expert might manually engineer intermediate concepts:
+      </p>
+      <ul>
+        <li>\(a_1 = \text{ReLU}(\theta_1 x_1 + \theta_2 x_2 + \theta_3)\) captures <strong>Family Size capacity</strong>.</li>
+        <li>\(a_2 = \text{ReLU}(\theta_4 x_3 + \theta_5)\) captures neighborhood <strong>Walkability</strong>.</li>
+        <li>\(a_3 = \text{ReLU}(\theta_6 x_3 + \theta_7 x_4 + \theta_8)\) captures <strong>School Quality</strong>.</li>
+        <li>Output: \(\bar{h}_\theta(x) = \theta_9 a_1 + \theta_{10} a_2 + \theta_{11} a_3 + \theta_{12} = \text{Price } y\).</li>
+      </ul>
+      <p>
+        <strong>The Neural Network Breakthrough:</strong> Instead of handcrafting which features connect to which intermediate neurons, we construct a <strong>Fully Connected (Dense) layer</strong> where every input feature is connected to every hidden neuron. The network discovers its own optimal intermediate latent concepts automatically through gradient optimization!
+      </p>
+
+      <h3>Vectorization &amp; GPU Parallelism (Slide 30)</h3>
+      <p>
+        Slide 30 highlights the fundamental hardware bridge:
+        <em>"Vectorization and matrix formulation are essential for parallel acceleration on modern GPUs and SIMD hardware."</em>
+      </p>
+      <p>
+        Deep neural network evaluation is structured as alternating Matrix Multiplications (\(MM\)) and element-wise non-linear activations (\(g\)):
+      </p>
+      \[
+        MM \longrightarrow g \longrightarrow MM \longrightarrow g \dots \longrightarrow g \longrightarrow h_\theta(x)
+      \]
+      <p>
+        Mathematically, deep networks are functional compositions:
+      </p>
+      \[
+        h_\theta(x) = f_L \circ f_{L-1} \circ \dots \circ f_1(x)
+      \]
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 8.1 (Why Don't We Use the Identity Function? Non-Linearity Collapse)</span>
+        Suppose all hidden activation functions were linear/identity: \(g(z) = z\) (Slide 34).
+        Then for a two-layer network:
+        \[
+          a^{[1]} = W^{[1]} x + b^{[1]}
+        \]
+        \[
+          h_\theta(x) = W^{[2]} a^{[1]} + b^{[2]} = W^{[2]} \left(W^{[1]} x + b^{[1]}\right) + b^{[2]} = \left(W^{[2]} W^{[1]}\right) x + \left(W^{[2]} b^{[1]} + b^{[2]}\right)
+        \]
+        Defining the composite weight matrix \(\tilde{W} = W^{[2]} W^{[1]}\) and composite bias \(\tilde{b} = W^{[2]} b^{[1]} + b^{[2]}\):
+        \[
+          h_\theta(x) = \tilde{W} x + \tilde{b}
+        \]
+        <div class="proof-box">
+          <strong>The Linearity Collapse Principle:</strong><br>
+          Because the composition of linear maps is itself strictly linear, any multi-layer neural network with linear activation functions—regardless of whether it has 2 layers or 10,000 layers—collapses identically to a single linear regression model! Non-linear activations are <em>strictly necessary</em> to produce expressive non-linear hypotheses and universal function approximation.
+        </div>
+      </div>
+
+      <!-- Section 9 -->
+      <h2 id="sec-representation-dimensions">9. Learned Feature Maps &amp; Layer Dimension Theorems</h2>
+
+      <h3>Deep Networks vs. Kernel Methods (Slides 31, 35)</h3>
+      <p>
+        Slide 35 illuminates a profound conceptual link between deep learning and the Kernel Trick:
+      </p>
+      \[
+        h_\theta(x) = W^{[r]} \phi_\beta(x) + b^{[r]}
+      \]
+      <div class="thm-box">
+        <span class="box-label">Comparison: Kernel Methods vs. Deep Neural Networks</span>
+        <ul>
+          <li>
+            <strong>Kernel Methods (SVM, Ridge Regression):</strong> The non-linear feature map \(\phi(x)\) is chosen <em>a priori</em> (e.g. polynomial, Gaussian RBF) and remains fixed throughout learning.
+          </li>
+          <li>
+            <strong>Deep Neural Networks:</strong> The activations of the penultimate layer \(a^{[r-1]} = \phi_\beta(x)\) act as a feature map. However, this feature map is <strong>parameterized by all previous layer weights \(\beta\) and learned directly from data</strong>:
+            <br>
+            <em>(\(\phi(x) = a^{[L-1]}\) represents the internal feature representation learned autonomously by hidden layers).</em>
+          </li>
+        </ul>
+        Deep neural networks are end-to-end representation learning machines.
+      </div>
+
+      <h3>Formal Mathematical Indexing &amp; Forward Propagation (Slides 38–42)</h3>
+      <p>
+        To avoid index ambiguity, we adopt standard Stanford/MIT matrix indexing conventions:
+      </p>
+      <ul>
+        <li>\(l \in \{1, 2, \dots, L\}\): Layer index (\(l=1\) is input layer, \(l=L\) is output layer).</li>
+        <li>\(a_i^{(l)}\): The activation of neuron \(i\) in layer \(l\).</li>
+        <li>\(x_0 = 1, a_0^{(l)} = 1\): Bias units.</li>
+        <li>\(\Theta_{ij}^{(l)}\): Weight controlling the link from unit \(j\) in layer \(l\) to unit \(i\) in layer \(l+1\) (Row index \(i\) corresponds to destination unit in layer \(l+1\); column index \(j\) corresponds to source unit in layer \(l\)).</li>
+      </ul>
+
+      <div class="ex-box">
+        <span class="box-label">Worked Concrete Example: 3-Layer Network (Slides 39, 42)</span>
+        Consider a network with 3 inputs (\(x_1, x_2, x_3\) plus bias \(x_0=1\)), a hidden layer with 3 neurons (\(a_1^{(2)}, a_2^{(2)}, a_3^{(2)}\) plus bias \(a_0^{(2)}=1\)), and a single output neuron \(a_1^{(3)}\):
+        <p><strong>Hidden Layer Activations:</strong></p>
+        \[
+          z_1^{(2)} = \Theta_{10}^{(1)} x_0 + \Theta_{11}^{(1)} x_1 + \Theta_{12}^{(1)} x_2 + \Theta_{13}^{(1)} x_3 \implies a_1^{(2)} = g(z_1^{(2)})
+        \]
+        \[
+          z_2^{(2)} = \Theta_{20}^{(1)} x_0 + \Theta_{21}^{(1)} x_1 + \Theta_{22}^{(1)} x_2 + \Theta_{23}^{(1)} x_3 \implies a_2^{(2)} = g(z_2^{(2)})
+        \]
+        \[
+          z_3^{(2)} = \Theta_{30}^{(1)} x_0 + \Theta_{31}^{(1)} x_1 + \Theta_{32}^{(1)} x_2 + \Theta_{33}^{(1)} x_3 \implies a_3^{(2)} = g(z_3^{(2)})
+        \]
+        <p><strong>Output Layer Activation:</strong></p>
+        \[
+          z_1^{(3)} = \Theta_{10}^{(2)} a_0^{(2)} + \Theta_{11}^{(2)} a_1^{(2)} + \Theta_{12}^{(2)} a_2^{(2)} + \Theta_{13}^{(2)} a_3^{(2)} \implies h_\Theta(x) = a_1^{(3)} = g(z_1^{(3)})
+        \]
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 9.1 (The Weight Matrix Dimension Theorem - Slide 42)</span>
+        If layer \(l\) contains \(s_l\) functional units and layer \(l+1\) contains \(s_{l+1}\) functional units, then the weight matrix \(\Theta^{(l)}\) connecting layer \(l\) to layer \(l+1\) has dimensions:
+        \[
+          \dim\left(\Theta^{(l)}\right) = s_{l+1} \times (s_l + 1)
+        \]
+        <p>
+          <em>(Matrix Dimension Summary:
+          <br>&bull; <strong>Columns:</strong> Number of units in layer \(l\) plus one bias unit \(\implies s_l + 1\).
+          <br>&bull; <strong>Rows:</strong> Number of units in destination layer \(l+1 \implies s_{l+1}\)).</em>
+        </p>
+      </div>
+
+      <p>
+        This elegant matrix formulation sets the stage for Lecture 21, where we will derive the generalized <strong>Backpropagation algorithm</strong> using the multivariate chain rule across arbitrary computational graphs.
+      </p>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-18.html">&larr; Lecture 18: GLMs &amp; Generative Learning</a>
+      <a href="./lecture-21.html">Lecture 21: Neural Networks &amp; Backpropagation &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

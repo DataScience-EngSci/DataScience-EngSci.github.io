@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 16: Logistic Regression, Classification &amp; Regularization | Basics of Data Science</title>
+  <meta name="description" content="Comprehensive MIT OCW / CS231n-style lecture notes on Logistic Regression: Gradient Derivations, Decision Boundaries, Bernoulli Likelihood Equivalence, Multiclass One-vs-All &amp; Softmax Regression, Categorical Cross-Entropy, and Regularization Foundations.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2316%20-%20logistic%20regression%20and%20classification.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 16 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 16: Logistic Regression, Multiclass Classification &amp; Foundations of Regularization</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Semester:</strong> Fall 2026</div>
+        <div class="note-meta-item"><strong>Instructor:</strong> University of Tehran</div>
+        <div class="note-meta-item"><strong>Primary Deck:</strong> Lecture #16 (31 Slides)</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-cross-entropy-recap">1. Binary Cross-Entropy Loss &amp; The Sigmoid Derivative Identity</a></li>
+        <li><a href="#sec-gradient-derivation">2. Rigorous Derivation of the Logistic Gradient Descent Update</a></li>
+        <li><a href="#sec-decision-boundaries">3. Linear and Non-Linear Decision Boundaries</a></li>
+        <li><a href="#sec-probabilistic-mle">4. The Probabilistic View: Bernoulli Likelihood &amp; Equivalence to MLE</a></li>
+        <li><a href="#sec-multiclass-ova">5. Multiclass Generalization: One-vs-All (One-vs-Rest)</a></li>
+        <li><a href="#sec-softmax">6. Softmax Regression (Multinomial Logistic Regression)</a></li>
+        <li><a href="#sec-regularization-intro">7. The Overfitting Pathology &amp; Foundations of Regularization</a></li>
+        <li><a href="#sec-ridge-asymptotics">8. \(L_2\) Regularized Cost Function &amp; Asymptotic Shrinkage Dynamics</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-cross-entropy-recap">1. Binary Cross-Entropy Loss &amp; The Sigmoid Derivative Identity</h2>
+      <p>
+        Building upon the conceptual foundations introduced in Lecture 15, we consider the binary classification setting where targets \(y^{(i)} \in \{0, 1\}\) and the hypothesis is parameterized via the logistic sigmoid function:
+        \[
+          h_\theta(x) = \sigma(\theta^T x) = \frac{1}{1 + e^{-\theta^T x}}
+        \]
+      </p>
+
+      <h3>A. Cross-Entropy Loss Formulation (Slides 1&ndash;2)</h3>
+      <p>
+        The per-instance penalty for predicting \(h_\theta(x) \in (0, 1)\) when the true label is \(y\) is defined piecewise:
+        \[
+          \text{Cost}\left(h_\theta(x), y\right) = \begin{cases}
+            -\log\left(h_\theta(x)\right) & \text{if } y = 1 \\
+            -\log\left(1 - h_\theta(x)\right) & \text{if } y = 0
+          \end{cases}
+        \]
+        Since \(y\) strictly takes values in \(\{0, 1\}\), these two mutually exclusive branches are unified into a single algebraic statement:
+        \[
+          \text{Cost}\left(h_\theta(x), y\right) = -y \log\left(h_\theta(x)\right) - (1 - y) \log\left(1 - h_\theta(x)\right)
+        \]
+        Averaged across the training dataset of \(m\) observations, we obtain the total <strong>Binary Cross-Entropy Loss Function</strong>:
+        \[
+          J(\theta) = -\frac{1}{m} \sum_{i=1}^m \left[ y^{(i)} \log\left(h_\theta(x^{(i)})\right) + \left(1 - y^{(i)}\right) \log\left(1 - h_\theta(x^{(i)})\right) \right]
+        \]
+        where \(h_\theta(x^{(i)}) = P(y=1 \mid x^{(i)}; \theta)\) and \(1 - h_\theta(x^{(i)}) = P(y=0 \mid x^{(i)}; \theta)\).
+      </p>
+
+      <h3>B. The Derivative of the Sigmoid Function (Slide 4)</h3>
+      <div class="thm-box">
+        <span class="box-label">Lemma 1.1 (Sigmoid Derivative Identity)</span>
+        Let \(\sigma(z) = \frac{1}{1 + e^{-z}}\). The derivative \(\sigma'(z)\) satisfies:
+        \[
+          \frac{d}{dz}\sigma(z) = \sigma(z)\left(1 - \sigma(z)\right)
+        \]
+        <div class="proof-box">
+          <strong>Proof:</strong>
+          Applying the quotient / power rule of elementary calculus:
+          \[
+            \begin{aligned}
+              \frac{d}{dz}\left(1 + e^{-z}\right)^{-1} &= -(1 + e^{-z})^{-2} \cdot \frac{d}{dz}\left(1 + e^{-z}\right) \\
+              &= -(1 + e^{-z})^{-2} \cdot \left(-e^{-z}\right) \\
+              &= \frac{e^{-z}}{(1 + e^{-z})^2} \\
+              &= \frac{1}{1 + e^{-z}} \cdot \frac{e^{-z}}{1 + e^{-z}} \\
+              &= \frac{1}{1 + e^{-z}} \cdot \left(\frac{1 + e^{-z} - 1}{1 + e^{-z}}\right) \\
+              &= \frac{1}{1 + e^{-z}} \cdot \left(1 - \frac{1}{1 + e^{-z}}\right) \\
+              &= \sigma(z)\left(1 - \sigma(z)\right) \quad \blacksquare
+            \end{aligned}
+          \]
+        </div>
+      </div>
+
+      <p>
+        By applying the multivariate Chain Rule to the hypothesis \(\sigma(\theta^T x)\) where \(z = \theta^T x = \sum_{k=0}^n \theta_k x_k\):
+        \[
+          \frac{\partial z}{\partial \theta_j} = x_j
+        \]
+        Therefore:
+        \[
+          \frac{\partial}{\partial \theta_j} \sigma(\theta^T x) = \frac{\partial \sigma(z)}{\partial z} \cdot \frac{\partial z}{\partial \theta_j} = \sigma(\theta^T x)\left(1 - \sigma(\theta^T x)\right) x_j
+        \]
+      </p>
+
+      <!-- Section 2 -->
+      <h2 id="sec-gradient-derivation">2. Rigorous Derivation of the Logistic Gradient Descent Update</h2>
+      <p>
+        To minimize \(J(\theta)\), we compute its gradient \(\nabla_\theta J(\theta)\) with respect to each parameter \(\theta_j\) (\(j = 0, 1, \dots, n\)).
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 2.1 (The Gradient of Binary Cross-Entropy)</span>
+        For any parameter \(\theta_j\), the partial derivative of \(J(\theta)\) is:
+        \[
+          \frac{\partial J(\theta)}{\partial \theta_j} = \frac{1}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) x_j^{(i)}
+        \]
+        <div class="proof-box">
+          <strong>Step-by-Step Analytical Proof:</strong><br>
+          Consider the loss for a single observation \(i\):
+          \[
+            \ell_i(\theta) = -y^{(i)} \log\left(h_\theta(x^{(i)})\right) - (1 - y^{(i)}) \log\left(1 - h_\theta(x^{(i)})\right)
+          \]
+          Differentiating \(\ell_i(\theta)\) with respect to \(h_\theta(x^{(i)})\):
+          \[
+            \frac{\partial \ell_i}{\partial h_\theta(x^{(i)})} = -\frac{y^{(i)}}{h_\theta(x^{(i)})} - \frac{1 - y^{(i)}}{1 - h_\theta(x^{(i)})} \cdot (-1) = -\frac{y^{(i)}}{h_\theta(x^{(i)})} + \frac{1 - y^{(i)}}{1 - h_\theta(x^{(i)})}
+          \]
+          Finding a common algebraic denominator:
+          \[
+            \frac{\partial \ell_i}{\partial h_\theta(x^{(i)})} = \frac{-y^{(i)}\left(1 - h_\theta(x^{(i)})\right) + \left(1 - y^{(i)}\right) h_\theta(x^{(i)})}{h_\theta(x^{(i)})\left(1 - h_\theta(x^{(i)})\right)} = \frac{-y^{(i)} + y^{(i)} h_\theta + h_\theta - y^{(i)} h_\theta}{h_\theta(x^{(i)})\left(1 - h_\theta(x^{(i)})\right)} = \frac{h_\theta(x^{(i)}) - y^{(i)}}{h_\theta(x^{(i)})\left(1 - h_\theta(x^{(i)})\right)}
+          \]
+          Now apply the chain rule with the derivative of \(\sigma(\theta^T x^{(i)})\) from Lemma 1.1:
+          \[
+            \begin{aligned}
+              \frac{\partial \ell_i}{\partial \theta_j} &= \frac{\partial \ell_i}{\partial h_\theta(x^{(i)})} \cdot \frac{\partial h_\theta(x^{(i)})}{\partial \theta_j} \\
+              &= \left[\frac{h_\theta(x^{(i)}) - y^{(i)}}{h_\theta(x^{(i)})\left(1 - h_\theta(x^{(i)})\right)}\right] \cdot \left[h_\theta(x^{(i)})\left(1 - h_\theta(x^{(i)})\right) x_j^{(i)}\right]
+            \end{aligned}
+          \]
+          Notice the miraculous cancellation! The non-linear sigmoid denominator cancels out identically with the sigmoid derivative:
+          \[
+            \frac{\partial \ell_i}{\partial \theta_j} = \left(h_\theta(x^{(i)}) - y^{(i)}\right) x_j^{(i)}
+          \]
+          Summing over all \(m\) observations and multiplying by \(\frac{1}{m}\) completes the proof:
+          \[
+            \frac{\partial J(\theta)}{\partial \theta_j} = \frac{1}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) x_j^{(i)} \quad \blacksquare
+          \]
+        </div>
+      </div>
+
+      <div class="note-callout">
+        <span class="box-label">The Remarkable Linear-Logistic Coincidence (Slide 5)</span>
+        The resulting gradient descent update rule for logistic regression is:
+        \[
+          \theta_j := \theta_j - \alpha \frac{1}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) x_j^{(i)} \quad \text{simultaneously for all } j = 0, \dots, n
+        \]
+        <strong>Critical Insight:</strong> As highlighted in Slide 5 (<em>"Algorithm looks identical to linear regression!"</em>), the algebraic formula for the gradient update appears completely identical to Ordinary Least Squares! 
+        <br><br>
+        However, the underlying mathematical algorithms are profoundly different:
+        <ul>
+          <li>In Linear Regression: \(h_\theta(x) = \theta^T x\) (an unbounded affine hyperplane).</li>
+          <li>In Logistic Regression: \(h_\theta(x) = \frac{1}{1 + e^{-\theta^T x}}\) (a non-linear probability mapping bounded in \((0, 1)\)).</li>
+        </ul>
+        This structural symmetry is not an accidental coincidence; it is a universal property of Generalized Linear Models (GLMs) operating under canonical link functions (explored in Lecture 18).
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-decision-boundaries">3. Linear and Non-Linear Decision Boundaries</h2>
+
+      <h3>A. Worked Numerical Example: Linear Decision Boundary (Slide 6)</h3>
+      <p>
+        Consider a 2D feature space \(x = [x_1, x_2]^T\) with model hypothesis:
+        \[
+          h_\theta(x) = g(\theta_0 + \theta_1 x_1 + \theta_2 x_2)
+        \]
+        Suppose optimization on training data \(\{(x^{(i)}, y^{(i)})\}_{i=1}^m\) yields the parameter vector:
+        \[
+          \theta = \begin{bmatrix} \theta_0 \\ \theta_1 \\ \theta_2 \end{bmatrix} = \begin{bmatrix} -3 \\ 1 \\ 1 \end{bmatrix}
+        \]
+        Applying a classification threshold of \(\tau = 0.5\):
+        \[
+          \text{Predict } y = 1 \iff h_\theta(x) \ge 0.5 \iff \theta^T x \ge 0 \iff -3 + x_1 + x_2 \ge 0 \iff x_1 + x_2 \ge 3
+        \]
+        \[
+          \text{Predict } y = 0 \iff h_\theta(x) < 0.5 \iff \theta^T x < 0 \iff -3 + x_1 + x_2 < 0 \iff x_1 + x_2 < 3
+        \]
+        The <strong>Decision Boundary</strong> is the 1D line:
+        \[
+          x_1 + x_2 = 3 \implies x_2 = -x_1 + 3
+        \]
+        This line intersects the axes at \((3, 0)\) and \((0, 3)\). Any point with \(x_1 + x_2 > 3\) (e.g., \((2, 2)\)) is classified as \(y = 1\), and any point below (e.g., \((1, 1)\)) is classified as \(y = 0\).
+      </p>
+
+      <h3>B. Non-Linear Decision Boundaries via Feature Transformations (Slide 7)</h3>
+      <p>
+        When classes are arranged concentrically (e.g., positive points clustered near the origin surrounded by a ring of negative points), they are linearly non-separable in the original space \([x_1, x_2]\):
+      </p>
+      <div class="def-box">
+        <span class="box-label">Circular Boundary Derivation (Slide 7)</span>
+        <p style="font-family: inherit; font-size: 1.05rem; color: #1e3a8a; font-weight: bold;">
+          Not linearly separable with a linear boundary \(\xrightarrow{\text{transformation}}\) Linearly separable in the higher-dimensional feature space
+        </p>
+        Define the non-linear feature mapping:
+        \[
+          \phi(x_1, x_2) = \begin{bmatrix} 1 \\ x_1^2 \\ x_2^2 \end{bmatrix}
+        \]
+        and parameter weight vector \(w = [-R^2, 1, 1]^T\). The inner product becomes:
+        \[
+          w^T \phi(x) = -R^2 + x_1^2 + x_2^2
+        \]
+        Setting the decision boundary \(w^T \phi(x) = 0\):
+        \[
+          x_1^2 + x_2^2 = R^2
+        \]
+        This defines a circle of radius \(R\):
+        <ul>
+          <li>Predict \(y = 1\) if \(x_1^2 + x_2^2 > R^2\) (points exterior to the circle).</li>
+          <li>Predict \(y = 0\) if \(x_1^2 + x_2^2 < R^2\) (points interior to the circle).</li>
+        </ul>
+        While circular in the raw feature coordinates \((x_1, x_2)\), the decision boundary is strictly a linear hyperplane in the transformed feature space \((z_1 = x_1^2, z_2 = x_2^2)\)!
+      </div>
+
+      <p>
+        By expanding into higher-order polynomials \(P_\theta(x)\):
+        \[
+          h_\theta(x) = \sigma\left(\theta_0 + \theta_1 x_1 + \theta_2 x_2 + \theta_3 x_1 x_2 + \theta_4 x_1^2 + \theta_5 x_2^2 + \dots\right)
+        \]
+        the model can delineate arbitrarily complex, multi-lobed decision contours (higher-order polynomial decision boundaries).
+      </p>
+
+      <!-- Section 4 -->
+      <h2 id="sec-probabilistic-mle">4. The Probabilistic View: Bernoulli Likelihood &amp; Equivalence to MLE</h2>
+
+      <h3>A. Bernoulli Likelihood Representation (Slide 8)</h3>
+      <p>
+        In probabilistic machine learning, the binary target \(y \in \{0, 1\}\) given input \(x\) is modeled as a <strong>Bernoulli random variable</strong>:
+        \[
+          y \mid x \sim \text{Bernoulli}\left(p = \sigma(w^T x + b)\right)
+        \]
+        where \(w^T x + b \equiv \theta^T x\). The probability mass function (PMF) is:
+        \[
+          P(y = k \mid x; \theta) = \begin{cases} p & \text{if } k = 1 \\ 1 - p & \text{if } k = 0 \end{cases}
+        \]
+        The quantity \(a = w^T x + b\) represents the <strong>log-odds (logit)</strong>:
+        \[
+          a = \log\left(\frac{p}{1 - p}\right) \implies p = \sigma(a) = \frac{1}{1 + e^{-a}}
+        \]
+      </p>
+
+      <h3>B. Maximum Likelihood Estimation Equivalence (Slides 9&ndash;11)</h3>
+      <p>
+        Assuming the \(m\) training examples \(\{(x^{(i)}, y^{(i)})\}_{i=1}^m\) are independent and identically distributed (i.i.d.):
+        \[
+          P_\theta(y \mid X) = \prod_{i=1}^m P_\theta(y^{(i)} \mid x^{(i)}) = \prod_{i=1}^m \left[h_\theta(x^{(i)})\right]^{y^{(i)}} \left[1 - h_\theta(x^{(i)})\right]^{1 - y^{(i)}}
+        \]
+        Taking the natural logarithm yields the log-likelihood function \(\ell(\theta) = \log P_\theta(y \mid X)\):
+        \[
+          \ell(\theta) = \sum_{i=1}^m \left[ y^{(i)} \log\left(h_\theta(x^{(i)})\right) + \left(1 - y^{(i)}\right) \log\left(1 - h_\theta(x^{(i)})\right) \right]
+        \]
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 4.1 (Equivalence of MLE and Cross-Entropy Minimization, Slide 11)</span>
+        <p style="font-family: inherit; font-size: 1.05rem; color: #1e3a8a; line-height: 1.8;">
+          Under the assumption of independent Bernoulli observations for \(y\), the Maximum Likelihood Estimate (MLE) for parameter \(\theta\) is mathematically identical to minimizing the cross-entropy cost function.
+        </p>
+        Maximizing the log-likelihood is mathematically identical to minimizing the negative log-likelihood:
+        \[
+          \hat{\theta}_{\text{MLE}} = \arg\max_\theta \ell(\theta) = \arg\min_\theta \left[ -\frac{1}{m} \ell(\theta) \right] = \arg\min_\theta J(\theta)
+        \]
+        Thus, cross-entropy loss is not a heuristic; it is the exact negative log-likelihood under Bernoulli sampling.
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-multiclass-ova">5. Multiclass Generalization: One-vs-All (One-vs-Rest)</h2>
+      <p>
+        Many real-world classification problems involve \(K > 2\) discrete mutually exclusive categories (Slide 12):
+      </p>
+      <ul>
+        <li><strong>Email Categorization (\(K = 4\)):</strong> Work (\(y=0\)), Friends (\(y=1\)), Family (\(y=2\)), Hobby (\(y=3\)).</li>
+        <li><strong>Medical Diagnostics (\(K = 3\)):</strong> Healthy (\(y=0\)), Common Cold (\(y=1\)), Influenza (\(y=2\)).</li>
+        <li><strong>Meteorology (\(K = 4\)):</strong> Sunny (\(0\)), Cloudy (\(1\)), Rain (\(2\)), Snow (\(3\)).</li>
+      </ul>
+
+      <h3>A. The One-vs-All (OvA) Heuristic (Slides 13&ndash;15)</h3>
+      <p>
+        The simplest strategy to extend binary logistic regression to \(K\) classes is <strong>One-vs-All (OvA)</strong>:
+      </p>
+      <div class="def-box">
+        <span class="box-label">Algorithm 5.1 (One-vs-All Classification)</span>
+        Given a training set with targets \(y \in \{1, 2, \dots, K\}\):
+        <ol>
+          <li>
+            Train \(K\) independent binary logistic regression classifiers:
+            \[
+              h_\theta^{(k)}(x) = P(y = k \mid x; \theta^{(k)}) \quad \text{for } k = 1, 2, \dots, K
+            \]
+            where classifier \(k\) is trained by relabeling class \(k\) as positive (\(y=1\)) and all other \(K-1\) classes combined as negative (\(y=0\)).
+          </li>
+          <li>
+            For a novel query sample \(x_{\text{test}}\), evaluate all \(K\) classifiers simultaneously.
+          </li>
+          <li>
+            Assign the sample to the class with the highest predicted probability:
+            \[
+              \hat{y}_{\text{test}} = \arg\max_{k \in \{1, \dots, K\}} h_\theta^{(k)}(x_{\text{test}})
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-softmax">6. Softmax Regression (Multinomial Logistic Regression)</h2>
+      <p>
+        While One-vs-All decomposes multiclass into \(K\) independent binary tasks, <strong>Softmax Regression</strong> (generalized logistic regression for \(K > 2\) classes) formulates a unified, globally normalized categorical distribution (Slides 16&ndash;17).
+      </p>
+
+      <h3>A. Softmax Hypothesis Formulation (Slide 16)</h3>
+      <p>
+        For \(K\) classes, we maintain a separate parameter weight vector \(\theta^{(k)} \in \mathbb{R}^{n+1}\) for each class, stacked as columns in the parameter matrix:
+        \[
+          \Theta = \begin{bmatrix} \theta^{(1)} & \theta^{(2)} & \dots & \theta^{(K)} \end{bmatrix} \in \mathbb{R}^{(n+1) \times K}
+        \]
+        The hypothesis computes the posterior probability distribution over all \(K\) classes:
+        \[
+          h_\Theta(x) = \begin{bmatrix} P(y = 1 \mid x; \Theta) \\ P(y = 2 \mid x; \Theta) \\ \vdots \\ P(y = K \mid x; \Theta) \end{bmatrix} \in \mathbb{R}^K
+        \]
+        The conditional probability for class \(j\) is given by the <strong>Softmax function</strong>:
+        \[
+          h_\Theta^{(j)}(x) = \frac{\exp\left({\theta^{(j)}}^T x\right)}{\sum_{k=1}^K \exp\left({\theta^{(k)}}^T x\right)}
+        \]
+        Properties:
+        <ul>
+          <li>Positivity: \(h_\Theta^{(j)}(x) > 0\) for all \(j\).</li>
+          <li>Conservation of Probability: \(\sum_{j=1}^K h_\Theta^{(j)}(x) = 1\).</li>
+        </ul>
+        <em>Canonical Application:</em> MNIST handwritten digit recognition (\(K = 10\) classes for digits \(0, \dots, 9\)).
+      </p>
+
+      <h3>B. Categorical Cross-Entropy Cost Function (Slide 17)</h3>
+      <div class="def-box">
+        <span class="box-label">Definition 6.1 (Categorical Cross-Entropy Loss)</span>
+        Let \(\mathbf{1}\{\cdot\}\) be the indicator function (\(\mathbf{1}\{\text{True}\} = 1\) and \(\mathbf{1}\{\text{False}\} = 0\)). The multiclass cross-entropy cost function is:
+        \[
+          J(\Theta) = -\frac{1}{m} \sum_{i=1}^m \sum_{j=1}^K \mathbf{1}\left\{y^{(i)} = j\right\} \log \left( \frac{\exp\left({\theta^{(j)}}^T x^{(i)}\right)}{\sum_{k=1}^K \exp\left({\theta^{(k)}}^T x^{(i)}\right)} \right)
+        \]
+        This is the generalized negative log-likelihood of the <strong>Categorical distribution</strong>:
+        \[
+          P(y \mid x, \Theta) \sim \text{Categorical}(p_1, p_2, \dots, p_K), \quad \text{where } p_K = 1 - \sum_{i=1}^{K-1} p_i
+        \]
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Worked Classification Example (Slide 17)</span>
+        Suppose a 4-class classifier evaluates a test input \(x_{\text{test}}\) and produces:
+        \[
+          h_\Theta(x_{\text{test}}) = \begin{bmatrix} 0.80 \\ 0.10 \\ 0.05 \\ 0.05 \end{bmatrix}
+        \]
+        Since class 1 has probability \(0.80 > 0.10, 0.05\), the model decides:
+        \[
+          \hat{y}_{\text{test}} = 1
+        \]
+      </div>
+
+      <!-- Section 7 -->
+      <h2 id="sec-regularization-intro">7. The Overfitting Pathology &amp; Foundations of Regularization</h2>
+
+      <h3>A. The Core Mechanism of Overfitting (Slides 18&ndash;20)</h3>
+      <p>
+        The central dilemma of statistical learning is that an algorithm optimizes parameters to minimize empirical loss on the <strong>training set</strong>, but our ultimate objective is performance on <strong>unseen future data</strong>.
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Motivating Toy Example: Coin Toss Maximum Likelihood (Slide 19)</span>
+        Suppose we wish to estimate the probability of flipping heads for a coin. We toss it \(N = 3\) times and observe:
+        \[
+          \text{Heads, Heads, Heads} \implies N_1 = 3, \; N_0 = 0
+        \]
+        The Maximum Likelihood Estimate is:
+        \[
+          \theta_{\text{MLE}} = \frac{N_1}{N_0 + N_1} = \frac{3}{3 + 0} = 1.0
+        \]
+        If we adopt this unregularized model, we predict that <em>all future coin tosses will be heads with 100% certainty</em>. This conclusion is absurd because \(N=3\) is far too small a sample to conclude the coin has two heads. 
+        <br><br>
+        <strong>Theoretical Lesson (Slide 20):</strong> When a model has excessive capacity relative to the available data, it places all probability mass on the empirical sample, perfectly memorizing noise and failing completely to generalize to novel samples.
+      </div>
+
+      <h3>B. The Bias-Variance Spectrum in Regression &amp; Classification (Slides 22&ndash;23)</h3>
+      <p>
+        Slide 22 and Slide 23 illustrate the spectrum across linear regression and logistic regression:
+      </p>
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Regime</th>
+            <th>Linear Regression Example</th>
+            <th>Logistic Regression Boundary</th>
+            <th>Error Characteristic</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Underfitting</strong></td>
+            <td>\(h(x) = \theta_0 + \theta_1 x\) (straight line)</td>
+            <td>Linear line \(g(\theta_0 + \theta_1 x_1 + \theta_2 x_2)\)</td>
+            <td><strong>High Bias:</strong> Model is too rigid to capture true underlying curve.</td>
+          </tr>
+          <tr>
+            <td><strong>Just Right</strong></td>
+            <td>\(h(x) = \theta_0 + \theta_1 x + \theta_2 x^2\) (quadratic)</td>
+            <td>Quadratic boundary \(g(\dots + \theta_4 x_1^2 + \theta_5 x_2^2)\)</td>
+            <td><strong>Balanced:</strong> Low bias and low variance; optimal generalization.</td>
+          </tr>
+          <tr>
+            <td><strong>Overfitting</strong></td>
+            <td>Degree-4+ polynomial wiggling through every point</td>
+            <td>Contorted, fragmented decision boundaries isolating single points</td>
+            <td><strong>High Variance:</strong> Fits training noise (\(J(\theta) \approx 0\)), fails on test set.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>C. Addressing Overfitting (Slides 24&ndash;25)</h3>
+      <p>
+        Two primary strategies exist:
+      </p>
+      <ol>
+        <li>
+          <strong>Dimensionality Reduction / Feature Selection:</strong> Manually prune features or employ automated subset selection algorithms. Disadvantage: potentially discards useful residual predictive signals.
+        </li>
+        <li>
+          <strong>Regularization:</strong> Retain all \(n\) features, but penalize the magnitude of parameters \(\theta_j\). This shrinks weights smoothly toward zero, enforcing simplicity without completely discarding features.
+        </li>
+      </ol>
+
+      <!-- Section 8 -->
+      <h2 id="sec-ridge-asymptotics">8. \(L_2\) Regularized Cost Function &amp; Asymptotic Shrinkage Dynamics</h2>
+
+      <h3>A. Penalization Intuition: Shrinking Specific Coefficients (Slides 26&ndash;27)</h3>
+      <p>
+        Suppose we have a high-order polynomial \(h_\theta(x) = \theta_0 + \theta_1 x + \theta_2 x^2 + \theta_3 x^3 + \theta_4 x^4\). If we artificially modify the cost function:
+        \[
+          \min_\theta \frac{1}{2m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right)^2 + 1000\,\theta_3^2 + 1000\,\theta_4^2
+        \]
+        To minimize the total cost, the optimization algorithm will be heavily penalized unless \(\theta_3 \approx 0\) and \(\theta_4 \approx 0\). As \(\theta_3, \theta_4 \to 0\), the higher-order terms vanish, leaving approximately the simple quadratic model \(h_\theta(x) \approx \theta_0 + \theta_1 x + \theta_2 x^2\), which eliminates the extreme wild oscillations.
+      </p>
+
+      <h3>B. The General \(L_2\) Regularized Cost Function (Slides 28&ndash;29)</h3>
+      <div class="thm-box">
+        <span class="box-label">Definition 8.1 (\(L_2\) Regularized Linear Regression / Ridge)</span>
+        When we do not know in advance which features are noisy, we penalize all parameters uniformly:
+        \[
+          J(\theta) = \frac{1}{2m} \left[ \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right)^2 + \lambda \sum_{j=1}^n \theta_j^2 \right]
+        \]
+        where \(\lambda \ge 0\) is the <strong>regularization hyperparameter</strong>.
+      </div>
+
+      <div class="note-callout">
+        <span class="box-label">Crucial Mathematical Convention: The Bias Term \(\theta_0\) is NOT Regularized! (Slide 28)</span>
+        Notice the summation index in the penalty term:
+        \[
+          \lambda \sum_{j=1}^n \theta_j^2 \quad (\text{notice } j \text{ starts from } 1, \text{ NOT } 0!)
+        \]
+        The intercept/bias parameter \(\theta_0\) represents the baseline level or global average of \(y\) when all features are zero. Penalizing \(\theta_0\) would force the regression line to pass near the origin \((0, 0)\), which is an arbitrary artifact of coordinate shifts and harms predictive accuracy. By convention, \(\theta_0\) is strictly unpenalized.
+      </div>
+
+      <h3>C. Asymptotic Shrinkage &amp; The Extreme \(\lambda\) Pathology (Slides 30&ndash;31)</h3>
+      <p>
+        What happens if the practitioner sets \(\lambda\) to an excessively large value, e.g., \(\lambda = 10^{10}\)?
+      </p>
+      <ul>
+        <li>
+          The penalty term \(\lambda \sum_{j=1}^n \theta_j^2\) completely dominates the data-fitting term \(\frac{1}{2m} \sum (h_\theta(x^{(i)}) - y^{(i)})^2\).
+        </li>
+        <li>
+          The optimizer forces all regularized weights to zero:
+          \[
+            \theta_1 \approx 0, \; \theta_2 \approx 0, \; \dots, \; \theta_n \approx 0
+          \]
+        </li>
+        <li>
+          The resulting learned hypothesis collapses to a horizontal line (Slide 31):
+          \[
+            h_\theta(x) = \theta_0 = \bar{y}
+          \]
+        </li>
+        <li>
+          <strong>Result: Severe Underfitting (High Bias).</strong> The model fails to capture any relationship whatsoever with the input features.
+        </li>
+      </ul>
+
+      <h3>D. Comparison of Regularization Norms (Slide 30)</h3>
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>\(L_2\) Regularization (Ridge)</th>
+            <th>\(L_1\) Regularization (Lasso)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Penalty Formula</strong></td>
+            <td>\(\lambda \sum_{j=1}^n \theta_j^2 = \lambda \|\theta_{1:n}\|_2^2\)</td>
+            <td>\(\lambda \sum_{j=1}^n |\theta_j| = \lambda \|\theta_{1:n}\|_1\)</td>
+          </tr>
+          <tr>
+            <td><strong>Geometry of Contours</strong></td>
+            <td>Spherical / circular quadratic penalty</td>
+            <td>Diamond / sharp rhomboid penalty</td>
+          </tr>
+          <tr>
+            <td><strong>Sparsity</strong></td>
+            <td>Weights become small, but non-zero (\(\theta_j \approx 0\))</td>
+            <td>Weights become strictly zero (\(\theta_j = 0\), feature selection)</td>
+          </tr>
+          <tr>
+            <td><strong>Differentiability</strong></td>
+            <td>Smooth everywhere; closed-form solution exists</td>
+            <td>Non-differentiable at \(\theta_j = 0\); requires subgradient methods</td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-15.html">&larr; Lecture 15: Feature Engineering &amp; Gradient Descent</a>
+      <a href="./lecture-17.html">Lecture 17: Regularization: Ridge &amp; Lasso &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

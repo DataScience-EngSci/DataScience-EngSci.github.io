@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 13: Foundations of Artificial Intelligence &amp; Machine Learning | Basics of Data Science</title>
+  <meta name="description" content="MIT OCW style lecture notes on foundations of artificial intelligence and machine learning: definitions of AI, weak vs strong AI, sample complexity, learning scenarios, task taxonomy, and the statistical learning pipeline.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2313%20-%20introduction%20to%20artificial%20intelligence.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 13 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 13: Foundations of Artificial Intelligence &amp; Machine Learning</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Fall 2026</div>
+        <div class="note-meta-item"><strong>Readings:</strong> Murphy (PML-Intro) Ch. 1; Ross (Probability) Ch. 1–4; Mohri et al. (FML) Ch. 1</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-what-is-ai">1. What is Artificial Intelligence? </a></li>
+        <li><a href="#sec-weak-strong-ai">2. Weak AI vs. Strong AI </a></li>
+        <li><a href="#sec-ai-ml-dl-hierarchy">3. The Hierarchy: AI, Machine Learning, and Deep Learning</a></li>
+        <li><a href="#sec-what-is-ml">4. What is Machine Learning? Experience, Data, and Complexity</a></li>
+        <li><a href="#sec-sample-complexity">5. Computational Complexity vs. Sample Complexity</a></li>
+        <li><a href="#sec-applications">6. Major Applications of Machine Learning</a></li>
+        <li><a href="#sec-learning-scenarios">7. Taxonomy of Learning Scenarios </a></li>
+        <li><a href="#sec-problem-categories">8. Core Machine Learning Problem Types</a></li>
+        <li><a href="#sec-learning-stages">9. Mathematical Formalization of the Learning Stages</a></li>
+        <li><a href="#sec-data-partitioning">10. Dataset Partitioning, Validation &amp; Generalization Error</a></li>
+        <li><a href="#sec-regression-vs-classification">11. Visual Geometry: Continuous Regression vs. Discrete Classification</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-what-is-ai">1. What is Artificial Intelligence? </h2>
+      <p>
+        Having developed classical probability models, maximum likelihood estimation, and hypothesis testing in Lectures 01 through 12, we now transition to the computational paradigm of modern data science: <strong>Artificial Intelligence (AI)</strong> and <strong>Machine Learning (ML)</strong>.
+      </p>
+      <div class="def-box">
+        <span class="box-label">Definition 1.1 (Artificial Intelligence)</span>
+        <strong>Artificial Intelligence</strong> is the branch of computer science dedicated to simulating human cognitive faculties in machines—including vision, auditory perception, speech, conceptual understanding, learning, and autonomous decision-making.<br>
+        AI is inherently multidisciplinary, situated at the nexus of:
+        <ul>
+          <li><strong>Cognitive Science:</strong> Modeling mental representation and thought processes.</li>
+          <li><strong>Neuroscience:</strong> Understanding biological neural circuits and biological information processing.</li>
+          <li><strong>Psychology &amp; Linguistics:</strong> Studying behavioral adaptation and natural language syntax and semantics.</li>
+          <li><strong>Mathematics, Statistics &amp; Optimization:</strong> Providing the rigorous formal engine for learning from empirical observations.</li>
+        </ul>
+      </div>
+
+      <p>
+        The concrete operational goals of AI systems can be broken down into six foundational capabilities:
+      </p>
+      <ol>
+        <li><strong>Learning :</strong> Inferring underlying patterns, rules, or statistical distributions from empirical experience.</li>
+        <li><strong>Reasoning :</strong> Drawing valid logical or probabilistic inferences from knowledge bases and sensory inputs.</li>
+        <li><strong>Concept Understanding :</strong> Forming abstract representations that generalize across varied instances.</li>
+        <li><strong>Decision Making :</strong> Choosing optimal actions among alternatives to achieve defined goals under uncertainty.</li>
+        <li><strong>Prediction :</strong> Forecasting future outcomes, unobserved variables, or trend trajectories.</li>
+        <li><strong>Environmental Action :</strong> Executing actions through physical actuators or digital agents that modify the surrounding state.</li>
+      </ol>
+
+      <!-- Section 2 -->
+      <h2 id="sec-weak-strong-ai">2. Weak AI vs. Strong AI </h2>
+      <p>
+        Contemporary AI architectures are categorized by the scope and autonomy of their operational competence:
+      </p>
+      <div class="thm-box">
+        <span class="box-label">Taxonomy 2.1 (Weak AI vs. Strong AI)</span>
+        <ul>
+          <li>
+            <strong>Weak / Narrow AI :</strong><br>
+            Systems engineered to solve specific, tightly-bounded tasks within defined domains. Rather than replacing human general cognition, they serve as <em>assistive tools</em>.
+            Examples highlighted in class:
+            <ul>
+              <li>Voice assistants: <em>Amazon Alexa</em>, <em>Apple Siri</em>.</li>
+              <li>Game AI: Automated opponents and non-player characters in video games.</li>
+              <li>Filtering engines: Automated spam detection, targeted recommendation algorithms.</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Strong / General AI :</strong><br>
+            Autonomous systems possessing broad, robust intelligence capable of operating in safety-critical, complex, and unconstrained environments without human intervention.
+            Examples highlighted in class:
+            <ul>
+              <li><strong>Autonomous Vehicles:</strong> Real-time sensor fusion, path planning, hazard avoidance, and high-speed trajectory control.</li>
+              <li><strong>Surgical AI / Autonomous Operating Rooms:</strong> Robotic microsurgery, dynamic tissue tracking, and sub-millimeter anatomical precision.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-ai-ml-dl-hierarchy">3. The Hierarchy: AI, Machine Learning, and Deep Learning</h2>
+      <p>
+        A foundational relationship connects Artificial Intelligence, Machine Learning, and Deep Learning as concentric sub-disciplines:
+      </p>
+      <div class="def-box">
+        <span class="box-label">The Nested Paradigms of AI</span>
+        <div style="background: var(--bg-surface-elevated); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-subtle); margin: 0.75rem 0;">
+          <h4 style="margin: 0 0 0.5rem 0; color: #1e3a8a;">1. Artificial Intelligence (Outer Layer)</h4>
+          <p style="margin: 0 0 1rem 0;"><em>"Computers making decisions with logic."</em> Encompasses all rule-based expert systems, symbolic reasoning, heuristic search (such as \(A^*\)), and knowledge graphs.</p>
+          
+          <h4 style="margin: 0 0 0.5rem 0; color: #1d4ed8;">2. Machine Learning (Middle Layer)</h4>
+          <p style="margin: 0 0 1rem 0;"><em>"Computers making decisions without being explicitly programmed."</em> Algorithms whose internal decision parameters are automatically updated by statistical optimization over empirical datasets.</p>
+          
+          <h4 style="margin: 0 0 0.5rem 0; color: #2563eb;">3. Deep Learning (Core Layer)</h4>
+          <p style="margin: 0;"><em>"Computers making decisions where decision criteria do not have to be manually defined or guided."</em> Hierarchical representation learning using multi-layered artificial neural networks where features are learned end-to-end from raw data (pixels, raw waveforms, token sequences).</p>
+        </div>
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-what-is-ml">4. What is Machine Learning? Experience, Data, and Complexity</h2>
+      <p>
+        Following the formal characterization in statistical learning theory:
+      </p>
+      <div class="def-box">
+        <span class="box-label">Definition 4.1 (Machine Learning)</span>
+        <strong>Machine learning</strong> consists of computational methods that leverage <em>experience</em> to systematically improve performance at a specific task or to make accurate, generalizable predictions on unobserved data.
+      </div>
+      <p>
+        In computational practice:
+      </p>
+      <ul>
+        <li><strong>Experience (\(E\)):</strong> Refers to historical data made available to the learner, typically formatted as structured electronic datasets (digitized feature vectors, time series, or human-labeled supervision pairs).</li>
+        <li><strong>Data Quality &amp; Size:</strong> The statistical consistency and generalization capacity of any learner strictly depend on both the <em>sample size</em> \(n\) and the <em>label quality</em> (signal-to-noise ratio).</li>
+        <li><strong>Document Classification Example:</strong> Consider classifying randomly sampled text documents into topic categories (e.g., <em>politics</em>, <em>business</em>, <em>sports</em>, <em>weather</em>). As the sample size \(n\) grows, the variance of the estimator shrinks; however, performance degrades if human labelers introduce misclassification noise, or if the cardinality of the topic space is large.</li>
+      </ul>
+
+      <!-- Section 5 -->
+      <h2 id="sec-sample-complexity">5. Computational Complexity vs. Sample Complexity</h2>
+      <p>
+        In classical theoretical computer science, algorithms are evaluated primarily along two resource dimensions:
+        \[
+          \text{Time Complexity } \mathcal{O}(T(n)) \quad \text{and} \quad \text{Space Complexity } \mathcal{O}(S(n))
+        \]
+        In statistical machine learning, however, an equally fundamental theoretical criterion is required:
+      </p>
+      <div class="thm-box">
+        <span class="box-label">Definition 5.1 (Sample Complexity)</span>
+        <strong>Sample Complexity</strong> evaluates the minimal number of training examples \(m = m(\epsilon, \delta)\) required by a learning algorithm to guarantee, with high probability (\(1 - \delta\)), that its generalization error is bounded above by \(\epsilon\):
+        \[
+          P\left( R(h) - R^* \le \epsilon \right) \ge 1 - \delta
+        \]
+        Sample complexity depends fundamentally on:
+        <ol>
+          <li>The <strong>richness / expressive capacity</strong> of the chosen concept class or hypothesis set \(\mathcal{H}\) (measured via VC-dimension or Rademacher complexity).</li>
+          <li>The inherent <strong>noise level</strong> of the underlying data-generating distribution \(\mathcal{D}\).</li>
+        </ol>
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-applications">6. Major Applications of Machine Learning</h2>
+      <p>
+        The lecture highlights the ubiquitous penetration of machine learning algorithms across science and industry:
+      </p>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border-strong); text-align: left;">
+            <th style="padding: 0.6rem;">Domain</th>
+            <th style="padding: 0.6rem;">Key Applications &amp; In-Class Highlights</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 0.6rem; font-weight: 600;">Healthcare &amp; Biology</td>
+            <td style="padding: 0.6rem;">Drug discovery, high-throughput protein screening, automated pathological imaging diagnostics, genomic sequence variant analysis.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 0.6rem; font-weight: 600;">Language &amp; Speech</td>
+            <td style="padding: 0.6rem;">Natural Language Processing (NLP), semantic sentiment classification, speech recognition, acoustic signal processing.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 0.6rem; font-weight: 600;">Generative AI</td>
+            <td style="padding: 0.6rem;"><em>Circled in red in lecture:</em> Algorithmic music composition, poetry and creative text generation, generative image diffusion models.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 0.6rem; font-weight: 600;">Finance &amp; Economics</td>
+            <td style="padding: 0.6rem;">Quantitative portfolio optimization, algorithmic trading, financial fraud detection, credit risk default prediction.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 0.6rem; font-weight: 600;">Vision &amp; Robotics</td>
+            <td style="padding: 0.6rem;">Computer vision, optical character recognition (OCR), autonomous driving obstacle avoidance, robotic kinematics.</td>
+          </tr>
+          <tr>
+            <td style="padding: 0.6rem; font-weight: 600;">Web &amp; Telecommunications</td>
+            <td style="padding: 0.6rem;">Collaborative filtering recommenders, social network community detection, targeted online advertising, wireless channel estimation, earthquake forecasting.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Section 7 -->
+      <h2 id="sec-learning-scenarios">7. Taxonomy of Learning Scenarios </h2>
+      <p>
+        The mechanism by which the learner interacts with information defines the learning paradigm:
+      </p>
+      <ul>
+        <li>
+          <strong>Supervised Learning:</strong> Training instances are pairs \((x_i, y_i)\) drawn i.i.d. from distribution \(\mathcal{D}\). Given a new unseen feature vector \(x_{\text{new}}\), the goal is to predict its target label \(y_{\text{new}}\).
+        </li>
+        <li>
+          <strong>Unsupervised Learning:</strong> The learner receives only unlabeled observations \(\{x_i\}\) without target annotations (\(X, \bcancel{Y}\)). The objective is to discover latent geometric structure, probability density contours, or discrete clusters.
+        </li>
+        <li>
+          <strong>Semi-Supervised Learning:</strong> Leverages a small corpus of labeled examples alongside a vastly larger body of unlabeled data to guide the placement of decision boundaries through low-density regions.
+        </li>
+        <li>
+          <strong>Self-Supervised Learning:</strong> Supervision signals are generated autonomously from the structure of the input data itself (e.g., predicting masked tokens in BERT or contrasting image augmentations in SimCLR).
+        </li>
+        <li>
+          <strong>Ensemble Learning:</strong> Combines a collection of base hypotheses (via bagging, random forests, or gradient boosting) to produce a composite model with dramatically lower variance or bias.
+        </li>
+        <li>
+          <strong>Transfer Learning:</strong> Repurposing representations acquired on a data-rich source task (e.g., ImageNet pre-training) to achieve rapid convergence on a data-scarce target task.
+        </li>
+        <li>
+          <strong>Multi-Task Learning:</strong> Jointly training a model on multiple related tasks simultaneously, sharing internal representations to exploit inductive transfer across domains.
+        </li>
+        <li>
+          <strong>Adversarial Learning:</strong> Designing minimax training objectives (such as Generative Adversarial Networks) or hardening classifiers against worst-case adversarial input perturbations.
+        </li>
+        <li>
+          <strong>Online Learning:</strong> Sequential processing where training examples arrive stream-wise one at a time, requiring continual, low-latency hypothesis updates without storing the full history.
+        </li>
+        <li>
+          <strong>Reinforcement Learning:</strong> An autonomous agent interacts with a dynamic environment via a Markov Decision Process (MDP), taking actions \(a_t \in \mathcal{A}\), receiving state feedback \(s_{t+1}\), and maximizing expected cumulative discounted reward \(\sum \gamma^t r_t\).
+        </li>
+      </ul>
+
+      <!-- Section 8 -->
+      <h2 id="sec-problem-categories">8. Core Machine Learning Problem Types</h2>
+      <div class="def-box">
+        <span class="box-label">The Canonical Problem Types</span>
+        <ul>
+          <li>
+            <strong>Classification:</strong> Mapping inputs to discrete categorical classes \(\mathcal{Y} = \{c_1, \dots, c_K\}\). There is generally no continuous metric distance defined between classes. Examples:
+            <ul>
+              <li>Document topic tagging (\(\{\text{politics}, \text{business}, \text{sports}, \text{weather}\}\)).</li>
+              <li>Object detection (\(\{\text{car}, \text{train}, \text{airplane}\}\)).</li>
+              <li>Binary botanical classification: *Iris-Virginica* vs. *Not Iris-Virginica*.</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Regression:</strong> Predicting a continuous real-valued response \(y \in \mathbb{R}\). The loss penalty is a direct function of the numerical distance between the true value \(y\) and the prediction \(\hat{y}\) (e.g., squared error \((y - \hat{y})^2\)).
+          </li>
+          <li>
+            <strong>Ranking:</strong> Learning an ordering over a set of items based on a utility criterion. The canonical example is web search query result ranking.
+          </li>
+          <li>
+            <strong>Clustering:</strong> Unsupervised partitioning of unlabeled instances into homogeneous subgroups or natural communities without pre-assigned ground truth labels.
+          </li>
+          <li>
+            <strong>Dimensionality Reduction / Manifold Learning:</strong> Projecting high-dimensional observations \(\mathbb{R}^D\) into a compact representation \(\mathbb{R}^d\) (\(d \ll D\)) while preserving pairwise distances, topological neighborhood graphs, or maximal variance.
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 9 -->
+      <h2 id="sec-learning-stages">9. Mathematical Formalization of the Learning Stages</h2>
+      <p>
+        To formulate machine learning mathematically, we introduce the formal vocabulary:
+      </p>
+      <div class="def-box">
+        <span class="box-label">Formal Mathematical Vocabulary</span>
+        <ul>
+          <li><strong>Instance / Example (\(x \in \mathcal{X}\)):</strong> An individual object or data point. In email filtering, this represents a single raw email message.</li>
+          <li><strong>Feature Vector (\(\mathbf{x} \in \mathbb{R}^d\)):</strong> An ordered vector of numerical measurements extracted from an instance:
+            \[
+              \mathbf{x} = \begin{bmatrix} x_1 & x_2 & \dots & x_d \end{bmatrix}^T
+            \]
+            E.g., message length, sender domain reputation score, keyword frequencies.
+          </li>
+          <li><strong>Label (\(y \in \mathcal{Y}\)):</strong> The ground truth target. \(\mathcal{Y} = \{-1, +1\}\) for binary spam classification; \(\mathcal{Y} = \mathbb{R}\) for regression.</li>
+          <li><strong>Hypothesis Set (\(\mathcal{H}\)):</strong> A defined class of candidate functions mapping feature vectors to labels:
+            \[
+              \mathcal{H} = \{ h_\theta : \mathcal{X} \to \mathcal{Y} \mid \theta \in \Theta \}
+            \]
+          </li>
+          <li><strong>Loss Function (\(L\)):</strong> A non-negative mapping measuring prediction error:
+            \[
+              L: \mathcal{Y} \times \mathcal{Y} \to \mathbb{R}_+
+            \]
+            Common instances include \(0\text{--}1\) loss \(L(y, \hat{y}) = \mathbf{1}_{\{y \ne \hat{y}\}}\) and squared error \(L(y, \hat{y}) = (y - \hat{y})^2\).
+          </li>
+          <li><strong>Hyperparameters:</strong> Structural configuration parameters (regularization weight \(\lambda\), polynomial degree \(p\), tree depth) that are chosen prior to running optimization, rather than learned directly by gradient descent.</li>
+        </ul>
+      </div>
+
+      <!-- Section 10 -->
+      <h2 id="sec-data-partitioning">10. Dataset Partitioning, Validation &amp; Generalization Error</h2>
+      <p>
+        A fundamental axiom of machine learning is that <strong>training error is an overly optimistic, biased estimator of true test error</strong>. To ensure rigorous, unbiased evaluation, empirical data must be partitioned into three mutually disjoint subsets:
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">The Three-Way Data Partition</span>
+        <ol>
+          <li>
+            <strong>Training Sample (\(S_{\text{train}}\)):</strong> Used by algorithm \(\mathcal{A}(\Theta)\) to optimize the model's primary internal parameters \(\theta\) (e.g., weights in regression or neural network weights).
+          </li>
+          <li>
+            <strong>Validation Sample (\(S_{\text{val}}\)):</strong> Used to evaluate performance across different hyperparameter choices \(\Theta_0\) (e.g., tuning regularization parameter \(\lambda\) or model complexity) to prevent overfitting.
+          </li>
+          <li>
+            <strong>Test Sample (\(S_{\text{test}}\)):</strong> Held out strictly until the final model is selected. Evaluated once via the loss function to produce an unbiased estimate of future generalization performance.
+          </li>
+        </ol>
+      </div>
+
+      <div class="note-callout">
+        <strong>The Generalization Principle:</strong><br>
+        The ultimate success of any machine learning system is measured strictly by its <strong>generalization error</strong> on unobserved test data drawn from the true underlying distribution \(\mathcal{D}\), never by its ability to memorize the training sample.
+      </div>
+
+      <!-- Section 11 -->
+      <h2 id="sec-regression-vs-classification">11. Visual Geometry: Continuous Regression vs. Discrete Classification</h2>
+      <p>
+        The lecture concludes with a direct geometric contrast between the two core supervised tasks:
+      </p>
+      <div class="ex-box">
+        <span class="box-label">Geometric Comparison</span>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 0.5rem;">
+          <div>
+            <strong>1. Continuous Regression:</strong>
+            <p>
+              Given continuous coordinate points \((x_i, y_i)\), find the optimal function (e.g. line \(\hat{y} = \beta_0 + \beta_1 x\)) that minimizes vertical distance residuals:
+              \[
+                \min_{\beta_0, \beta_1} \sum_{i=1}^n (y_i - (\beta_0 + \beta_1 x_i))^2
+              \]
+              The output is a real-valued number along a continuum.
+            </p>
+          </div>
+          <div>
+            <strong>2. Discrete Classification:</strong>
+            <p>
+              Given feature coordinates (e.g., <em>Petal Length</em> vs. <em>Petal Width</em> in Fisher's Iris data), find a separating decision boundary (such as the linear hyper-plane dashed line) that partitions the feature space into discrete class regions:
+              \[
+                \hat{y} = \text{sign}(\mathbf{w}^T \mathbf{x} + b)
+              \]
+              Assigning instances to either <em>Iris-Virginica</em> or <em>Not Iris-Virginica</em>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="note-callout">
+        <strong>Course Literature References (Slide 16):</strong><br>
+        The theoretical foundations introduced here connect directly with:
+        <ul>
+          <li><em>A First Course in Probability</em> by Sheldon Ross (Probability foundations, random vectors, conditioning).</li>
+          <li><em>Probabilistic Machine Learning: An Introduction</em> by Kevin P. Murphy (Statistical modeling, linear models, neural architectures).</li>
+          <li><em>Foundations of Machine Learning</em> by Mehryar Mohri, Afshin Rostamizadeh, and Ameet Talwalkar (Sample complexity, PAC learning guarantees).</li>
+        </ul>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-12.html">&larr; Lecture 12: Two-Sample Confidence Intervals</a>
+      <a href="./lecture-14.html">Lecture 14: Supervised Learning: Regression &amp; Classification &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

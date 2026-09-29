@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture Slides Repository | Basics of Data Science - University of Tehran</title>
+  <meta name="description" content="Official repository of presentation slides for Basics of Data Science, Department of Engineering Science, University of Tehran.">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-hover: #f1f5f9;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #0284c7;
+      --primary-light: #e0f2fe;
+      --primary-hover: #0369a1;
+      --badge-bg: #f1f5f9;
+      --badge-text: #334155;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+      --radius: 10px;
+    }
+    [data-theme="dark"] {
+      --bg: #0b0f17;
+      --surface: #111827;
+      --surface-hover: #1f2937;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border: #1f2937;
+      --primary: #38bdf8;
+      --primary-light: rgba(56, 189, 248, 0.12);
+      --primary-hover: #7dd3fc;
+      --badge-bg: #1f2937;
+      --badge-text: #e5e7eb;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 4rem;
+    }
+    .repo-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 2.2rem 1.5rem 1.8rem;
+    }
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    .repo-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .repo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .theme-toggle {
+      background: var(--badge-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.4rem 0.65rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-family: inherit;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .repo-title {
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      margin-bottom: 0.4rem;
+    }
+    .repo-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 720px;
+      margin-bottom: 1.5rem;
+    }
+    .search-bar-row {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 260px;
+    }
+    .search-input-wrapper svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+    .search-input {
+      width: 100%;
+      padding: 0.65rem 0.85rem 0.65rem 2.4rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    .slide-count {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .repo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.1rem;
+      margin-top: 2rem;
+    }
+    .slide-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .slide-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary);
+    }
+    .slide-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.65rem;
+    }
+    .slide-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      letter-spacing: 0.02em;
+    }
+    .slide-size-pill {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--badge-bg);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+    .slide-title {
+      font-size: 1.02rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.35;
+      margin-bottom: 0.65rem;
+    }
+    .slide-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin-bottom: 1.1rem;
+      word-break: break-all;
+    }
+    .slide-meta svg {
+      flex-shrink: 0;
+    }
+    .slide-filename {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+    }
+    .slide-card-actions {
+      margin-top: auto;
+    }
+    .btn-open-slide {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      width: 100%;
+      padding: 0.55rem 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #ffffff;
+      background: var(--primary);
+      border-radius: 6px;
+      text-decoration: none;
+      transition: background 0.15s ease;
+    }
+    .btn-open-slide:hover {
+      background: var(--primary-hover);
+    }
+    .no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      display: none;
+    }
+    .repo-footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      padding-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="repo-header">
+    <div class="container">
+      <div class="repo-top-bar">
+        <div class="repo-badge">
+          <span>University of Tehran</span>
+          <span>&bull;</span>
+          <span>Department of Engineering Science</span>
+        </div>
+        <button id="theme-btn" class="theme-toggle" aria-label="Toggle theme">
+          <span id="theme-text">Toggle Theme</span>
+        </button>
+      </div>
+
+      <h1 class="repo-title">Presentation Slides Repository</h1>
+      <p class="repo-desc">
+        Basics of Data Science &bull; Class 8 of Engineering Science. All 36 lecture slide decks in official PDF format, arranged in chronological course sequence.
+      </p>
+
+      <div class="search-bar-row">
+        <div class="search-input-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" id="slide-search" class="search-input" placeholder="Filter slides by number or topic (e.g. 2, 10, regression, SVM)..." autocomplete="off">
+        </div>
+        <div id="slide-counter" class="slide-count">Showing 36 of 36 slide decks</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="slides-grid" class="repo-grid">
+        <div class="slide-card" data-lecture="1" data-title="introduction">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 1</span>
+            <span class="slide-size-pill">2.7 MB</span>
+          </div>
+          <h3 class="slide-title">Introduction</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#1 - introduction.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%231%20-%20introduction.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="2" data-title="probability review">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 2</span>
+            <span class="slide-size-pill">2.7 MB</span>
+          </div>
+          <h3 class="slide-title">Probability Review</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#2 - probability review.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%232%20-%20probability%20review.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="3" data-title="probability review">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 3</span>
+            <span class="slide-size-pill">2.7 MB</span>
+          </div>
+          <h3 class="slide-title">Probability Review</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#3 - probability review.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%233%20-%20probability%20review.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="4" data-title="sampling methods">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 4</span>
+            <span class="slide-size-pill">168 KB</span>
+          </div>
+          <h3 class="slide-title">Sampling Methods</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#4 - sampling methods.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%234%20-%20sampling%20methods.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="5.1" data-title="point estimation">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 5.1</span>
+            <span class="slide-size-pill">405 KB</span>
+          </div>
+          <h3 class="slide-title">Point Estimation</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#5.1 - point estimation.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%235.1%20-%20point%20estimation.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="5.2" data-title="maximum likelihood estimation">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 5.2</span>
+            <span class="slide-size-pill">159 KB</span>
+          </div>
+          <h3 class="slide-title">Maximum Likelihood Estimation</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#5.2 - maximum likelihood estimation.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%235.2%20-%20maximum%20likelihood%20estimation.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="5.3" data-title="mle derivations">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 5.3</span>
+            <span class="slide-size-pill">346 KB</span>
+          </div>
+          <h3 class="slide-title">MLE Derivations</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#5.3 - mle derivations.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%235.3%20-%20mle%20derivations.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="6.1" data-title="normal and uniform mle">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 6.1</span>
+            <span class="slide-size-pill">1.3 MB</span>
+          </div>
+          <h3 class="slide-title">Normal and Uniform MLE</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#6.1 - normal and uniform mle.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%236.1%20-%20normal%20and%20uniform%20mle.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="6.2" data-title="invariance property of mles">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 6.2</span>
+            <span class="slide-size-pill">857 KB</span>
+          </div>
+          <h3 class="slide-title">Invariance Property of MLEs</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#6.2 - invariance property of mles.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%236.2%20-%20invariance%20property%20of%20mles.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="7.1" data-title="mse and efficiency">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 7.1</span>
+            <span class="slide-size-pill">151 KB</span>
+          </div>
+          <h3 class="slide-title">MSE and Efficiency</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#7.1 - mse and efficiency.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%237.1%20-%20mse%20and%20efficiency.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="7.2" data-title="cramér-rao lower bound">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 7.2</span>
+            <span class="slide-size-pill">420 KB</span>
+          </div>
+          <h3 class="slide-title">Cramér-Rao Lower Bound</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#7.2 - cramer-rao lower bound.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%237.2%20-%20cramer-rao%20lower%20bound.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="8.1" data-title="fisher information simplifications">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 8.1</span>
+            <span class="slide-size-pill">442 KB</span>
+          </div>
+          <h3 class="slide-title">Fisher Information Simplifications</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#8.1 - fisher information simplifications.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%238.1%20-%20fisher%20information%20simplifications.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="8.2" data-title="convergence in probability and wlln">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 8.2</span>
+            <span class="slide-size-pill">258 KB</span>
+          </div>
+          <h3 class="slide-title">Convergence in Probability and WLLN</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#8.2 - convergence in probability and wlln.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%238.2%20-%20convergence%20in%20probability%20and%20wlln.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="9" data-title="central limit theorem">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 9</span>
+            <span class="slide-size-pill">365 KB</span>
+          </div>
+          <h3 class="slide-title">Central Limit Theorem</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#9 - central limit theorem.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%239%20-%20central%20limit%20theorem.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="10" data-title="asymptotic properties of mle">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 10</span>
+            <span class="slide-size-pill">380 KB</span>
+          </div>
+          <h3 class="slide-title">Asymptotic Properties of MLE</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#10 - asymptotic properties of mle.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2310%20-%20asymptotic%20properties%20of%20mle.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="11.1" data-title="introduction to confidence intervals">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 11.1</span>
+            <span class="slide-size-pill">302 KB</span>
+          </div>
+          <h3 class="slide-title">Introduction to Confidence Intervals</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#11.1 - introduction to confidence intervals.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2311.1%20-%20introduction%20to%20confidence%20intervals.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="11.2" data-title="large sample confidence intervals">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 11.2</span>
+            <span class="slide-size-pill">387 KB</span>
+          </div>
+          <h3 class="slide-title">Large Sample Confidence Intervals</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#11.2 - large sample confidence intervals.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2311.2%20-%20large%20sample%20confidence%20intervals.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="11.3" data-title="chi-squared and t distributions">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 11.3</span>
+            <span class="slide-size-pill">2.7 MB</span>
+          </div>
+          <h3 class="slide-title">Chi-Squared and t Distributions</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#11.3 - chi-squared and t distributions.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2311.3%20-%20chi-squared%20and%20t%20distributions.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="12.1" data-title="difference of means known variances">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 12.1</span>
+            <span class="slide-size-pill">283 KB</span>
+          </div>
+          <h3 class="slide-title">Difference of Means Known Variances</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#12.1 - difference of means known variances.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2312.1%20-%20difference%20of%20means%20known%20variances.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="12.2" data-title="difference of means unknown variances">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 12.2</span>
+            <span class="slide-size-pill">462 KB</span>
+          </div>
+          <h3 class="slide-title">Difference of Means Unknown Variances</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#12.2 - difference of means unknown variances.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2312.2%20-%20difference%20of%20means%20unknown%20variances.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="12.3" data-title="confidence intervals for proportions">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 12.3</span>
+            <span class="slide-size-pill">197 KB</span>
+          </div>
+          <h3 class="slide-title">Confidence Intervals for Proportions</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#12.3 - confidence intervals for proportions.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2312.3%20-%20confidence%20intervals%20for%20proportions.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="12.4" data-title="difference of proportions">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 12.4</span>
+            <span class="slide-size-pill">278 KB</span>
+          </div>
+          <h3 class="slide-title">Difference of Proportions</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#12.4 - difference of proportions.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2312.4%20-%20difference%20of%20proportions.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="13" data-title="introduction to artificial intelligence">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 13</span>
+            <span class="slide-size-pill">1.2 MB</span>
+          </div>
+          <h3 class="slide-title">Introduction to Artificial Intelligence</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#13 - introduction to artificial intelligence.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2313%20-%20introduction%20to%20artificial%20intelligence.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="14" data-title="supervised learning regression and classification">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 14</span>
+            <span class="slide-size-pill">2.1 MB</span>
+          </div>
+          <h3 class="slide-title">Supervised Learning Regression and Classification</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#14 - supervised learning regression and classification.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2314%20-%20supervised%20learning%20regression%20and%20classification.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="15" data-title="linear regression and gradient descent">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 15</span>
+            <span class="slide-size-pill">1.8 MB</span>
+          </div>
+          <h3 class="slide-title">Linear Regression and Gradient Descent</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#15 - linear regression and gradient descent.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2315%20-%20linear%20regression%20and%20gradient%20descent.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="16" data-title="logistic regression and classification">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 16</span>
+            <span class="slide-size-pill">1.7 MB</span>
+          </div>
+          <h3 class="slide-title">Logistic Regression and Classification</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#16 - logistic regression and classification.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2316%20-%20logistic%20regression%20and%20classification.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="17" data-title="regularization ridge and lasso">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 17</span>
+            <span class="slide-size-pill">2.8 MB</span>
+          </div>
+          <h3 class="slide-title">Regularization Ridge and Lasso</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#17 - regularization ridge and lasso.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2317%20-%20regularization%20ridge%20and%20lasso.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="18" data-title="generalized linear models and generative learning">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 18</span>
+            <span class="slide-size-pill">1.9 MB</span>
+          </div>
+          <h3 class="slide-title">Generalized Linear Models and Generative Learning</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#18 - generalized linear models and generative learning.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2318%20-%20generalized%20linear%20models%20and%20generative%20learning.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="20" data-title="naive bayes and neural networks">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 20</span>
+            <span class="slide-size-pill">3.2 MB</span>
+          </div>
+          <h3 class="slide-title">Naive Bayes and Neural Networks</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#20 - naive bayes and neural networks.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2320%20-%20naive%20bayes%20and%20neural%20networks.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="21" data-title="neural networks and backpropagation">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 21</span>
+            <span class="slide-size-pill">3.1 MB</span>
+          </div>
+          <h3 class="slide-title">Neural Networks and Backpropagation</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#21 - neural networks and backpropagation.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2321%20-%20neural%20networks%20and%20backpropagation.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="22" data-title="machine learning diagnostics and debugging">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 22</span>
+            <span class="slide-size-pill">2.2 MB</span>
+          </div>
+          <h3 class="slide-title">Machine Learning Diagnostics and Debugging</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#22 - machine learning diagnostics and debugging.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2322%20-%20machine%20learning%20diagnostics%20and%20debugging.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="23" data-title="kernel methods and the kernel trick">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 23</span>
+            <span class="slide-size-pill">1.3 MB</span>
+          </div>
+          <h3 class="slide-title">Kernel Methods and The Kernel Trick</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#23 - kernel methods and the kernel trick.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2323%20-%20kernel%20methods%20and%20the%20kernel%20trick.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="24" data-title="support vector machines">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 24</span>
+            <span class="slide-size-pill">2.1 MB</span>
+          </div>
+          <h3 class="slide-title">Support Vector Machines</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#24 - support vector machines.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2324%20-%20support%20vector%20machines.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="25" data-title="svm duality and k-means clustering">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 25</span>
+            <span class="slide-size-pill">2.1 MB</span>
+          </div>
+          <h3 class="slide-title">SVM Duality and K-Means Clustering</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#25 - svm duality and k-means clustering.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2325%20-%20svm%20duality%20and%20k-means%20clustering.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="26&27" data-title="gaussian mixtures em and pca">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 26&27</span>
+            <span class="slide-size-pill">5.5 MB</span>
+          </div>
+          <h3 class="slide-title">Gaussian Mixtures EM and PCA</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#26&27 - gaussian mixtures em and pca.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2326%2627%20-%20gaussian%20mixtures%20em%20and%20pca.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+        <div class="slide-card" data-lecture="28" data-title="independent component analysis">
+          <div class="slide-card-header">
+            <span class="slide-badge">Lecture 28</span>
+            <span class="slide-size-pill">7.4 MB</span>
+          </div>
+          <h3 class="slide-title">Independent Component Analysis</h3>
+          <div class="slide-meta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="slide-filename">lecture#28 - independent component analysis.pdf</span>
+          </div>
+          <div class="slide-card-actions">
+            <a href="./lecture%2328%20-%20independent%20component%20analysis.pdf" target="_blank" rel="noopener" class="btn-open-slide">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              <span>Open Presentation Slide</span>
+            </a>
+          </div>
+        </div>
+      <div id="no-matches" class="no-results">
+        No slide decks match your search query.
+      </div>
+    </div>
+
+    <footer class="repo-footer">
+      <div>University of Tehran &bull; Department of Engineering Science &bull; Basics of Data Science</div>
+    </footer>
+  </main>
+
+  <script>
+    // Theme sync
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    const themeBtn = document.getElementById("theme-btn");
+    themeBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("theme", next);
+    });
+
+    // Live search filter
+    const searchInput = document.getElementById("slide-search");
+    const cards = document.querySelectorAll(".slide-card");
+    const counter = document.getElementById("slide-counter");
+    const noMatches = document.getElementById("no-matches");
+
+    searchInput.addEventListener("input", (e) => {
+      const query = e.target.value.trim().toLowerCase();
+      let visible = 0;
+      cards.forEach(card => {
+        const num = card.getAttribute("data-lecture").toLowerCase();
+        const title = card.getAttribute("data-title");
+        if (!query || num.includes(query) || title.includes(query)) {
+          card.style.display = "flex";
+          visible++;
+        } else {
+          card.style.display = "none";
+        }
+      });
+      counter.textContent = `Showing ${visible} of ${cards.length} slide decks`;
+      noMatches.style.display = visible === 0 ? "block" : "none";
+    });
+  </script>
+</body>
+</html>

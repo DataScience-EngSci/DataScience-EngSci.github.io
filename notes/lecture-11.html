@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 11: Confidence Intervals, Pivoting, Chi-Squared &amp; Student's t-Distribution | Basics of Data Science</title>
+  <meta name="description" content="Rigorous MIT OCW style lecture notes on confidence intervals: pivotal quantities, large-sample asymptotics, Chi-squared distribution, Cochran's sum-of-squares decomposition, bivariate Jacobian derivation of Student's t, and R implementations.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+        <a href="../lecture%20slides/lecture%2311.1%20-%20introduction%20to%20confidence%20intervals.pdf" target="_blank" rel="noopener" class="note-slide-link" title="Part 1: Introduction to Confidence Intervals">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+          <span>Slide 11.1</span>
+        </a>
+        <a href="../lecture%20slides/lecture%2311.2%20-%20large%20sample%20confidence%20intervals.pdf" target="_blank" rel="noopener" class="note-slide-link" title="Part 2: Large Sample Confidence Intervals">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+          <span>Slide 11.2</span>
+        </a>
+        <a href="../lecture%20slides/lecture%2311.3%20-%20chi-squared%20and%20t%20distributions.pdf" target="_blank" rel="noopener" class="note-slide-link" title="Part 3: Chi-Squared &amp; Student's t">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+          <span>Slide 11.3</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 11: Confidence Intervals, Pivoting, Chi-Squared &amp; Student's t-Distribution</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Nov 04, 2026</div>
+        <div class="note-meta-item"><strong>Readings:</strong> FDS Ch. 4; SFDS Ch. 3; Devore Ch. 7 &amp; 8</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-from-point-to-interval">1. The Philosophical Shift: Point Estimates vs. Interval Estimation</a></li>
+        <li><a href="#sec-known-variance">2. Exact Pivoting for Normal Mean with Known Variance (\(\sigma^2\) Known)</a></li>
+        <li><a href="#sec-large-sample-known">3. Large-Sample Asymptotics &amp; Worked Supermarket Produce Example</a></li>
+        <li><a href="#sec-large-sample-unknown">4. Large Samples with Unknown Variance: Slutsky &amp; Sample Standard Deviation</a></li>
+        <li><a href="#sec-the-small-sample-problem">5. The Small-Sample Dilemma (\(n \le 30\)) &amp; Why Normal Approximations Fail</a></li>
+        <li><a href="#sec-chi-squared-theory">6. Theoretical Foundations: The Chi-Squared Distribution \(\chi^2(n)\)</a></li>
+        <li><a href="#sec-sum-of-squares-proof">7. Sum-of-Squares Decomposition &amp; MGF Proof of \((n-1)S^2/\sigma^2 \sim \chi^2(n-1)\)</a></li>
+        <li><a href="#sec-student-t-derivation">8. Student's t-Distribution: Definition, Jacobian Derivation, &amp; Sensor Lifetime Example</a></li>
+        <li><a href="#sec-summary-matrix">9. Comprehensive Summary of Univariate Mean Inference Methods</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-from-point-to-interval">1. The Philosophical Shift: Point Estimates vs. Interval Estimation</h2>
+      <p>
+        In Lectures 05 through 10, our primary objective was finding optimal <strong>point estimators</strong> \(\hat{\theta}(X_1, \dots, X_n)\) (such as the Maximum Likelihood Estimator \(\hat{\theta}_{\text{MLE}}\) or the Method of Moments estimator \(\hat{\theta}_{\text{MM}}\)). While point estimators possess asymptotic optimality (consistency, asymptotic efficiency attaining the CRLB), a single point estimate suffers from two fundamental limitations in practical data science:
+      </p>
+      <ol>
+        <li><strong>Zero Probability of Exact Hits:</strong> For any continuous parameter \(\theta \in \mathbb{R}\), the probability that a sample statistic coincides exactly with the ground truth is strictly zero:
+          \[
+            P(\hat{\theta} = \theta) = 0
+          \]
+        </li>
+        <li><strong>Absence of Uncertainty Quantification:</strong> Saying \(\hat{\mu} = 10.4\) gives no indication whether the true mean likely lies in \([10.2, 10.6]\) (high precision) or \([-5.0, 25.0]\) (pure noise).
+      </li>
+      </ol>
+      <p>
+        To quantify precision, <strong>interval estimation</strong> seeks two sample statistics \(L(X_1, \dots, X_n)\) and \(U(X_1, \dots, X_n)\) defining a random interval \([L, U]\) that captures \(\theta\) with a pre-specified high probability \(1 - \alpha\).
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 1.1 (Confidence Interval)</span>
+        Let \(X_1, \dots, X_n\) be a sample drawn from a distribution indexed by \(\theta\). An interval \([L, U]\) computed from the sample is a <strong>\(100(1-\alpha)\%\) Confidence Interval</strong> for \(\theta\) if:
+        \[
+          P\left(L(X_1, \dots, X_n) \le \theta \le U(X_1, \dots, X_n)\right) = 1 - \alpha
+        \]
+        The scalar \(1 - \alpha\) is the <strong>confidence level</strong> (typically \(90\%\), \(95\%\), or \(99\%\)), and \(\alpha \in (0, 1)\) is the <strong>significance level</strong>.
+      </div>
+
+      <div class="note-callout">
+        <strong>The Frequentist Meaning of Confidence (Slide 11.1, Slide 3):</strong>
+        Suppose after collecting data, a calculated \(95\%\) confidence interval for \(\mu\) is \((-2.14, 3.07)\).
+        <br><br>
+        <strong>Common Fallacy:</strong> <em>"There is a 95% probability that the parameter \(\mu\) lies between \(-2.14\) and \(3.07\)."</em> &mdash; <strong>WRONG!</strong>
+        <br><br>
+        <strong>Correct Frequentist Interpretation:</strong> In classical statistics, the true parameter \(\mu\) is a <strong>fixed, non-random constant</strong>. The numbers \(-2.14\) and \(3.07\) are also fixed realized values. The statement \(-2.14 \le \mu \le 3.07\) is either entirely TRUE or entirely FALSE; there is no remaining randomness once data are observed. 
+        <br><br>
+        The \(95\%\) probability refers to the <em>random procedure</em> \([L(X), U(X)]\) across hypothetically repeated samples. If 100 independent researchers each draw a random sample of size \(n\) from the same population and compute their own interval \([L, U]\), approximately 95 of those 100 intervals will cover \(\mu\), while approximately 5 will fail to cover it.
+      </div>
+
+      <!-- Section 2 -->
+      <h2 id="sec-known-variance">2. Exact Pivoting for Normal Mean with Known Variance (\(\sigma^2\) Known)</h2>
+      <p>
+        Consider an i.i.d. sample \(X_1, \dots, X_n \sim \mathcal{N}(\mu, \sigma^2)\) where \(\sigma^2\) is known. The sample mean \(\bar{X} = \frac{1}{n}\sum_{i=1}^n X_i\) is distributed as:
+        \[
+          \bar{X} \sim \mathcal{N}\left(\mu, \frac{\sigma^2}{n}\right)
+        \]
+        We standardize \(\bar{X}\) into a <strong>pivotal quantity</strong> \(Z\):
+        \[
+          Z = \frac{\bar{X} - \mu}{\sigma / \sqrt{n}} \sim \mathcal{N}(0, 1)
+        \]
+        A pivotal quantity possesses the defining trait that its sampling distribution is completely known and free of all unknown parameters (here, \(\mathcal{N}(0, 1)\) does not depend on \(\mu\)).
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 2.1 (The Pivoting Method)</span>
+        Let \(z_{\alpha/2}\) be the upper critical value of the standard normal distribution such that \(P(Z > z_{\alpha/2}) = \alpha/2\). By symmetry, \(P(Z < -z_{\alpha/2}) = \alpha/2\). Therefore:
+        \[
+          P\left(-z_{\alpha/2} \le \frac{\bar{X} - \mu}{\sigma/\sqrt{n}} \le z_{\alpha/2}\right) = 1 - \alpha
+        \]
+        To isolate the parameter \(\mu\) "in the middle":
+        <ol>
+          <li>Multiply through by the standard error \(\frac{\sigma}{\sqrt{n}} > 0\):
+            \[
+              -z_{\alpha/2}\frac{\sigma}{\sqrt{n}} \le \bar{X} - \mu \le z_{\alpha/2}\frac{\sigma}{\sqrt{n}}
+            \]
+          </li>
+          <li>Subtract \(\bar{X}\) from all parts:
+            \[
+              -\bar{X} - z_{\alpha/2}\frac{\sigma}{\sqrt{n}} \le -\mu \le -\bar{X} + z_{\alpha/2}\frac{\sigma}{\sqrt{n}}
+            \]
+          </li>
+          <li>Multiply by \(-1\) (reversing the inequality signs):
+            \[
+              \bar{X} - z_{\alpha/2}\frac{\sigma}{\sqrt{n}} \le \mu \le \bar{X} + z_{\alpha/2}\frac{\sigma}{\sqrt{n}}
+            \]
+          </li>
+        </ol>
+        Hence, the exact two-sided \(100(1-\alpha)\%\) Confidence Interval is:
+        \[
+          \bar{X} \pm z_{\alpha/2} \frac{\sigma}{\sqrt{n}}
+        \]
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-large-sample-known">3. Large-Sample Asymptotics &amp; Worked Supermarket Produce Example</h2>
+      <p>
+        What if the underlying population is <em>not normal</em>, but the sample size \(n\) is large (\(n \ge 30\))?
+        By the Central Limit Theorem (CLT):
+        \[
+          \frac{\bar{X} - \mu}{\sigma/\sqrt{n}} \xrightarrow{d} \mathcal{N}(0, 1) \quad \text{as } n \to \infty
+        \]
+        Hence, regardless of population skewness or shape, the same interval \(\bar{X} \pm z_{\alpha/2}\frac{\sigma}{\sqrt{n}}\) provides an <strong>asymptotically valid</strong> confidence interval.
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Worked Slide Example 11.1: Supermarket Produce Spending</span>
+        <strong>Problem Statement:</strong>
+        A regional supermarket chain conducts a survey to evaluate customer spending on organic produce. A random sample of \(n = 200\) customers yields an average monthly spending of \(\bar{x} = \$36\). From historical market records, the population variance is assumed known at \(\sigma^2 = 5\) (hence \(\sigma = \sqrt{5} \approx 2.236\)).
+        <br><br>
+        Find an approximate \(90\%\) confidence interval for the true mean customer expenditure \(\mu\).
+        <br><br>
+        <strong>Step-by-Step Solution:</strong>
+        <ol>
+          <li><strong>Identify parameters:</strong>
+            \[
+              n = 200, \quad \bar{x} = 36, \quad \sigma^2 = 5 \implies \sigma = \sqrt{5}, \quad 1 - \alpha = 0.90 \implies \alpha = 0.10, \quad \frac{\alpha}{2} = 0.05
+            \]
+          </li>
+          <li><strong>Find critical value \(z_{0.05}\):</strong>
+            We require \(z_{0.05}\) such that \(P(Z \le z_{0.05}) = 0.95\). In R:
+            <pre><code class="language-r">> qnorm(0.95)
+[1] 1.644854  # rounded to 1.645</code></pre>
+          </li>
+          <li><strong>Compute Margin of Error:</strong>
+            \[
+              E = z_{\alpha/2} \frac{\sigma}{\sqrt{n}} = 1.645 \cdot \frac{\sqrt{5}}{\sqrt{200}} = 1.645 \cdot \frac{\sqrt{5}}{10\sqrt{2}} = 1.645 \cdot \frac{\sqrt{2.5}}{10} \approx 1.645 \cdot 0.15811 = 0.2601
+            \]
+          </li>
+          <li><strong>Interval Bounds:</strong>
+            \[
+              \bar{x} \pm E = 36 \pm 0.2601 \implies (35.74, \; 36.26)
+            \]
+          </li>
+        </ol>
+        <strong>Conclusion:</strong> We are \(90\%\) confident that the regional population average monthly expenditure on organic produce lies between \(\$35.74\) and \(\$36.26\).
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-large-sample-unknown">4. Large Samples with Unknown Variance: Slutsky &amp; Sample Standard Deviation</h2>
+      <p>
+        In nearly all practical engineering and data science applications, the population variance \(\sigma^2\) is unknown. We estimate \(\sigma^2\) using the unbiased <strong>sample variance</strong>:
+        \[
+          S^2 = \frac{1}{n-1}\sum_{i=1}^n (X_i - \bar{X})^2 = \frac{\sum_{i=1}^n X_i^2 - \frac{1}{n}\left(\sum_{i=1}^n X_i\right)^2}{n-1}
+        \]
+        By the Weak Law of Large Numbers (WLLN), \(S^2 \xrightarrow{P} \sigma^2\), and by the Continuous Mapping Theorem:
+        \[
+          S = \sqrt{S^2} \xrightarrow{P} \sigma \implies \frac{S}{\sigma} \xrightarrow{P} 1
+        \]
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 4.1 (Slutsky's Asymptotic Justification for Large Samples)</span>
+        When replacing the unknown parameter \(\sigma\) with the random statistic \(S\), the standardized ratio decomposes into:
+        \[
+          \frac{\bar{X} - \mu}{S/\sqrt{n}} = \underbrace{\left(\frac{\bar{X} - \mu}{\sigma/\sqrt{n}}\right)}_{\xrightarrow{d} \mathcal{N}(0, 1) \text{ by CLT}} \cdot \underbrace{\left(\frac{\sigma}{S}\right)}_{\xrightarrow{P} 1 \text{ by WLLN}} \xrightarrow{d} \mathcal{N}(0, 1)
+        \]
+        Therefore, for <strong>large samples</strong> (\(n > 30\)), an approximate \(100(1-\alpha)\%\) confidence interval for \(\mu\) under <em>any</em> underlying population distribution with finite variance is:
+        \[
+          \bar{X} \pm z_{\alpha/2} \frac{S}{\sqrt{n}}
+        \]
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-the-small-sample-problem">5. The Small-Sample Dilemma (\(n \le 30\)) &amp; Why Normal Approximations Fail</h2>
+      <p>
+        What happens if the sample size is small (\(n \le 30\)) and \(\sigma^2\) is unknown?
+      </p>
+      <div class="note-callout">
+        <strong>The Fundamental Slide 11.2 Question:</strong>
+        Can we use the normal approximation \(\bar{X} \pm z_{\alpha/2}\frac{S}{\sqrt{n}}\) for arbitrary distributions with \(n \le 30\)?
+        <br><br>
+        <strong style="color: #dc2626; font-size: 1.15rem;">NO!</strong>
+        <br><br>
+        Two catastrophic failures occur simultaneously:
+        <ol>
+          <li>The Central Limit Theorem has not converged: \(\bar{X}\) is <em>not</em> normal if the parent population is skewed or multimodal.</li>
+          <li>The sample standard deviation \(S\) is <strong>random</strong> (as emphasized on slide 10). The variability of \(S\) is huge for small \(n\). In a small sample, \(S\) might fluctuate drastically below or above \(\sigma\), blowing up the tail probabilities.</li>
+        </ol>
+        <strong>Resolution:</strong> We must assume that the underlying population is <strong>normally distributed</strong>, \(X_i \overset{\text{i.i.d.}}{\sim} \mathcal{N}(\mu, \sigma^2)\), and determine the <em>exact finite-sample distribution</em> of the ratio:
+        \[
+          \frac{\bar{X} - \mu}{S/\sqrt{n}} = \frac{\frac{\bar{X} - \mu}{\sigma/\sqrt{n}}}{\sqrt{\frac{S^2}{\sigma^2}}} = \frac{\frac{\bar{X} - \mu}{\sigma/\sqrt{n}}}{\sqrt{\frac{(n-1)S^2/\sigma^2}{n-1}}} = \frac{Z}{\sqrt{W/(n-1)}}
+        \]
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-chi-squared-theory">6. Theoretical Foundations: The Chi-Squared Distribution \(\chi^2(n)\)</h2>
+      <p>
+        To understand the denominator \(W = \frac{(n-1)S^2}{\sigma^2}\), we study the <strong>Chi-Squared distribution</strong>.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 6.1 (Chi-Squared Distribution)</span>
+        The Chi-Squared distribution with \(n\) degrees of freedom, written \(X \sim \chi^2(n)\), is defined as a special Gamma distribution:
+        \[
+          X \sim \text{Gamma}\left(\alpha = \frac{n}{2}, \; \beta = \frac{1}{2}\right) \quad (\text{rate parameterization } \beta = 1/2)
+        \]
+        Its probability density function (PDF) is given by:
+        \[
+          f_X(x) = \frac{1}{\Gamma(n/2)} \left(\frac{1}{2}\right)^{n/2} x^{\frac{n}{2} - 1} e^{-\frac{1}{2}x} \, \mathbb{I}_{(0, \infty)}(x)
+        \]
+        <strong>Properties:</strong>
+        <ul>
+          <li><strong>Mean:</strong> \(E[X] = \frac{\alpha}{\beta} = \frac{n/2}{1/2} = n\).</li>
+          <li><strong>Variance:</strong> \(\text{Var}(X) = \frac{\alpha}{\beta^2} = \frac{n/2}{(1/2)^2} = 2n\).</li>
+          <li><strong>Moment Generating Function:</strong> For \(t < 1/2\):
+            \[
+              M_X(t) = \left(1 - \frac{t}{1/2}\right)^{-n/2} = \left(\frac{1/2}{1/2 - t}\right)^{n/2} = (1 - 2t)^{-n/2}
+            \]
+          </li>
+        </ul>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 6.2 (The Chi-Squared &amp; Normal Relationship)</span>
+        <ol>
+          <li><strong>Single Squared Normal:</strong> If \(Z \sim \mathcal{N}(0, 1)\), then \(Y = Z^2 \sim \chi^2(1)\).
+            <br>
+            <em>Proof via MGF:</em>
+            \[
+              M_Y(t) = E[e^{t Z^2}] = \int_{-\infty}^\infty e^{t z^2} \frac{1}{\sqrt{2\pi}} e^{-z^2/2} dz = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^\infty e^{-\frac{1}{2}(1 - 2t)z^2} dz = (1 - 2t)^{-1/2}
+            \]
+            which is precisely the MGF of \(\chi^2(1)\).
+          </li>
+          <li><strong>Additivity of Chi-Squared:</strong> Let \(X_1, \dots, X_k\) be independent with \(X_i \sim \chi^2(n_i)\). Then \(Y = \sum_{i=1}^k X_i \sim \chi^2\left(\sum_{i=1}^k n_i\right)\).
+            <br>
+            <em>Proof via MGF:</em>
+            \[
+              M_Y(t) = \prod_{i=1}^k M_{X_i}(t) = \prod_{i=1}^k \left(\frac{1/2}{1/2 - t}\right)^{n_i/2} = \left(\frac{1/2}{1/2 - t}\right)^{\frac{\sum n_i}{2}} \implies Y \sim \chi^2\left(\sum_{i=1}^k n_i\right)
+            \]
+          </li>
+          <li><strong>Sum of Squared Standard Normals:</strong> If \(Z_1, \dots, Z_n \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0, 1)\), then:
+            \[
+              \sum_{i=1}^n Z_i^2 \sim \chi^2(n)
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 7 -->
+      <h2 id="sec-sum-of-squares-proof">7. Sum-of-Squares Decomposition &amp; MGF Proof of \((n-1)S^2/\sigma^2 \sim \chi^2(n-1)\)</h2>
+      <p>
+        In Slides 25&ndash;37 of Lecture 11.3, the complete algebraic and moment-generating proof of the distribution of sample variance is established.
+      </p>
+
+      <div class="proof-box">
+        <span class="box-label">Step 1: Sum-of-Squares Algebraic Identity</span>
+        For an i.i.d. normal sample \(X_1, \dots, X_n \sim \mathcal{N}(\mu, \sigma^2)\), add and subtract \(\bar{X}\) inside each squared error term:
+        \[
+          \sum_{i=1}^n (X_i - \mu)^2 = \sum_{i=1}^n \left[(X_i - \bar{X}) + (\bar{X} - \mu)\right]^2
+        \]
+        Expanding the quadratic expression:
+        \[
+          \sum_{i=1}^n (X_i - \mu)^2 = \sum_{i=1}^n (X_i - \bar{X})^2 + 2(\bar{X} - \mu)\sum_{i=1}^n (X_i - \bar{X}) + \sum_{i=1}^n (\bar{X} - \mu)^2
+        \]
+        Notice that the middle cross-product term vanishes identically:
+        \[
+          \sum_{i=1}^n (X_i - \bar{X}) = \sum_{i=1}^n X_i - n\bar{X} = n\bar{X} - n\bar{X} = 0
+        \]
+        Therefore:
+        \[
+          \sum_{i=1}^n (X_i - \mu)^2 = \sum_{i=1}^n (X_i - \bar{X})^2 + n(\bar{X} - \mu)^2
+        \]
+      </div>
+
+      <div class="proof-box">
+        <span class="box-label">Step 2: Division by \(\sigma^2\) and MGF Separation</span>
+        Dividing both sides of the identity by \(\sigma^2\):
+        \[
+          \underbrace{\sum_{i=1}^n \left(\frac{X_i - \mu}{\sigma}\right)^2}_{Y_1} = \underbrace{\frac{\sum_{i=1}^n (X_i - \bar{X})^2}{\sigma^2}}_{Y_2} + \underbrace{\left(\frac{\bar{X} - \mu}{\sigma/\sqrt{n}}\right)^2}_{Y_3}
+        \]
+        Observe each component:
+        <ul>
+          <li><strong>LHS (\(Y_1\)):</strong> Each \(\frac{X_i - \mu}{\sigma} \sim \mathcal{N}(0, 1)\), so \(Y_1\) is the sum of \(n\) independent squared standard normals:
+            \[
+              Y_1 \sim \chi^2(n) \implies M_{Y_1}(t) = (1 - 2t)^{-n/2}
+            \]
+          </li>
+          <li><strong>RHS second term (\(Y_3\)):</strong> \(\frac{\bar{X} - \mu}{\sigma/\sqrt{n}} \sim \mathcal{N}(0, 1)\), so its square is:
+            \[
+              Y_3 \sim \chi^2(1) \implies M_{Y_3}(t) = (1 - 2t)^{-1/2}
+            \]
+          </li>
+          <li><strong>RHS first term (\(Y_2\)):</strong> By definition, \(S^2 = \frac{1}{n-1}\sum (X_i - \bar{X})^2\), so:
+            \[
+              Y_2 = \frac{(n-1)S^2}{\sigma^2}
+            \]
+          </li>
+        </ul>
+        <strong>Crucial Independence:</strong> In a normal population, the sample mean \(\bar{X}\) and the deviations vector \((X_1 - \bar{X}, \dots, X_n - \bar{X})\) are independent (Fisher's Theorem). Consequently, \(Y_2\) and \(Y_3\) are <strong>statistically independent</strong>.
+        <br><br>
+        Using the MGF property of independent sums:
+        \[
+          M_{Y_1}(t) = M_{Y_2 + Y_3}(t) = M_{Y_2}(t) \cdot M_{Y_3}(t)
+        \]
+        Solving for \(M_{Y_2}(t)\):
+        \[
+          M_{Y_2}(t) = \frac{M_{Y_1}(t)}{M_{Y_3}(t)} = \frac{(1 - 2t)^{-n/2}}{(1 - 2t)^{-1/2}} = (1 - 2t)^{-\frac{n-1}{2}}
+        \]
+        By the uniqueness theorem of Moment Generating Functions, \(Y_2\) must follow a Chi-squared distribution:
+        \[
+          \frac{(n-1)S^2}{\sigma^2} \sim \chi^2(n-1)
+        \]
+        <em>One degree of freedom is lost</em> because estimating the sample mean \(\bar{X}\) imposes the linear constraint \(\sum_{i=1}^n (X_i - \bar{X}) = 0\).
+      </div>
+
+      <!-- Section 8 -->
+      <h2 id="sec-student-t-derivation">8. Student's t-Distribution: Definition, Jacobian Derivation, &amp; Sensor Lifetime Example</h2>
+
+      <div class="def-box">
+        <span class="box-label">Definition 8.1 (Student's t-Distribution)</span>
+        Let \(Z \sim \mathcal{N}(0, 1)\) and \(W \sim \chi^2(n)\) be <strong>independent</strong> random variables. The ratio:
+        \[
+          T = \frac{Z}{\sqrt{W / n}}
+        \]
+        is defined as <strong>Student's \(t\)-distribution</strong> with \(n\) degrees of freedom, written \(T \sim t(n)\).
+      </div>
+
+      <div class="proof-box">
+        <span class="box-label">Bivariate Jacobian Transformation Derivation (Slide 11.3, Slides 15&ndash;18)</span>
+        Let \(X_1 = Z \sim \mathcal{N}(0, 1)\) and \(X_2 = W \sim \chi^2(n)\) be independent. Their joint density is:
+        \[
+          f_{X_1, X_2}(x_1, x_2) = \left[\frac{1}{\sqrt{2\pi}} e^{-x_1^2/2}\right] \cdot \left[\frac{1}{\Gamma(n/2) 2^{n/2}} x_2^{n/2 - 1} e^{-x_2/2}\right]
+        \]
+        Define the bivariate transformation:
+        \[
+          Y_1 = \frac{X_1}{\sqrt{X_2 / n}} = T, \quad Y_2 = X_2
+        \]
+        The inverse transformations are:
+        \[
+          x_1 = g_1^{-1}(y_1, y_2) = y_1 \sqrt{\frac{y_2}{n}}, \quad x_2 = g_2^{-1}(y_1, y_2) = y_2
+        \]
+        The Jacobian matrix of the transformation is:
+        \[
+          J = \det \begin{pmatrix} \frac{\partial x_1}{\partial y_1} & \frac{\partial x_1}{\partial y_2} \\ \frac{\partial x_2}{\partial y_1} & \frac{\partial x_2}{\partial y_2} \end{pmatrix} = \det \begin{pmatrix} \sqrt{\frac{y_2}{n}} & \frac{y_1}{2\sqrt{n y_2}} \\ 0 & 1 \end{pmatrix} = \sqrt{\frac{y_2}{n}}
+        \]
+        The joint density of \((Y_1, Y_2)\) is \(f_{Y_1, Y_2}(y_1, y_2) = f_{X_1, X_2}(x_1(y_1, y_2), y_2) \cdot |J|\):
+        \[
+          f_{Y_1, Y_2}(y_1, y_2) = \frac{1}{\sqrt{2\pi} \, \Gamma(n/2) 2^{n/2}} \exp\left(-\frac{y_1^2 y_2}{2n}\right) y_2^{\frac{n}{2}-1} e^{-y_2/2} \cdot \left(\frac{y_2}{n}\right)^{1/2}
+        \]
+        \[
+          f_{Y_1, Y_2}(y_1, y_2) = \frac{1}{\sqrt{2\pi n} \, \Gamma(n/2) 2^{n/2}} y_2^{\frac{n+1}{2} - 1} \exp\left(-\frac{y_2}{2}\left[1 + \frac{y_1^2}{n}\right]\right)
+        \]
+        To obtain the marginal density \(f_T(t) = f_{Y_1}(y_1)\), integrate out \(y_2 \in (0, \infty)\):
+        \[
+          f_T(t) = \frac{1}{\sqrt{2\pi n} \, \Gamma(n/2) 2^{n/2}} \int_0^\infty y_2^{\frac{n+1}{2} - 1} \exp\left(- y_2 \cdot \frac{1 + t^2/n}{2}\right) dy_2
+        \]
+        Recognizing the integral as the kernel of a \(\text{Gamma}\left(\frac{n+1}{2}, \frac{1 + t^2/n}{2}\right)\) density, its value is:
+        \[
+          \frac{\Gamma\left(\frac{n+1}{2}\right)}{\left(\frac{1 + t^2/n}{2}\right)^{\frac{n+1}{2}}}
+        \]
+        Substituting this back:
+        \[
+          f_T(t) = \frac{\Gamma\left(\frac{n+1}{2}\right)}{\Gamma(n/2)\sqrt{n\pi}} \left(1 + \frac{t^2}{n}\right)^{-\frac{n+1}{2}}, \quad -\infty < t < \infty
+        \]
+        This establishes the exact density of Student's \(t\)-distribution with \(n\) degrees of freedom!
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Moments and Asymptotic Behavior of \(t(n)\) (Slide 11.3, Slides 20&ndash;22)</span>
+        <ul>
+          <li><strong>Mean:</strong> \(E[T] = 0\) for \(n > 1\) (undefined for \(n = 1\), the Cauchy distribution).</li>
+          <li><strong>Variance:</strong>
+            \[
+              \text{Var}(T) = \frac{n}{n - 2} \quad \text{for } n > 2
+            \]
+            Notice that \(\text{Var}(T) > 1\) for all finite \(n\), reflecting the heavier tails caused by uncertainty in estimating \(\sigma\).
+          </li>
+          <li><strong>Asymptotic Normality:</strong> As degrees of freedom \(n \to \infty\):
+            \[
+              \lim_{n \to \infty} \left(1 + \frac{t^2}{n}\right)^{-\frac{n+1}{2}} = e^{-t^2/2} \implies t(n) \xrightarrow{d} \mathcal{N}(0, 1)
+            \]
+          </li>
+        </ul>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Worked Slide Example 11.2: Continuous Glucose Monitoring Sensor Lifetimes</span>
+        <strong>Problem Statement:</strong>
+        A biomedical engineering study tests a new sensor for a continuous glucose monitoring (CGM) system. Previous clinical experience indicates that the lifetime of the sensors (in days) is normally distributed.
+        <br><br>
+        A random sample of \(n = 20\) patients is fitted with the new sensor. On average, the sensors operated for \(\bar{x} = 187\) days before wearing out. The sample variance of sensor lifetimes was measured at \(s^2 = 16.2\) \(\text{days}^2\) (hence \(s = \sqrt{16.2} \approx 4.025\) days).
+        <br><br>
+        Find a \(95\%\) confidence interval for the true mean sensor lifetime \(\mu\).
+        <br><br>
+        <strong>Step-by-Step Solution:</strong>
+        <ol>
+          <li><strong>Identify the setting:</strong>
+            Normal population, \(\sigma^2\) unknown, small sample size \(n = 20 \le 30\). We must use Student's \(t\)-distribution with \(\text{df} = n - 1 = 19\).
+          </li>
+          <li><strong>Identify critical value \(t_{\alpha/2, n-1}\):</strong>
+            Here \(1 - \alpha = 0.95 \implies \alpha = 0.05 \implies \alpha/2 = 0.025\).
+            We need \(t_{0.025, 19}\). In R:
+            <pre><code class="language-r">> qt(0.975, df = 19)
+[1] 2.093024  # rounded to 2.093</code></pre>
+          </li>
+          <li><strong>Confidence Interval Formula:</strong>
+            \[
+              \bar{x} \pm t_{\alpha/2, n-1} \frac{s}{\sqrt{n}} = 187 \pm 2.093 \frac{\sqrt{16.2}}{\sqrt{20}}
+            \]
+          </li>
+          <li><strong>Calculate Margin of Error:</strong>
+            \[
+              \frac{\sqrt{16.2}}{\sqrt{20}} = \sqrt{\frac{16.2}{20}} = \sqrt{0.81} = 0.9000
+            \]
+            \[
+              E = 2.093024 \times 0.9000 \approx 1.8837 \approx 1.88 \text{ days}
+            \]
+          </li>
+          <li><strong>Compute bounds:</strong>
+            \[
+              [187 - 1.88, \; 187 + 1.88] \implies (185.11, \; 188.88)
+            \]
+          </li>
+        </ol>
+        <strong>Conclusion:</strong> We are \(95\%\) confident that the true average lifetime of the new CGM sensors across all diabetic patients is between \(185.11\) and \(188.88\) days.
+      </div>
+
+      <!-- Section 9 -->
+      <h2 id="sec-summary-matrix">9. Comprehensive Summary of Univariate Mean Inference Methods</h2>
+      <p>
+        The following decision framework synthesizes all three slide sets for constructing confidence intervals for a population mean \(\mu\):
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Inference Selection Matrix for Population Mean \(\mu\)</span>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.92rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-strong); text-align: left;">
+              <th style="padding: 0.5rem;">Population Dist.</th>
+              <th style="padding: 0.5rem;">Variance \(\sigma^2\)</th>
+              <th style="padding: 0.5rem;">Sample Size \(n\)</th>
+              <th style="padding: 0.5rem;">Pivotal Statistic</th>
+              <th style="padding: 0.5rem;">\(100(1-\alpha)\%\) Confidence Interval</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.5rem;">Normal</td>
+              <td style="padding: 0.5rem;">Known</td>
+              <td style="padding: 0.5rem;">Any \(n\)</td>
+              <td style="padding: 0.5rem;">\(Z = \frac{\bar{X}-\mu}{\sigma/\sqrt{n}} \sim \mathcal{N}(0,1)\)</td>
+              <td style="padding: 0.5rem;">\(\bar{X} \pm z_{\alpha/2}\frac{\sigma}{\sqrt{n}}\) (Exact)</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.5rem;">Any with finite \(\sigma^2\)</td>
+              <td style="padding: 0.5rem;">Known</td>
+              <td style="padding: 0.5rem;">Large (\(n > 30\))</td>
+              <td style="padding: 0.5rem;">\(Z \approx \frac{\bar{X}-\mu}{\sigma/\sqrt{n}} \xrightarrow{d} \mathcal{N}(0,1)\)</td>
+              <td style="padding: 0.5rem;">\(\bar{X} \pm z_{\alpha/2}\frac{\sigma}{\sqrt{n}}\) (CLT Approximate)</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.5rem;">Any with finite \(\sigma^2\)</td>
+              <td style="padding: 0.5rem;">Unknown</td>
+              <td style="padding: 0.5rem;">Large (\(n > 30\))</td>
+              <td style="padding: 0.5rem;">\(\frac{\bar{X}-\mu}{S/\sqrt{n}} \xrightarrow{d} \mathcal{N}(0,1)\)</td>
+              <td style="padding: 0.5rem;">\(\bar{X} \pm z_{\alpha/2}\frac{S}{\sqrt{n}}\) (Slutsky Approximate)</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.5rem;">Normal</td>
+              <td style="padding: 0.5rem;">Unknown</td>
+              <td style="padding: 0.5rem;">Small (\(n \le 30\))</td>
+              <td style="padding: 0.5rem;">\(T = \frac{\bar{X}-\mu}{S/\sqrt{n}} \sim t(n-1)\)</td>
+              <td style="padding: 0.5rem;">\(\bar{X} \pm t_{\alpha/2, n-1}\frac{S}{\sqrt{n}}\) (Exact)</td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem;">Non-Normal</td>
+              <td style="padding: 0.5rem;">Unknown</td>
+              <td style="padding: 0.5rem;">Small (\(n \le 30\))</td>
+              <td style="padding: 0.5rem;"><em>Distribution non-standard</em></td>
+              <td style="padding: 0.5rem;"><strong>No parametric CI!</strong> (Use Bootstrap / Nonparametric)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-10.html">&larr; Lecture 10: Asymptotic Properties of MLE</a>
+      <a href="./lecture-12.html">Lecture 12: Two-Sample Confidence Intervals &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

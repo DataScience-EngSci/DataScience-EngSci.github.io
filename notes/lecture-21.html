@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 21: Neural Networks, Logic Synthesis &amp; The Backpropagation Algorithm | Basics of Data Science</title>
+  <meta name="description" content="MIT OCW / Stanford CS231n style lecture notes on Deep Neural Networks: Boolean logic gate synthesis (AND, OR, NOT, XNOR), scalar and vectorized forward propagation, regularized MSE and cross-entropy loss functions, complete mathematical derivation of the Backpropagation algorithm, Xavier/He initialization, gradient checking, and non-convex optimization.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2321%20-%20neural%20networks%20and%20backpropagation.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 21 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 21: Deep Neural Networks, Logic Synthesis &amp; The Backpropagation Algorithm</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Fall 2026</div>
+        <div class="note-meta-item"><strong>Readings:</strong> Goodfellow et al. <em>Deep Learning</em> Ch. 6; Murphy PML-1 Ch. 13; Nielsen <em>Neural Networks &amp; Deep Learning</em> Ch. 1&ndash;2</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-review-foundations">1. Foundations Review: Non-Linear Hypotheses &amp; Multi-Class Vector Targets</a></li>
+        <li><a href="#sec-logic-synthesis">2. Non-Linear Decision Boundaries via Logic Synthesis: AND, OR, NOT &amp; XNOR</a></li>
+        <li><a href="#sec-loss-functions">3. Objective Functions: Single-Sample Loss, Regularized MSE &amp; Multi-Class Cross-Entropy</a></li>
+        <li><a href="#sec-backprop-intuition">4. The Credit Assignment Problem &amp; The Error Vector \(\delta^{(l)}\)</a></li>
+        <li><a href="#sec-backprop-derivation">5. Rigorous Step-by-Step Chain Rule Derivation of Backpropagation</a></li>
+        <li><a href="#sec-four-equations">6. Vectorized Backpropagation &amp; The Batch Gradient Descent Algorithm</a></li>
+        <li><a href="#sec-weight-init">7. Symmetry Breaking, Random Initialization &amp; Xavier/He Variance Scaling</a></li>
+        <li><a href="#sec-grad-check-nonconvex">8. Practical Diagnostics: Gradient Checking &amp; The Non-Convex Optimization Landscape</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-review-foundations">1. Foundations Review: Non-Linear Hypotheses &amp; Multi-Class Vector Targets</h2>
+      <p>
+        In Lecture 20, we established that classical linear models (such as Linear Regression and Logistic Regression) fail catastrophically when applied to high-dimensional, complex perceptual tasks such as computer vision. When considering non-linear polynomial expansions (e.g., all quadratic combinations \(x_i x_j\)), a modest \(50 \times 50\) grayscale image yields \(\approx \frac{2500^2}{2} \approx 3 \times 10^6\) features, and an RGB image yields upwards of \(28 \times 10^6\) features. This explosive parameter complexity leads to severe overfitting and intractable computation.
+      </p>
+      <p>
+        Artificial Neural Networks (ANNs) resolve this challenge by learning hierarchical representations \(\phi_\beta(x)\) through successive layers of non-linear transformations.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 1.1 (Multi-Layer Perceptron Notation &amp; Indexing)</span>
+        Let a feedforward neural network have \(n_l\) total layers, where layer \(1\) denotes the input layer, layers \(2, \dots, n_l - 1\) are hidden layers, and layer \(n_l\) is the output layer.
+        <ul>
+          <li>Let \(s_l\) denote the number of physical activation units in layer \(l\) (excluding the bias unit \(a_0^{(l)} = +1\)).</li>
+          <li>The input vector is \(x \in \mathbb{R}^{s_1}\). We set the initial activations \(a^{(1)} = x\).</li>
+          <li>For each layer \(l \in \{1, \dots, n_l - 1\}\), the weight parameter matrix connecting layer \(l\) to layer \(l+1\) is denoted \(\Theta^{(l)} \in \mathbb{R}^{s_{l+1} \times (s_l + 1)}\) (or alternatively \(W^{(l)} \in \mathbb{R}^{s_{l+1} \times s_l}\) with separate bias vector \(b^{(l)} \in \mathbb{R}^{s_{l+1}}\)).</li>
+          <li>Entry \(\Theta_{ji}^{(l)}\) (or \(W_{ji}^{(l)}\)) denotes the weight of the synapse leading <strong>from unit \(i\) in layer \(l\) into unit \(j\) in layer \(l+1\)</strong>:
+            \[
+              \text{Dimension of } \Theta^{(l)} = (\text{units in layer } l+1) \times (\text{units in layer } l + 1)
+            \]
+          </li>
+        </ul>
+      </div>
+
+      <p>
+        For multi-class classification with \(K\) distinct categories (e.g., pedestrian, car, motorcycle, truck), the target is represented as a one-hot column vector \(y \in \mathbb{R}^K\):
+      </p>
+      \[
+        y \in \left\{ \begin{bmatrix} 1 \\ 0 \\ 0 \\ 0 \end{bmatrix}, \begin{bmatrix} 0 \\ 1 \\ 0 \\ 0 \end{bmatrix}, \begin{bmatrix} 0 \\ 0 \\ 1 \\ 0 \end{bmatrix}, \begin{bmatrix} 0 \\ 0 \\ 0 \\ 1 \end{bmatrix} \right\} \subset \mathbb{R}^4
+      \]
+      <p>
+        The output layer has \(s_{n_l} = K\) units, yielding an estimated probability distribution \(h_\Theta(x) = a^{(n_l)} \in \mathbb{R}^K\) where each component \((h_\Theta(x))_k \approx P(y_k = 1 \mid x)\).
+      </p>
+
+      <!-- Section 2 -->
+      <h2 id="sec-logic-synthesis">2. Non-Linear Decision Boundaries via Logic Synthesis: AND, OR, NOT &amp; XNOR</h2>
+      <p>
+        Historically, the Perceptron was famously criticized by Minsky and Papert (1969) because a single linear threshold unit cannot compute the non-linear <strong>XOR</strong> (Exclusive OR) or <strong>XNOR</strong> (Equivalence) function. However, as demonstrated in the lecture slides, cascading elementary logistic units into a multi-layer network synthesizes arbitrary Boolean logic functions with razor-sharp non-linear decision boundaries.
+      </p>
+
+      <div class="note-callout">
+        <span class="callout-title">The Sigmoid Thresholding Regime</span>
+        Recall the logistic sigmoid activation function \(g(z) = \frac{1}{1 + e^{-z}}\). For large positive inputs \(z \ge 4.6\), \(g(z) \approx 1\); for large negative inputs \(z \le -4.6\), \(g(z) \approx 0\); and \(g(0) = 0.5\). By selecting weights of magnitude \(\approx 20\) to \(40\), a continuous sigmoid unit mimics a discrete Boolean gate.
+      </div>
+
+      <h3 style="font-size: 1.15rem; margin-top: 1.5rem; color: var(--navy-primary);">Building Elementary Boolean Gates</h3>
+      <p>
+        Let inputs \(x_1, x_2 \in \{0, 1\}\). We incorporate the constant bias \(x_0 = +1\).
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Example 2.1 (Logical AND Gate)</span>
+        Consider parameters \(\Theta^{(1)} = \begin{bmatrix} -30 & 20 & 20 \end{bmatrix}\). The hypothesis computes:
+        \[
+          h_\Theta(x) = g\left(-30 + 20x_1 + 20x_2\right)
+        \]
+        Evaluating across all Boolean input combinations:
+        <table style="width: 100%; border-collapse: collapse; margin-top: 0.75rem; text-align: center; font-size: 0.95rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); background: var(--bg-card);">
+              <th style="padding: 6px;">\(x_1\)</th>
+              <th style="padding: 6px;">\(x_2\)</th>
+              <th style="padding: 6px;">Pre-activation \(z = -30 + 20x_1 + 20x_2\)</th>
+              <th style="padding: 6px;">\(h_\Theta(x) = g(z)\)</th>
+              <th style="padding: 6px;">Boolean Target \(x_1 \land x_2\)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">\(-30\)</td>
+              <td style="padding: 6px;">\(g(-30) \approx 0\)</td>
+              <td style="padding: 6px;"><strong>0</strong></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">1</td>
+              <td style="padding: 6px;">\(-10\)</td>
+              <td style="padding: 6px;">\(g(-10) \approx 0\)</td>
+              <td style="padding: 6px;"><strong>0</strong></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 6px;">1</td>
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">\(-10\)</td>
+              <td style="padding: 6px;">\(g(-10) \approx 0\)</td>
+              <td style="padding: 6px;"><strong>0</strong></td>
+            </tr>
+            <tr>
+              <td style="padding: 6px;">1</td>
+              <td style="padding: 6px;">1</td>
+              <td style="padding: 6px;">\(+10\)</td>
+              <td style="padding: 6px;">\(g(+10) \approx 1\)</td>
+              <td style="padding: 6px;"><strong>1</strong></td>
+            </tr>
+          </tbody>
+        </table>
+        This single unit reproduces the exact truth table of logical <strong>AND</strong>.
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Example 2.2 (Logical OR, NOT &amp; NOR Gates)</span>
+        <ul>
+          <li><strong>Logical OR Gate:</strong> Choose \(\Theta^{(1)} = \begin{bmatrix} -10 & 20 & 20 \end{bmatrix}\).
+            \[
+              h_\Theta(x) = g(-10 + 20x_1 + 20x_2)
+            \]
+            For \((0, 0)\), \(z = -10 \implies g(-10) \approx 0\). For \((0, 1)\) or \((1, 0)\), \(z = 10 \implies g(10) \approx 1\). For \((1, 1)\), \(z = 30 \implies g(30) \approx 1\).
+          </li>
+          <li><strong>Logical NOT Gate:</strong> For a single scalar input \(x_1 \in \{0, 1\}\), choose \(\Theta^{(1)} = \begin{bmatrix} 10 & -20 \end{bmatrix}\).
+            \[
+              h_\Theta(x) = g(10 - 20x_1) \implies \begin{cases} x_1 = 0 \implies g(10) \approx 1 \\ x_1 = 1 \implies g(-10) \approx 0 \end{cases}
+            \]
+          </li>
+          <li><strong>Logical NOR Gate (NOT \(x_1\) AND NOT \(x_2\)):</strong> Choose \(\Theta^{(1)} = \begin{bmatrix} 10 & -20 & -20 \end{bmatrix}\).
+            \[
+              h_\Theta(x) = g(10 - 20x_1 - 20x_2)
+            \]
+            Only \((0,0)\) yields \(z = 10 \implies 1\); all other input pairs yield \(z \le -10 \implies 0\).
+          </li>
+        </ul>
+      </div>
+
+      <h3 style="font-size: 1.15rem; margin-top: 1.5rem; color: var(--navy-primary);">Synthesizing Non-Linear XNOR via a 2-Layer Network</h3>
+      <p>
+        The XNOR function evaluates to \(1\) if and only if \(x_1\) and \(x_2\) are identical (\(x_1 = x_2\)). It is expressed in terms of disjunctive normal form as:
+        \[
+          x_1 \text{ XNOR } x_2 = (x_1 \land x_2) \lor (\neg x_1 \land \neg x_2) = (x_1 \text{ AND } x_2) \text{ OR } (x_1 \text{ NOR } x_2)
+        \]
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 2.1 (Two-Layer Synthesis of XNOR)</span>
+        We construct a neural network with \(s_1 = 2\) inputs, a hidden layer of \(s_2 = 2\) neurons, and \(s_3 = 1\) output neuron.
+        <br><br>
+        <strong>Hidden Layer 2:</strong>
+        \[
+          \Theta^{(1)} = \begin{bmatrix} -30 & 20 & 20 \\ 10 & -20 & -20 \end{bmatrix} \in \mathbb{R}^{2 \times 3}
+        \]
+        The first hidden neuron computes \(a_1^{(2)} = g(-30 + 20x_1 + 20x_2) \approx x_1 \text{ AND } x_2\).<br>
+        The second hidden neuron computes \(a_2^{(2)} = g(10 - 20x_1 - 20x_2) \approx (\text{NOT } x_1) \text{ AND } (\text{NOT } x_2)\).
+        <br><br>
+        <strong>Output Layer 3 (OR Gate over Hidden Activations):</strong>
+        We append bias \(a_0^{(2)} = 1\), so \(a^{(2)} = \begin{bmatrix} 1 & a_1^{(2)} & a_2^{(2)} \end{bmatrix}^T\). Setting \(\Theta^{(2)} = \begin{bmatrix} -10 & 20 & 20 \end{bmatrix} \in \mathbb{R}^{1 \times 3}\):
+        \[
+          a_1^{(3)} = g\left(-10 + 20 a_1^{(2)} + 20 a_2^{(2)}\right)
+        \]
+        <table style="width: 100%; border-collapse: collapse; margin-top: 0.75rem; text-align: center; font-size: 0.95rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); background: var(--bg-card);">
+              <th style="padding: 6px;">\(x_1\)</th>
+              <th style="padding: 6px;">\(x_2\)</th>
+              <th style="padding: 6px;">\(a_1^{(2)} \approx x_1 \text{ AND } x_2\)</th>
+              <th style="padding: 6px;">\(a_2^{(2)} \approx \text{NOR}(x_1, x_2)\)</th>
+              <th style="padding: 6px;">\(a_1^{(3)} = g(-10 + 20a_1^{(2)} + 20a_2^{(2)})\)</th>
+              <th style="padding: 6px;">XNOR Output</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">1</td>
+              <td style="padding: 6px;">\(g(10) \approx 1\)</td>
+              <td style="padding: 6px;"><strong>1</strong></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">1</td>
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">\(g(-10) \approx 0\)</td>
+              <td style="padding: 6px;"><strong>0</strong></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 6px;">1</td>
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">\(g(-10) \approx 0\)</td>
+              <td style="padding: 6px;"><strong>0</strong></td>
+            </tr>
+            <tr>
+              <td style="padding: 6px;">1</td>
+              <td style="padding: 6px;">1</td>
+              <td style="padding: 6px;">1</td>
+              <td style="padding: 6px;">0</td>
+              <td style="padding: 6px;">\(g(10) \approx 1\)</td>
+              <td style="padding: 6px;"><strong>1</strong></td>
+            </tr>
+          </tbody>
+        </table>
+        By combining linear separators in the hidden layer, the network synthesizes an enclosed, non-linear decision boundary separating the diagonal XOR/XNOR classes!
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-loss-functions">3. Objective Functions: Single-Sample Loss, Regularized MSE &amp; Multi-Class Cross-Entropy</h2>
+      <p>
+        To train the parameters \(\Theta\) (or \(\{W, b\}\)) via gradient-based optimization, we define an objective function measuring the discrepancy between predictions and ground-truth targets across a training set \(\{(x^{(1)}, y^{(1)}), \dots, (x^{(m)}, y^{(m)})\}\).
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 3.1 (Single-Sample Mean Squared Error &amp; Regularized Cost)</span>
+        For a single training example \((x, y)\), the half squared Euclidean error is defined as:
+        \[
+          J(W, b; x, y) = \frac{1}{2} \| h_{W, b}(x) - y \|^2 = \frac{1}{2} \sum_{k=1}^{s_{n_l}} \left( a_k^{(n_l)} - y_k \right)^2
+        \]
+        The overall regularized cost function averaged over all \(m\) training examples is:
+        \[
+          J(W, b) = \left[ \frac{1}{m} \sum_{i=1}^m J\left(W, b; x^{(i)}, y^{(i)}\right) \right] + \frac{\lambda}{2} \sum_{l=1}^{n_l - 1} \sum_{i=1}^{s_l} \sum_{j=1}^{s_{l+1}} \left( W_{ji}^{(l)} \right)^2
+        \]
+      </div>
+
+      <div class="note-callout">
+        <span class="callout-title">Slide Handwritten Annotation: Penalizing Weights vs. Biases (\(W, \cancel{b}\))</span>
+        Notice that the \(L_2\) regularization penalty applies <strong>strictly to the multiplicative weights \(W_{ji}^{(l)}\) and NEVER to the additive bias terms \(b_i^{(l)}\)</strong> (penalizing \(W\) while explicitly excluding bias terms \(b\): \(W, \cancel{b}\)).
+        <br>
+        Regularizing the bias would penalize the network simply for shifting the baseline activation threshold away from zero, introducing undesirable shrinkage bias without improving capacity control.
+      </div>
+
+      <div class="def-box">
+        <span class="box-label">Definition 3.2 (Multi-Class Cross-Entropy Cost Function)</span>
+        When the network output units represent Bernoulli probabilities (for multiple independent binary labels) or categorical distributions, the general multi-class cross-entropy objective is:
+        \[
+          J(\Theta) = -\frac{1}{m} \sum_{i=1}^m \sum_{k=1}^K \left[ y_k^{(i)} \ln\left( (h_\Theta(x^{(i)}))_k \right) + (1 - y_k^{(i)}) \ln\left( 1 - (h_\Theta(x^{(i)}))_k \right) \right] + \frac{\lambda}{2m} \sum_{l=1}^{n_l - 1} \sum_{i=1}^{s_l} \sum_{j=1}^{s_{l+1}} \left( \Theta_{ji}^{(l)} \right)^2
+        \]
+        where \(j\) sums from \(1\) to \(s_{l+1}\) and \(i\) sums from \(1\) to \(s_l\) (explicitly excluding the bias weight column \(\Theta_{j0}^{(l)}\)).
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-backprop-intuition">4. The Credit Assignment Problem &amp; The Error Vector \(\delta^{(l)}\)</h2>
+      <p>
+        In linear models, computing the parameter gradient \(\nabla_\theta J(\theta)\) is straightforward because each parameter connects directly to the final output. In a deep network with \(L = n_l\) layers, an error committed at the output layer is the culmination of hundreds of thousands of interacting intermediate decisions made throughout the earlier layers.
+      </p>
+      <p>
+        <strong>The Credit Assignment Problem</strong> asks: <em>How much responsibility (credit or blame) should be attributed to each individual synapse \(\Theta_{ji}^{(l)}\) in hidden layer \(l\) for the final output error?</em>
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 4.1 (The Error Term \(\delta_i^{(l)}\))</span>
+        For a given training example \((x, y)\), define the <strong>error term</strong> \(\delta_i^{(l)}\) of unit \(i\) in layer \(l\) as the sensitivity of the loss with respect to that unit's pre-activation net input \(z_i^{(l)}\):
+        \[
+          \delta_i^{(l)} \equiv \frac{\partial}{\partial z_i^{(l)}} J(W, b; x, y)
+        \]
+        In vector notation for layer \(l\):
+        \[
+          \delta^{(l)} \equiv \nabla_{z^{(l)}} J(W, b; x, y) = \begin{bmatrix} \delta_1^{(l)} \\ \delta_2^{(l)} \\ \vdots \\ \delta_{s_l}^{(l)} \end{bmatrix} \in \mathbb{R}^{s_l}
+        \]
+      </div>
+
+      <p>
+        Once the error terms \(\delta^{(l)}\) are known for all layers, the partial derivatives with respect to the synaptic weights \(\Theta^{(l)}\) and biases \(b^{(l)}\) collapse to simple outer products of forward activations and backward errors!
+      </p>
+
+      <!-- Section 5 -->
+      <h2 id="sec-backprop-derivation">5. Rigorous Step-by-Step Chain Rule Derivation of Backpropagation</h2>
+      <p>
+        We now derive the backpropagation equations step-by-step using the multivariate chain rule, mirroring the exact presentation in the lecture slides.
+      </p>
+
+      <div class="proof-box">
+        <span class="box-label">Step 1: Forward Propagation Recurrence</span>
+        Given an input vector \(x\), we initialize \(a^{(1)} = x\). For each layer \(l = 1, 2, \dots, n_l - 1\):
+        \[
+          z^{(l+1)} = W^{(l)} a^{(l)} + b^{(l)} \quad \Longleftrightarrow \quad z_i^{(l+1)} = \sum_{j=1}^{s_l} W_{ij}^{(l)} a_j^{(l)} + b_i^{(l)}
+        \]
+        \[
+          a^{(l+1)} = f\left( z^{(l+1)} \right) \quad \Longleftrightarrow \quad a_i^{(l+1)} = f\left( z_i^{(l+1)} \right)
+        \]
+        where \(f(\cdot)\) is the element-wise activation function (e.g., sigmoid \(g\)).
+      </div>
+
+      <div class="proof-box">
+        <span class="box-label">Step 2: Output Layer Error (\(l = n_l\))</span>
+        Let the loss be the single-sample MSE: \(J = \frac{1}{2} \sum_{k=1}^{s_{n_l}} (a_k^{(n_l)} - y_k)^2\).
+        Applying the univariate chain rule to the pre-activation \(z_i^{(n_l)}\):
+        \[
+          \delta_i^{(n_l)} = \frac{\partial J}{\partial z_i^{(n_l)}} = \frac{\partial J}{\partial a_i^{(n_l)}} \cdot \frac{\partial a_i^{(n_l)}}{\partial z_i^{(n_l)}}
+        \]
+        Differentiating each term:
+        \[
+          \frac{\partial J}{\partial a_i^{(n_l)}} = (a_i^{(n_l)} - y_i) = -(y_i - a_i^{(n_l)})
+        \]
+        \[
+          \frac{\partial a_i^{(n_l)}}{\partial z_i^{(n_l)}} = f'\left( z_i^{(n_l)} \right)
+        \]
+        Multiplying gives the fundamental output error formula:
+        \[
+          \delta_i^{(n_l)} = -(y_i - a_i^{(n_l)}) \cdot f'\left( z_i^{(n_l)} \right) = \left(a_i^{(n_l)} - y_i\right) \cdot f'\left( z_i^{(n_l)} \right)
+        \]
+        <div class="note-callout" style="margin-top: 0.75rem;">
+          <strong>Case of Sigmoid Derivative:</strong> For the logistic sigmoid function \(g(z) = \frac{1}{1 + e^{-z}}\), its derivative is \(g'(z) = g(z)(1 - g(z)) = a(1 - a)\). Therefore:
+          \[
+            \delta_i^{(n_l)} = (a_i^{(n_l)} - y_i) \cdot a_i^{(n_l)} (1 - a_i^{(n_l)})
+          \]
+          <em>Note:</em> For cross-entropy loss with sigmoid/softmax activations, the denominator of the loss gradient exactly cancels the derivative term \(g'(z)\), yielding simply \(\delta_i^{(n_l)} = a_i^{(n_l)} - y_i\).
+        </div>
+      </div>
+
+      <div class="proof-box">
+        <span class="box-label">Step 3: Hidden Layer Error Recurrence (\(l = n_l - 1, \dots, 2\))</span>
+        Consider a hidden unit \(i\) in layer \(l\). Its pre-activation \(z_i^{(l)}\) affects the cost function <em>only through its activation \(a_i^{(l)}\)</em>, which is subsequently fed forward to <strong>all units \(j = 1, \dots, s_{l+1}\) in the next layer \(l+1\)</strong>.
+        <br><br>
+        By the multivariate chain rule:
+        \[
+          \delta_i^{(l)} = \frac{\partial J}{\partial z_i^{(l)}} = \sum_{j=1}^{s_{l+1}} \frac{\partial J}{\partial z_j^{(l+1)}} \cdot \frac{\partial z_j^{(l+1)}}{\partial a_i^{(l)}} \cdot \frac{\partial a_i^{(l)}}{\partial z_i^{(l)}}
+        \]
+        Examine each constituent partial derivative:
+        <ol>
+          <li>By definition of the layer \(l+1\) error:
+            \[
+              \frac{\partial J}{\partial z_j^{(l+1)}} = \delta_j^{(l+1)}
+            \]
+          </li>
+          <li>Since \(z_j^{(l+1)} = \sum_{k=1}^{s_l} W_{jk}^{(l)} a_k^{(l)} + b_j^{(l)}\), differentiating with respect to \(a_i^{(l)}\) yields:
+            \[
+              \frac{\partial z_j^{(l+1)}}{\partial a_i^{(l)}} = W_{ji}^{(l)}
+            \]
+          </li>
+          <li>Since \(a_i^{(l)} = f(z_i^{(l)})\), differentiating with respect to \(z_i^{(l)}\) yields:
+            \[
+              \frac{\partial a_i^{(l)}}{\partial z_i^{(l)}} = f'\left( z_i^{(l)} \right)
+            \]
+          </li>
+        </ol>
+        Substituting these three terms back into the summation:
+        \[
+          \delta_i^{(l)} = \left( \sum_{j=1}^{s_{l+1}} W_{ji}^{(l)} \delta_j^{(l+1)} \right) f'\left( z_i^{(l)} \right)
+        \]
+        <p>
+          <strong>Interpretation:</strong> The error of unit \(i\) in layer \(l\) is the weighted combination of the errors \(\delta_j^{(l+1)}\) from the layer above, scaled by the incoming synapse weights \(W_{ji}^{(l)}\), and modulated by the local slope of the activation function \(f'(z_i^{(l)})\).
+        </p>
+      </div>
+
+      <div class="proof-box">
+        <span class="box-label">Step 4: Parameter Partial Derivatives (Synaptic Weights &amp; Biases)</span>
+        With \(\delta_i^{(l+1)}\) computed, we evaluate the gradient of the loss with respect to individual weights \(W_{ij}^{(l)}\) and biases \(b_i^{(l)}\).
+        <br><br>
+        <strong>For synaptic weights \(W_{ij}^{(l)}\):</strong>
+        \[
+          \frac{\partial J}{\partial W_{ij}^{(l)}} = \frac{\partial J}{\partial z_i^{(l+1)}} \cdot \frac{\partial z_i^{(l+1)}}{\partial W_{ij}^{(l)}}
+        \]
+        Since \(z_i^{(l+1)} = \sum_{k=1}^{s_l} W_{ik}^{(l)} a_k^{(l)} + b_i^{(l)}\), we have \(\frac{\partial z_i^{(l+1)}}{\partial W_{ij}^{(l)}} = a_j^{(l)}\). Therefore:
+        \[
+          \frac{\partial J}{\partial W_{ij}^{(l)}} = \delta_i^{(l+1)} \cdot a_j^{(l)} = a_j^{(l)} \delta_i^{(l+1)}
+        \]
+        <br>
+        <strong>For biases \(b_i^{(l)}\):</strong>
+        \[
+          \frac{\partial J}{\partial b_i^{(l)}} = \frac{\partial J}{\partial z_i^{(l+1)}} \cdot \frac{\partial z_i^{(l+1)}}{\partial b_i^{(l)}} = \delta_i^{(l+1)} \cdot 1 = \delta_i^{(l+1)}
+        \]
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-four-equations">6. Vectorized Backpropagation &amp; The Batch Gradient Descent Algorithm</h2>
+      <p>
+        Translating scalar element-wise equations into matrix operations allows deep learning frameworks to execute gradient computations at maximum hardware throughput on vectorized CPU/GPU matrix multiplication units.
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 6.1 (The Vectorized Backpropagation Equations)</span>
+        Let \(\odot\) denote the Hadamard (element-wise) product.
+        <ol>
+          <li><strong>Output Layer Error Vector:</strong>
+            \[
+              \delta^{(n_l)} = -(y - a^{(n_l)}) \odot f'\left( z^{(n_l)} \right) \in \mathbb{R}^{s_{n_l}}
+            \]
+          </li>
+          <li><strong>Hidden Layer Error Recurrence (\(l = n_l - 1, \dots, 2\)):</strong>
+            \[
+              \delta^{(l)} = \left( \left( W^{(l)} \right)^T \delta^{(l+1)} \right) \odot f'\left( z^{(l)} \right) \in \mathbb{R}^{s_l}
+            \]
+          </li>
+          <li><strong>Weight Gradient Outer Product:</strong>
+            \[
+              \nabla_{W^{(l)}} J(W, b; x, y) = \delta^{(l+1)} \left( a^{(l)} \right)^T \in \mathbb{R}^{s_{l+1} \times s_l}
+            \]
+          </li>
+          <li><strong>Bias Gradient Vector:</strong>
+            \[
+              \nabla_{b^{(l)}} J(W, b; x, y) = \delta^{(l+1)} \in \mathbb{R}^{s_{l+1}}
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <h3 style="font-size: 1.15rem; margin-top: 1.5rem; color: var(--navy-primary);">Batch Gradient Descent with Backpropagation</h3>
+      <p>
+        For a full dataset of \(m\) training examples, the training algorithm accumulates gradients in memory buffers \(\Delta^{(l)}\):
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Algorithm 6.1 (Batch Gradient Descent in Deep Networks)</span>
+        <ol>
+          <li><strong>Initialize Accumulators:</strong> Set \(\Delta_{ij}^{(l)} := 0\) and \(\Delta_i^{(l)} := 0\) for all \(l, i, j\).</li>
+          <li><strong>Iterate Over Training Set:</strong> For each training example \(k = 1, \dots, m\):
+            <ol type="a">
+              <li>Perform forward propagation to compute all activations \(a^{(l)}\) and net inputs \(z^{(l)}\) for \(l = 2, \dots, n_l\).</li>
+              <li>Evaluate the output error \(\delta^{(n_l)} = -(y^{(k)} - a^{(n_l)}) \odot f'(z^{(n_l)})\).</li>
+              <li>Backpropagate errors \(\delta^{(l)} = ((W^{(l)})^T \delta^{(l+1)}) \odot f'(z^{(l)})\) for \(l = n_l - 1, \dots, 2\).</li>
+              <li>Accumulate gradients:
+                \[
+                  \Delta_{ij}^{(l)} := \Delta_{ij}^{(l)} + a_j^{(l)} \delta_i^{(l+1)}
+                \]
+                \[
+                  \Delta_i^{(l)} := \Delta_i^{(l)} + \delta_i^{(l+1)}
+                \]
+              </li>
+            </ol>
+          </li>
+          <li><strong>Compute Regularized Average Derivatives:</strong>
+            \[
+              D_{ij}^{(l)} = \begin{cases}
+                \frac{1}{m} \Delta_{ij}^{(l)} + \lambda W_{ij}^{(l)} & \text{if } j \ge 1 \quad (\text{penalized weight synapses}) \\
+                \frac{1}{m} \Delta_{ij}^{(l)} & \text{if } j = 0 \quad (\text{unpenalized bias terms})
+              \end{cases}
+            \]
+          </li>
+          <li><strong>Update Network Parameters:</strong> Apply gradient descent with learning rate \(\alpha > 0\):
+            \[
+              W^{(l)} := W^{(l)} - \alpha D^{(l)}
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 7 -->
+      <h2 id="sec-weight-init">7. Symmetry Breaking, Random Initialization &amp; Xavier/He Variance Scaling</h2>
+      <p>
+        In linear regression and logistic regression, parameter initialization is trivial: setting all weights to zero (\(\theta = 0\)) is completely standard because the loss surface is strictly convex. In deep neural networks, however, <strong>zero initialization is a catastrophic failure mode</strong>.
+      </p>
+
+      <div class="proof-box">
+        <span class="box-label">The Symmetry Problem</span>
+        Suppose we initialize all weights to zero: \(W_{ij}^{(l)} = 0\) for all \(i, j, l\).
+        <br><br>
+        <strong>During Forward Propagation:</strong>
+        For any input \(x\), the pre-activation of every hidden unit in layer 2 is identical:
+        \[
+          z_i^{(2)} = \sum_{j} 0 \cdot x_j + 0 = 0 \implies a_1^{(2)} = a_2^{(2)} = \dots = a_{s_2}^{(2)} = f(0)
+        \]
+        <strong>During Backpropagation:</strong>
+        Because all outgoing weights from layer 2 are identical, every hidden unit receives the exact same backpropagated error signal:
+        \[
+          \delta_1^{(2)} = \delta_2^{(2)} = \dots = \delta_{s_2}^{(2)}
+        \]
+        Consequently, the gradient update for every weight in the layer is identical:
+        \[
+          \frac{\partial J}{\partial W_{i1}^{(1)}} = \frac{\partial J}{\partial W_{i2}^{(1)}} = \dots
+        \]
+        On every iteration of gradient descent, all hidden neurons remain <strong>mathematically identical copies of each other</strong>. The entire hidden layer of \(s_2\) neurons collapses functionally to a single neuron! The network can never break symmetry to learn diverse feature detectors.
+      </div>
+
+      <div class="def-box">
+        <span class="box-label">Symmetry Breaking via Random Initialization</span>
+        To break symmetry, parameters must be initialized randomly from a continuous zero-mean distribution:
+        \[
+          W_{ij}^{(l)} \sim \text{Uniform}[-\epsilon, +\epsilon] \quad \text{or} \quad W_{ij}^{(l)} \sim \mathcal{N}(0, \sigma^2)
+        \]
+        where \(\epsilon\) is a small positive scalar (e.g., \(\epsilon = 0.12\)).
+      </div>
+
+      <h3 style="font-size: 1.15rem; margin-top: 1.5rem; color: var(--navy-primary);">Modern Variance Scaling: Xavier (Glorot) and He (Kaiming) Initialization</h3>
+      <p>
+        As highlighted in slide 45, if the initial variance \(\sigma^2\) is chosen too small, activations and backpropagated gradients shrink exponentially with depth (<strong>vanishing gradient</strong>). If \(\sigma^2\) is chosen too large, pre-activations explode into saturation regions where \(f'(z) \approx 0\) (saturation paralysis).
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Variance Preservation Principle</span>
+        To preserve the variance of signals across layers during both the forward pass and backward pass:
+        <ul>
+          <li><strong>Xavier / Glorot Initialization (for Sigmoid and Tanh activations):</strong>
+            \[
+              W_{ij}^{(l)} \sim \mathcal{N}\left(0, \; \frac{2}{n_{\text{in}} + n_{\text{out}}}\right) = \mathcal{N}\left(0, \; \frac{2}{s_l + s_{l+1}}\right)
+            \]
+          </li>
+          <li><strong>He / Kaiming Initialization (for ReLU activations):</strong>
+            Because ReLU zeros out half of the pre-activations on average (\(\mathbb{E}[\text{ReLU}(z)^2] = \frac{1}{2}\text{Var}(z)\)), the variance must be doubled to compensate:
+            \[
+              W_{ij}^{(l)} \sim \mathcal{N}\left(0, \; \frac{2}{n_{\text{in}}}\right) = \mathcal{N}\left(0, \; \frac{2}{s_l}\right)
+            \]
+          </li>
+        </ul>
+        Biases can be safely initialized to zeros: \(b^{(l)} = 0\).
+      </div>
+
+      <!-- Section 8 -->
+      <h2 id="sec-grad-check-nonconvex">8. Practical Diagnostics: Gradient Checking &amp; The Non-Convex Optimization Landscape</h2>
+      <p>
+        Because backpropagation involves complex matrix dimensions, transposes, and index book-keeping, an implementation with subtle bugs often appears to run without crashing, yet achieves poor final accuracy or converges at an agonizingly slow pace.
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Numerical Gradient Checking</span>
+        To verify analytical backpropagation, we approximate the gradient numerically using the symmetric two-sided finite difference quotient.
+        <br><br>
+        Let all network parameters be unrolled into a single long parameter vector \(\theta \in \mathbb{R}^P\). For each individual parameter \(\theta_i\):
+        \[
+          \frac{\partial J}{\partial \theta_i} \approx \frac{J(\theta_1, \dots, \theta_i + \epsilon, \dots, \theta_P) - J(\theta_1, \dots, \theta_i - \epsilon, \dots, \theta_P)}{2\epsilon}
+        \]
+        where \(\epsilon \approx 10^{-4}\) (or \(10^{-7}\) in double precision).
+        <br><br>
+        <strong>Verification Metric:</strong> Compute the relative Euclidean distance between the analytical gradient vector \(d_{\text{analytic}}\) and numerical approximation \(d_{\text{approx}}\):
+        \[
+          \text{Relative Difference} = \frac{\| d_{\text{analytic}} - d_{\text{approx}} \|_2}{\| d_{\text{analytic}} \|_2 + \| d_{\text{approx}} \|_2}
+        \]
+        <ul>
+          <li>If the relative difference is \(\le 10^{-7}\): The backpropagation implementation is provably correct!</li>
+          <li>If the relative difference is \(\approx 10^{-4}\): Likely suspicious; check for regularization terms or indexing offsets.</li>
+          <li>If the relative difference is \(\ge 10^{-2}\): Severe bug in gradient derivation or code logic.</li>
+        </ul>
+        <div class="note-callout" style="margin-top: 0.75rem;">
+          <strong>Diagnostic Rule:</strong> Numerical gradient checking is computationally expensive (\(2P\) forward passes). It must be run only on tiny synthetic datasets and small architectures for testing, and turned off completely during actual training!
+        </div>
+      </div>
+
+      <h3 style="font-size: 1.15rem; margin-top: 1.5rem; color: var(--navy-primary);">The Non-Convex Optimization Landscape</h3>
+      <p>
+        A central theoretical distinction is the fundamental geometric nature of the neural network loss surface:
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Non-Convexity &amp; Local Optima</span>
+        In Linear Regression and Logistic Regression, the objective function \(J(\theta)\) is strictly convex (its Hessian \(\nabla^2 J\) is positive semi-definite everywhere). Consequently, every local minimum is a global minimum, and gradient descent is guaranteed to find the unique global optimal parameter vector.
+        <br><br>
+        In Deep Neural Networks, the composition of non-linear activations across multiple layers renders the objective function \(J(\Theta)\) <strong>fundamentally non-convex</strong>:
+        \[
+          J(\Theta) \text{ is non-convex: } \quad \exists \text{ multiple local minima, saddle points, and flat plateaus}
+        \]
+        <em>Optimization Note:</em> Due to non-convexity, gradient-based optimization is sensitive to initialization and may settle in suboptimal local minima.
+        <br><br>
+        <strong>Sources of Non-Convexity:</strong>
+        <ol>
+          <li><strong>Permutation Invariance (Symmetry):</strong> In any hidden layer with \(s_l\) neurons, permuting the indices of the neurons and their corresponding incoming and outgoing weights leaves the input-output function completely unchanged. For a layer with \(s_l\) neurons, there exist \(s_l!\) distinct parameter configurations that produce identical predictions. The parameter space thus contains at least \(\prod_{l=2}^{n_l-1} s_l!\) equivalent global minima!</li>
+          <li><strong>Saddle Points &amp; Flat Plateaus:</strong> In high-dimensional optimization, local minima where all eigenvalues of the Hessian are positive are actually rare compared to <em>saddle points</em> (where the gradient vanishes, but some directions curve upward while others curve downward).</li>
+        </ol>
+        Despite non-convexity, modern empirical research and over-parameterization theory show that stochastic gradient descent (SGD), momentum, and adaptive optimizers (Adam, RMSProp) routinely navigate high-dimensional loss landscapes to discover solutions that generalize exceptionally well.
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-20.html">&larr; Lecture 20: Naive Bayes &amp; Neural Networks</a>
+      <a href="./lecture-22.html">Lecture 22: ML Diagnostics &amp; Debugging &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

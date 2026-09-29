@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 17: Regularization &amp; Overfitting: Ridge and Lasso | Basics of Data Science</title>
+  <meta name="description" content="MIT OCW style lecture notes on regularization and overfitting: bias-variance tradeoff, L2 Ridge regression, regularized normal equations, L1 Lasso regression, geometric sparsity intuition, and Elastic Net.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2317%20-%20regularization%20ridge%20and%20lasso.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 17 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 17: Regularization &amp; Overfitting: Ridge and Lasso</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Nov 25, 2026</div>
+        <div class="note-meta-item"><strong>Readings:</strong> ESL Ch. 3; PML-Intro Ch. 7 &amp; 11; Bishop PRML Ch. 3</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-overfitting-bias-variance">1. The Problem of Overfitting: Motivation &amp; The Bias-Variance Tradeoff</a></li>
+        <li><a href="#sec-regularization-principle">2. The Regularization Principle &amp; Objective Formulation</a></li>
+        <li><a href="#sec-ridge-regression">3. Ridge Regression (\(L_2\) Regularization)</a></li>
+        <li><a href="#sec-ridge-optimization">4. Ridge Optimization: Weight Decay &amp; Analytical Invertibility</a></li>
+        <li><a href="#sec-regularized-logistic">5. Regularized Logistic Regression</a></li>
+        <li><a href="#sec-lasso-regression">6. Lasso Regression (\(L_1\) Regularization) &amp; The Bayesian MAP Perspective</a></li>
+        <li><a href="#sec-geometric-intuition">7. Geometric Intuition: Why \(L_1\) Enforces Exact Zero Sparsity</a></li>
+        <li><a href="#sec-model-evaluation">8. Model Evaluation &amp; Cross-Validation</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-overfitting-bias-variance">1. The Problem of Overfitting: Motivation &amp; The Bias-Variance Tradeoff</h2>
+      <p>
+        In statistical learning, our fundamental objective is not merely to minimize the loss on historical data, but to achieve superior generalization performance on unseen test distributions. When model flexibility exceeds the information content of the training dataset, models succumb to <strong>overfitting</strong>.
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Motivating Example: The 3-Coin-Toss Pathology</span>
+        <p>
+          Consider flipping a coin 3 times and observing 3 Heads: \(\mathcal{D} = \{H, H, H\}\). The Maximum Likelihood Estimator (MLE) for the probability of landing Heads is:
+          \[
+            \theta_{\text{MLE}} = \frac{3}{3} = 1.0
+          \]
+          Under this unregularized MLE model, the predicted probability of ever observing Tails on the fourth flip is identically <strong>zero</strong>! The estimator has catastrophically overfitted to a miniature sample, confusing temporary empirical variance with immutable physical ground truth.
+        </p>
+      </div>
+
+      <p>
+        The identical pathology emerges across regression and classification:
+      </p>
+      <ul>
+        <li><strong>Underfitting (High Bias):</strong> The model class is too simplistic to capture the true underlying data manifold (e.g., fitting a linear hypothesis \(y = \theta_0 + \theta_1 x\) to inherently parabolic data). Both training error and test error remain high.</li>
+        <li><strong>Overfitting (High Variance):</strong> The hypothesis function contains excessive degrees of freedom (e.g., fitting a high-degree polynomial \(h_\theta(x) = \sum_{j=0}^{10} \theta_j x^j\) to a small collection of points). The curve contorts wildly to pass through every individual data point, memorizing stochastic noise rather than underlying patterns. Training error drops toward zero, while test error explodes!</li>
+      </ul>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 1.1 (The Bias-Variance Decomposition)</span>
+        Assume the true data generation process is \(y = f(x) + \varepsilon\), where \(\varepsilon\) is zero-mean noise with variance \(\sigma_\varepsilon^2\) independent of \(x\). For any estimator \(\hat{f}(x)\) trained on sample \(\mathcal{D}\), the expected test Mean Squared Error decomposes into three mutually orthogonal, non-negative components:
+        \[
+          \mathbb{E}_\mathcal{D}\left[(y - \hat{f}(x))^2\right] = \underbrace{\left(\mathbb{E}_\mathcal{D}[\hat{f}(x)] - f(x)\right)^2}_{\text{Bias}^2(\hat{f}(x))} + \underbrace{\mathbb{E}_\mathcal{D}\left[\left(\hat{f}(x) - \mathbb{E}_\mathcal{D}[\hat{f}(x)]\right)^2\right]}_{\text{Variance}(\hat{f}(x))} + \underbrace{\sigma_\varepsilon^2}_{\text{Irreducible Noise}}
+        \]
+        <p>
+          As model capacity increases, <strong>Bias</strong> decreases monotonically, but <strong>Variance</strong> increases rapidly. The optimal generalization performance occurs at the sweet spot minimizing their sum.
+        </p>
+      </div>
+
+      <p>
+        To combat overfitting, we have two fundamental strategies:
+      </p>
+      <ol>
+        <li><strong>Reduce the number of features:</strong> Manually discard predictors or run feature selection algorithms. However, discarding features risks throwing away valuable predictive signal.</li>
+        <li><strong>Regularization:</strong> Keep all \(n\) features, but systematically constrain or penalize the magnitude of the parameters \(\theta_j\). This proves exceptionally effective when we possess many features, each contributing a small amount toward predicting \(y\).</li>
+      </ol>
+
+      <!-- Section 2 -->
+      <h2 id="sec-regularization-principle">2. The Regularization Principle &amp; Objective Formulation</h2>
+      <p>
+        Regularization modifies the optimization landscape by adding a complexity penalty to the empirical data loss:
+        \[
+          \min_\theta \mathcal{L}(\theta; \lambda) = \frac{1}{m}\sum_{i=1}^m \ell\left(h_\theta(x^{(i)}), y^{(i)}\right) + \lambda \, C(\theta)
+        \]
+        where \(\ell\) is the per-sample loss (squared error for regression, log-loss for classification), \(C(\theta)\) is the parameter penalty function, and \(\lambda \ge 0\) is the <strong>regularization hyperparameter</strong> governing the tradeoff between training fidelity and model simplicity:
+      </p>
+      <ul>
+        <li>If \(\lambda = 0\), the penalty vanishes and we recover standard unregularized Maximum Likelihood / Least Squares.</li>
+        <li>If \(\lambda \to \infty\), the penalty dominates, forcing all penalized weights \(\theta_j \to 0\) (causing severe underfitting, e.g., collapsing linear regression to a horizontal flat line \(h_\theta(x) = \theta_0\)).</li>
+      </ul>
+
+      <div class="def-box">
+        <span class="box-label">The Crucial Non-Penalization of Intercept \(\theta_0\)</span>
+        <p>
+          By universal convention in machine learning and statistics, we <strong>never penalize the bias intercept \(\theta_0\)</strong>:
+          \[
+            C(\theta) = \sum_{j=1}^n \theta_j^2 \quad \text{or} \quad \sum_{j=1}^n |\theta_j|
+          \]
+          Penalizing \(\theta_0\) would artificially force the baseline prediction toward zero regardless of the target's physical scale (e.g., house prices centered around \(\$500{,}000\)). Penalties are strictly applied only to the directional feature weights \(j = 1, \dots, n\).
+        </p>
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-ridge-regression">3. Ridge Regression (\(L_2\) Regularization)</h2>
+      <p>
+        In <strong>Ridge Regression</strong> (Tikhonov regularization), the complexity penalty is proportional to the squared Euclidean \(L_2\) norm of the non-intercept parameter vector:
+        \[
+          J_{\text{Ridge}}(\theta) = \frac{1}{2m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right)^2 + \frac{\lambda}{2m} \sum_{j=1}^n \theta_j^2
+        \]
+        Notice the normalizer \(\frac{1}{2m}\) applied to both the sum of squared errors and the penalty term, keeping their relative scale balanced regardless of dataset size \(m\).
+      </p>
+
+      <!-- Section 4 -->
+      <h2 id="sec-ridge-optimization">4. Ridge Optimization: Weight Decay &amp; Analytical Invertibility</h2>
+
+      <div class="thm-box">
+        <span class="box-label">First-Order Optimization: Weight Decay Update</span>
+        Differentiating \(J_{\text{Ridge}}(\theta)\) with respect to each parameter yields:
+        <ul>
+          <li><strong>For the unpenalized intercept \(\theta_0\):</strong>
+            \[
+              \frac{\partial J}{\partial \theta_0} = \frac{1}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) x_0^{(i)} \implies \theta_0 := \theta_0 - \alpha \frac{1}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) x_0^{(i)}
+            \]
+          </li>
+          <li><strong>For each feature weight \(\theta_j\) (\(j = 1, \dots, n\)):</strong>
+            \[
+              \frac{\partial J}{\partial \theta_j} = \frac{1}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) x_j^{(i)} + \frac{\lambda}{m} \theta_j
+            \]
+            Yielding the gradient descent step:
+            \[
+              \theta_j := \theta_j - \alpha \left[ \frac{1}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) x_j^{(i)} + \frac{\lambda}{m} \theta_j \right]
+            \]
+            Rearranging terms reveals the profound <strong>weight decay</strong> phenomenon:
+            \[
+              \theta_j := \theta_j \left( 1 - \alpha \frac{\lambda}{m} \right) - \alpha \frac{1}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) x_j^{(i)}
+            \]
+            Because \(\alpha > 0\) and \(\lambda > 0\), the coefficient \(\left( 1 - \alpha \frac{\lambda}{m} \right)\) is strictly less than 1 (for instance, \(1 - 0.01 = 0.99\)). On every single gradient iteration, \(\theta_j\) is first shrunk toward zero by multiplying with \(0.99\) before taking the standard loss gradient step!
+          </li>
+        </ul>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 4.1 (Regularized Normal Equation &amp; Guaranteed Invertibility)</span>
+        Setting the matrix gradient \(\nabla_\theta J_{\text{Ridge}}(\theta) = \mathbf{0}\) yields the closed-form analytical solution:
+        \[
+          \theta^* = \left( X^T X + \lambda L \right)^{-1} X^T y
+        \]
+        where \(L\) is the \((n+1) \times (n+1)\) diagonal matrix with a zero in the first diagonal entry (corresponding to unpenalized \(\theta_0\)) and ones elsewhere:
+        \[
+          L = \begin{bmatrix}
+            0 & 0 & 0 & \dots & 0 \\
+            0 & 1 & 0 & \dots & 0 \\
+            0 & 0 & 1 & \dots & 0 \\
+            \vdots & \vdots & \vdots & \ddots & \vdots \\
+            0 & 0 & 0 & \dots & 1
+          \end{bmatrix}_{(n+1) \times (n+1)}
+        \]
+        For example, when \(n = 2\), the regularization matrix is:
+        \[
+          L = \begin{bmatrix} 0 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{bmatrix}
+        \]
+      </div>
+
+      <div class="note-callout">
+        <strong>The Problem of Non-Invertibility (Collinear Features &amp; High Dimensions):</strong>
+        <p>
+          In unregularized OLS, the Normal Equation requires computing \((X^T X)^{-1}\). When features are collinear or high-dimensional:
+          <br>
+          <em>"Suppose \(m \le n\) (#examples \(\le\) #features) or we have linearly dependent features (\(m \ll n\)). In this case, \(X^T X\) is singular (non-invertible / singular) because its rank is at most \(m < n+1\)."</em>
+          <br>
+          If \(\lambda > 0\), adding \(\lambda L\) injects strictly positive values into all diagonal entries except the first. Provided \(X\) has an intercept column of ones and no all-zero columns, the matrix \((X^T X + \lambda L)\) is <strong>strictly positive definite and provably invertible</strong>! Ridge regression completely solves the numerical instability of ill-conditioned and rank-deficient design matrices.
+        </p>
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-regularized-logistic">5. Regularized Logistic Regression</h2>
+      <p>
+        Regularization is equally vital in classification. For binary classification with \(h_\theta(x) = \sigma(\theta^T x) = \frac{1}{1 + e^{-\theta^T x}}\), the \(L_2\)-regularized cost function is:
+        \[
+          J_{\text{reg}}(\theta) = -\frac{1}{m} \sum_{i=1}^m \left[ y^{(i)} \ln\left(h_\theta(x^{(i)})\right) + \left(1 - y^{(i)}\right) \ln\left(1 - h_\theta(x^{(i)})\right) \right] + \frac{\lambda}{2m} \sum_{j=1}^n \theta_j^2
+        \]
+        The gradient descent update rules parallel the linear regression case exactly:
+        \[
+          \theta_0 := \theta_0 - \frac{\alpha}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) x_0^{(i)}
+        \]
+        \[
+          \theta_j := \theta_j \left( 1 - \alpha \frac{\lambda}{m} \right) - \frac{\alpha}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) x_j^{(i)} \quad (j \ge 1)
+        \]
+        <em>Stabilizing Effect:</em> When classes are linearly separable, unregularized logistic regression drives \(\|\theta\| \to \infty\) in an attempt to saturate \(\sigma(\theta^T x) \in \{0, 1\}\). Adding \(\frac{\lambda}{2m}\sum \theta_j^2\) bounds the parameter norms, preventing catastrophic numerical overflow and yielding well-calibrated posterior probabilities.
+      </p>
+
+      <!-- Section 6 -->
+      <h2 id="sec-lasso-regression">6. Lasso Regression (\(L_1\) Regularization) &amp; The Bayesian MAP Perspective</h2>
+      <p>
+        The <strong>Lasso</strong> (Least Absolute Shrinkage and Selection Operator) replaces the squared penalty with the \(L_1\) absolute value norm:
+        \[
+          J_{\text{Lasso}}(\theta) = \frac{1}{2m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right)^2 + \frac{\lambda}{2m} \sum_{j=1}^n |\theta_j|
+        \]
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Sparsity &amp; The \(L_0\) Connection</span>
+        <p>
+          The ideal mathematical formulation of feature selection is the \(L_0\) pseudo-norm, which counts the number of non-zero parameters: \(\|\theta\|_0 = \sum_{j=1}^n \mathbf{1}\{\theta_j \ne 0\}\). However, minimizing an \(L_0\) penalty is NP-hard (combinatorial search over \(2^n\) feature subsets).
+        </p>
+        <p>
+          The \(L_1\) norm \(\sum |\theta_j|\) is the <strong>tightest convex relaxation</strong> of the \(L_0\) norm. As established in the slides:
+          \[
+            \text{sparsity} \longleftarrow L_0\text{-norm} \approx L_1\text{-norm}
+          \]
+          Lasso drives irrelevant parameters to be <em>identically zero</em>: \(\theta_j^* = 0\), performing continuous, convex, automatic feature selection!
+        </p>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">The Bayesian MAP Perspective</span>
+        <p>
+          From this Bayesian standpoint:
+          <br>
+          <em>"Instead of a point estimate for \(\theta\), a probability distribution over \(\theta\) is inferred to model parametric uncertainty:
+          \[
+            \theta \sim p(\theta) \quad (\theta \text{ is a random vector with a prior distribution})
+          \]
+          \[
+            \theta_{\text{MAP}} = \arg\max_\theta p(\theta | X, y) = \arg\max_\theta \left[ p(y | X; \theta) p(\theta) \right] = \arg\max_\theta \left[ \ln p(y | X; \theta) + \ln p(\theta) \right]
+          \]
+          "</em>
+        </p>
+        <p>
+          Taking the negative log yields an objective equivalent to empirical loss plus regularization:
+        </p>
+        <ul>
+          <li><strong>Gaussian Prior \(\implies L_2\) (Ridge):</strong> If we place an i.i.d. Gaussian prior \(\theta_j \sim \mathcal{N}(0, \tau^2)\) on the weights:
+            \[
+              \ln p(\theta) = -\frac{1}{2\tau^2} \sum_{j=1}^n \theta_j^2 - \text{const} \iff \text{Penalty: } \frac{\lambda}{2} \|\theta\|_2^2 \quad \text{with } \lambda = \frac{\sigma^2}{\tau^2}
+            \]
+          </li>
+          <li><strong>Laplace Prior \(\implies L_1\) (Lasso):</strong> If we place an i.i.d. Laplace (double-exponential) prior \(p(\theta_j) = \frac{1}{2b}\exp(-|\theta_j|/b)\):
+            \[
+              \ln p(\theta) = -\frac{1}{b} \sum_{j=1}^n |\theta_j| - \text{const} \iff \text{Penalty: } \lambda \|\theta\|_1 \quad \text{with } \lambda = \frac{\sigma^2}{b}
+            \]
+            The sharp, non-differentiable peak of the Laplace density at \(\theta_j = 0\) imposes strong probabilistic mass precisely on zero, thereby <strong>enforcing sparsity</strong> onto the parameter vector!
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 7 -->
+      <h2 id="sec-geometric-intuition">7. Geometric Intuition: Why \(L_1\) Enforces Exact Zero Sparsity</h2>
+      <p>
+        Using Lagrange duality, Ridge and Lasso can be formulated as constrained optimization problems:
+      </p>
+      <ul>
+        <li><strong>Ridge Constraint:</strong> \(\min_\theta \sum (h_\theta(x) - y)^2 \quad \text{subject to } \sum_{j=1}^n \theta_j^2 \le C\) (Hypersphere / Disk).</li>
+        <li><strong>Lasso Constraint:</strong> \(\min_\theta \sum (h_\theta(x) - y)^2 \quad \text{subject to } \sum_{j=1}^n |\theta_j| \le C\) (Cross-polytope / Diamond).</li>
+      </ul>
+
+      <div class="ex-box">
+        <span class="box-label">The Geometry in Two Dimensions (\(\theta_1, \theta_2\))</span>
+        <p>
+          Imagine the expanding elliptical level curves of the unconstrained OLS residual sum of squares centered at \(\hat{\theta}_{\text{OLS}}\):
+        </p>
+        <ul>
+          <li><strong>Ridge (Smooth Circle):</strong> The constraint boundary \(\theta_1^2 + \theta_2^2 = C\) has continuous curvature everywhere. Tangential contact between the expanding ellipse and the circle almost always occurs at an off-axis point where both \(\theta_1 \ne 0\) and \(\theta_2 \ne 0\). Coefficients are shrunk smoothly, but almost never set exactly to zero.</li>
+          <li><strong>Lasso (Sharp Diamond Vertices):</strong> The constraint region \(|\theta_1| + |\theta_2| \le C\) is a diamond whose sharp corners lie exactly on the coordinate axes (where \(\theta_1 = 0\) or \(\theta_2 = 0\)). Because corners project outward, the expanding elliptical contour is overwhelmingly likely to touch a corner first! At the corner contact point, one of the coordinates is identically zero (\(\theta_j = 0\)).</li>
+        </ul>
+      </div>
+
+      <!-- Section 8 -->
+      <h2 id="sec-model-evaluation">8. Model Evaluation &amp; Cross-Validation</h2>
+      <p>
+        How do we select the optimal regularization hyperparameter \(\lambda\)? Setting \(\lambda\) using training error is useless because training error is always minimized at \(\lambda = 0\). We must evaluate out-of-sample generalization.
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Slide 24 Evaluation Blueprint: Train / Validation / Test Partition</span>
+        <p>
+          As detailed on Slide 24, a representative dataset of \(N = 1000\) samples is partitioned into three disjoint subsets:
+        </p>
+        <ul>
+          <li><strong>Training Set (800 samples):</strong> Used exclusively to optimize parameter weights \(\theta\) for a fixed candidate value of \(\lambda\).</li>
+          <li><strong>Validation Set (100 samples):</strong> Used to evaluate performance across a logarithmic grid of \(\lambda\) values (e.g., \(\lambda \in \{10^{-4}, 10^{-3}, \dots, 10^3\}\)) and select the optimal hyperparameter \(\lambda^*\).</li>
+          <li><strong>Test Set (100 samples):</strong> Held out completely in a vault and evaluated <em>only once</em> at the conclusion of the study to obtain an unbiased estimate of real-world generalization error. (Never tune \(\lambda\) on the test set!).</li>
+        </ul>
+      </div>
+
+      <div class="def-box">
+        <span class="box-label">K-Fold Cross-Validation (5-Fold Scheme)</span>
+        <p>
+          When data is scarce, partitioning a static validation set sacrifices 10–20% of training data. <strong>\(K\)-Fold Cross-Validation</strong> maximizes data utilization:
+        </p>
+        <ul>
+          <li>The 1000 samples are split into \(K = 5\) equal folds of \(200\) samples each.</li>
+          <li>In each of the 5 iterations:
+            <ul>
+              <li>Hold out 1 fold (200 samples) as the test/validation fold.</li>
+              <li>Train the model on the remaining 4 folds combined (\(4 \times 200 = 800\) training samples).</li>
+              <li>Compute the validation error on the held-out 200 samples.</li>
+            </ul>
+          </li>
+          <li>Average the validation error across all 5 folds:
+            \[
+              \text{CV}_{(K)}(\lambda) = \frac{1}{K} \sum_{k=1}^K \text{MSE}_k(\lambda)
+            \]
+          </li>
+          <li>Select the hyperparameter \(\lambda^* = \arg\min_\lambda \text{CV}_{(K)}(\lambda)\), and finally retrain the model on the complete dataset of 1000 samples using \(\lambda^*\).</li>
+        </ul>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-16.html">&larr; Lecture 16: Logistic Regression &amp; Classification</a>
+      <a href="./lecture-18.html">Lecture 18: Generalized Linear Models &amp; Generative Learning &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

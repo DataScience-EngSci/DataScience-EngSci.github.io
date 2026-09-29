@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 14: Supervised Learning: Regression &amp; Linear Models | Basics of Data Science</title>
+  <meta name="description" content="Comprehensive MIT OCW / CS231n-style lecture notes on Supervised Learning, Univariate &amp; Multivariate Linear Regression, Cost Function Derivations, Gradient Descent Dynamics, Feature Scaling, and the Normal Equation.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2314%20-%20supervised%20learning%20regression%20and%20classification.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 14 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 14: Supervised Learning: Regression, Gradient Descent &amp; The Normal Equation</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Semester:</strong> Fall 2026</div>
+        <div class="note-meta-item"><strong>Instructor:</strong> University of Tehran</div>
+        <div class="note-meta-item"><strong>Primary Deck:</strong> Lecture #14 (47 Slides)</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-supervised-taxonomy">1. Supervised Learning Taxonomy: Continuous vs. Discrete Problems</a></li>
+        <li><a href="#sec-univariate-regression">2. Univariate Linear Regression &amp; Housing Price Datasets</a></li>
+        <li><a href="#sec-cost-function">3. The Mean Squared Error (MSE) Cost Function</a></li>
+        <li><a href="#sec-gradient-descent">4. The Gradient Descent Optimization Algorithm</a></li>
+        <li><a href="#sec-gd-derivation">5. Step-by-Step Gradient Derivation &amp; Simultaneous Updates</a></li>
+        <li><a href="#sec-learning-rate-convexity">6. Learning Rate Dynamics &amp; Convex vs. Non-Convex Surfaces</a></li>
+        <li><a href="#sec-multivariate-regression">7. Multivariate Linear Regression &amp; Matrix Formulation</a></li>
+        <li><a href="#sec-feature-scaling">8. Practical Optimization: Feature Scaling &amp; Mean Normalization</a></li>
+        <li><a href="#sec-convergence-tuning">9. Debugging Gradient Descent &amp; Hyperparameter Selection</a></li>
+        <li><a href="#sec-normal-equation">10. Closed-Form Analytical Solution: The Normal Equation</a></li>
+        <li><a href="#sec-comparison-invertibility">11. Comparative Trade-offs &amp; Singularity of \(X^T X\)</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-supervised-taxonomy">1. Supervised Learning Taxonomy: Continuous vs. Discrete Problems</h2>
+      <p>
+        Supervised learning operates on labeled training examples of the form \(\mathcal{D} = \{(x^{(i)}, y^{(i)})\}_{i=1}^m\), where \(x^{(i)} \in \mathcal{X}\) represents the input feature vector of example \(i\), and \(y^{(i)} \in \mathcal{Y}\) denotes its corresponding true target label. The supervised learning universe partitions fundamentally according to the topological nature of the output space \(\mathcal{Y}\):
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 1.1 (Regression vs. Classification)</span>
+        <ul>
+          <li>
+            <strong>Regression:</strong> The target space is continuous, typically \(\mathcal{Y} = \mathbb{R}\) (or \(\mathbb{R}^k\)). The algorithm fits a continuous response surface to predict numerical quantities. Examples include real estate market valuation, financial asset pricing, temperature forecasting, and load prediction.
+          </li>
+          <li>
+            <strong>Classification:</strong> The target space is categorical, consisting of a discrete set of unordered class labels \(\mathcal{Y} \in \{0, 1\}\) (binary classification) or \(\mathcal{Y} \in \{1, 2, \dots, K\}\) (multiclass). The model constructs geometric decision boundaries partitioning feature space into decision regions. Slide 2 illustrates this via the petal length vs. petal width decision boundary separating <em>Iris-versicolor</em> from <em>Iris-virginica</em>.
+          </li>
+        </ul>
+      </div>
+
+      <p>
+        Within regression, models range in structural complexity:
+      </p>
+      <ul>
+        <li><strong>Simple Linear Regression:</strong> Modeling the relationship between a single predictor \(x\) and response \(y\) via a line.</li>
+        <li><strong>Multivariate Linear Regression:</strong> Modeling \(y\) as a linear combination of multiple input variables \(x_1, x_2, \dots, x_n\).</li>
+        <li><strong>Polynomial Regression:</strong> Fitting curved non-linear trajectories by augmenting feature space with powers \(x^2, x^3, \dots\) while preserving linear parameterization.</li>
+      </ul>
+
+      <!-- Section 2 -->
+      <h2 id="sec-univariate-regression">2. Univariate Linear Regression &amp; Housing Price Datasets</h2>
+      <p>
+        To develop the fundamental mechanics of linear models, the lecture presents two concrete real-world datasets:
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Dataset Example 2.1 (Tehran Real Estate Pricing - Slide 4)</span>
+        Predicting residential apartment prices in Tehran:
+        <ul>
+          <li>Predictor \(x\): Apartment floor area in square meters (\(\text{m}^2\)).</li>
+          <li>Target \(y\): Price in Billion Tomans.</li>
+        </ul>
+        <table style="width: 70%; margin: 1rem auto; border-collapse: collapse; text-align: center;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-subtle); background: rgba(0, 114, 206, 0.05);">
+              <th style="padding: 0.5rem;">Area \(x\) (\(\text{m}^2\))</th>
+              <th style="padding: 0.5rem;">Price \(y\) (Billion Tomans)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">1800</td><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">20.0</td></tr>
+            <tr><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">800</td><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">13.0</td></tr>
+            <tr><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">500</td><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">12.0</td></tr>
+            <tr><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">852</td><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">14.5</td></tr>
+          </tbody>
+        </table>
+        <p>
+          <em>Inference Query:</em> Given a new property with area \(x = 1500\,\text{m}^2\), what is the estimated market value? Our linear model interpolates this to approximately \(\hat{y} \approx 30\) billion Tomans.
+        </p>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Dataset Example 2.2 (Portland, Oregon Housing Prices - Slides 5–6, 8)</span>
+        The canonical benchmark dataset tracking home sales in Portland, OR:
+        <ul>
+          <li>Predictor \(x\): Living area in square feet (\(\text{feet}^2\)).</li>
+          <li>Target \(y\): Price in thousands of US dollars (\(\$1000\text{s}\)).</li>
+        </ul>
+        <table style="width: 70%; margin: 1rem auto; border-collapse: collapse; text-align: center;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-subtle); background: rgba(0, 114, 206, 0.05);">
+              <th style="padding: 0.5rem;">Size \(x\) (\(\text{feet}^2\))</th>
+              <th style="padding: 0.5rem;">Price \(y\) (\(\$1000\))</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">2104</td><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">460</td></tr>
+            <tr><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">1416</td><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">232</td></tr>
+            <tr><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">1534</td><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">315</td></tr>
+            <tr><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">852</td><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">178</td></tr>
+            <tr><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">&vellip;</td><td style="padding: 0.4rem; border-bottom: 1px solid var(--border-subtle);">&vellip;</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        The supervised learning pipeline proceeds systematically:
+      </p>
+      <div style="text-align: center; margin: 1.5rem 0; font-weight: 600; color: var(--ut-blue);">
+        Training Set \(\{(x^{(i)}, y^{(i)})\}\) &xrarr; Learning Algorithm &xrarr; Hypothesis \(h_\theta(x)\) &xrarr; Predicted Price \(\hat{y}\)
+      </div>
+
+      <p>
+        In univariate linear regression, the hypothesis takes the affine form:
+        \[
+          h_\theta(x) = \theta_0 + \theta_1 x
+        \]
+        where \(\theta_0\) represents the <strong>intercept</strong> and \(\theta_1\) represents the <strong>slope</strong>.
+      </p>
+
+      <!-- Section 3 -->
+      <h2 id="sec-cost-function">3. The Mean Squared Error (MSE) Cost Function</h2>
+      <p>
+        To determine the optimal parameters \(\theta = (\theta_0, \theta_1)^T\), we require an objective criterion measuring how well the line fits the empirical observations. The error for the \(i\)-th training instance is the vertical discrepancy between predicted and true value: \(e^{(i)} = h_\theta(x^{(i)}) - y^{(i)}\).
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 3.1 (Mean Squared Error Cost Function)</span>
+        The standard objective function is the <strong>Mean Squared Error (MSE)</strong>, denoted \(J(\theta_0, \theta_1)\):
+        \[
+          J(\theta_0, \theta_1) = \frac{1}{2m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right)^2
+        \]
+        where \(m\) is the total number of training examples. The scaling constant \(\frac{1}{2m}\) is chosen intentionally: dividing by \(m\) ensures the cost represents an average error independent of sample size, while the denominator constant \(2\) cancels cleanly with the exponent \(2\) when computing derivatives.
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Worked Pedagogical Example (Slide 10: Simplified 1D Case with \(\theta_0 = 0\))</span>
+        To develop geometric intuition, suppress the intercept by fixing \(\theta_0 = 0\). The hypothesis reduces to a line through the origin: \(h_\theta(x) = \theta_1 x\), and the cost becomes a single-variable function \(J(\theta_1)\).
+        <br><br>
+        Consider a toy training dataset of \(m=3\) points:
+        \[
+          (x^{(1)}, y^{(1)}) = (1, 1), \quad (x^{(2)}, y^{(2)}) = (2, 2), \quad (x^{(3)}, y^{(3)}) = (3, 3)
+        \]
+        Let us evaluate \(J(\theta_1)\) across three candidate slope values:
+        <ol>
+          <li>
+            <strong>Candidate \(\theta_1 = 1\):</strong>
+            Predictions match targets perfectly: \(h(1)=1, h(2)=2, h(3)=3\).
+            \[
+              J(1) = \frac{1}{2(3)} \left[(1-1)^2 + (2-2)^2 + (3-3)^2\right] = 0
+            \]
+          </li>
+          <li>
+            <strong>Candidate \(\theta_1 = 0.5\):</strong>
+            Predictions are \(h(1)=0.5, h(2)=1.0, h(3)=1.5\).
+            \[
+              J(0.5) = \frac{1}{6} \left[(0.5-1)^2 + (1-2)^2 + (1.5-3)^2\right] = \frac{1}{6} [0.25 + 1.0 + 2.25] = \frac{3.5}{6} \approx 0.583
+            \]
+          </li>
+          <li>
+            <strong>Candidate \(\theta_1 = 2\):</strong>
+            Predictions are \(h(1)=2, h(2)=4, h(3)=6\).
+            \[
+              J(2) = \frac{1}{6} \left[(2-1)^2 + (4-2)^2 + (6-3)^2\right] = \frac{1}{6} [1 + 4 + 9] = \frac{14}{6} \approx 2.333
+            \]
+          </li>
+        </ol>
+        Plotting \(J(\theta_1)\) against \(\theta_1\) yields a strictly convex quadratic parabola centered precisely at its global minimum \(\theta_1^* = 1\).
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-gradient-descent">4. The Gradient Descent Optimization Algorithm</h2>
+      <p>
+        When optimizing both parameters \(\theta_0\) and \(\theta_1\), the parameter space is \(\mathbb{R}^2\), and \(J(\theta_0, \theta_1)\) forms a 3D bowl-shaped surface whose level curves form concentric ellipses (Slide 17). Rather than guessing blindly, we utilize <strong>Gradient Descent</strong>.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 4.1 (Gradient Descent General Update Rule)</span>
+        Starting from an initial parameter guess \(\theta^{(0)}\), gradient descent iteratively steps in the direction of steepest local descent—the negative gradient:
+        \[
+          \theta_j := \theta_j - \alpha \frac{\partial}{\partial \theta_j} J(\theta_0, \theta_1) \quad (\text{for } j = 0, 1)
+        \]
+        where \(\alpha > 0\) is the <strong>learning rate</strong>, governing the step length taken along the negative gradient vector.
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Critical Implementation Rule: Simultaneous Updates (Slide 13)</span>
+        All parameters must be updated <strong>simultaneously</strong> at each iteration step:
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 0.8rem;">
+          <div style="background: rgba(46, 125, 50, 0.08); padding: 0.8rem; border-left: 3px solid #2e7d32; border-radius: 4px;">
+            <strong style="color: #2e7d32;">&check; Correct (Simultaneous Update):</strong>
+            \[
+              \begin{aligned}
+                \text{temp0} &:= \theta_0 - \alpha \frac{\partial}{\partial \theta_0} J(\theta_0, \theta_1) \\
+                \text{temp1} &:= \theta_1 - \alpha \frac{\partial}{\partial \theta_1} J(\theta_0, \theta_1) \\
+                \theta_0 &:= \text{temp0} \\
+                \theta_1 &:= \text{temp1}
+              \end{aligned}
+            \]
+          </div>
+          <div style="background: rgba(198, 40, 40, 0.08); padding: 0.8rem; border-left: 3px solid #c62828; border-radius: 4px;">
+            <strong style="color: #c62828;">&cross; Incorrect (Sequential Update):</strong>
+            \[
+              \begin{aligned}
+                \text{temp0} &:= \theta_0 - \alpha \frac{\partial}{\partial \theta_0} J(\theta_0, \theta_1) \\
+                \theta_0 &:= \text{temp0} \\
+                \text{temp1} &:= \theta_1 - \alpha \frac{\partial}{\partial \theta_1} J(\mathbf{\theta_0}, \theta_1) \\
+                \theta_1 &:= \text{temp1}
+              \end{aligned}
+            \]
+            <em>Error:</em> Calculating \(\text{temp1}\) using the newly modified \(\theta_0\) distorts the true gradient vector!
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-gd-derivation">5. Step-by-Step Gradient Derivation &amp; Simultaneous Updates</h2>
+      <p>
+        Slide 16 provides the explicit handwritten derivation of the partial derivatives for the univariate linear regression model:
+      </p>
+
+      <div class="proof-box">
+        <span class="box-label">Mathematical Derivation (Slide 16)</span>
+        Substitute the hypothesis \(h_\theta(x^{(i)}) = \theta_0 + \theta_1 x^{(i)}\) directly into the cost function:
+        \[
+          J(\theta_0, \theta_1) = \frac{1}{2m} \sum_{i=1}^m \left(\theta_0 + \theta_1 x^{(i)} - y^{(i)}\right)^2
+        \]
+        Applying the chain rule of differentiation:
+        <ol>
+          <li>
+            <strong>Partial Derivative with respect to intercept \(\theta_0\) (\(j=0\)):</strong>
+            \[
+              \begin{aligned}
+                \frac{\partial}{\partial \theta_0} J(\theta_0, \theta_1) &= \frac{\partial}{\partial \theta_0} \left[ \frac{1}{2m} \sum_{i=1}^m \left(\theta_0 + \theta_1 x^{(i)} - y^{(i)}\right)^2 \right] \\
+                &= \frac{1}{2m} \sum_{i=1}^m 2 \left(\theta_0 + \theta_1 x^{(i)} - y^{(i)}\right) \cdot \frac{\partial}{\partial \theta_0} \left(\theta_0 + \theta_1 x^{(i)} - y^{(i)}\right) \\
+                &= \frac{1}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) \cdot (1) \\
+                &= \frac{1}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right)
+              \end{aligned}
+            \]
+          </li>
+          <li>
+            <strong>Partial Derivative with respect to slope \(\theta_1\) (\(j=1\)):</strong>
+            \[
+              \begin{aligned}
+                \frac{\partial}{\partial \theta_1} J(\theta_0, \theta_1) &= \frac{\partial}{\partial \theta_1} \left[ \frac{1}{2m} \sum_{i=1}^m \left(\theta_0 + \theta_1 x^{(i)} - y^{(i)}\right)^2 \right] \\
+                &= \frac{1}{2m} \sum_{i=1}^m 2 \left(\theta_0 + \theta_1 x^{(i)} - y^{(i)}\right) \cdot \frac{\partial}{\partial \theta_1} \left(\theta_0 + \theta_1 x^{(i)} - y^{(i)}\right) \\
+                &= \frac{1}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) \cdot x^{(i)}
+              \end{aligned}
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <p>
+        Plugging these gradients into the update equations yields the concrete algorithm:
+      </p>
+      <div class="def-box">
+        <span class="box-label">Batch Gradient Descent for Univariate Linear Regression</span>
+        Repeat until numerical convergence:
+        \[
+          \begin{aligned}
+            \theta_0 &:= \theta_0 - \frac{\alpha}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) \\
+            \theta_1 &:= \theta_1 - \frac{\alpha}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) x^{(i)}
+          \end{aligned}
+        \]
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-learning-rate-convexity">6. Learning Rate Dynamics &amp; Convex vs. Non-Convex Surfaces</h2>
+
+      <h3>A. Mechanics of the Step Size (Slide 15)</h3>
+      <p>
+        The handwritten annotations in Slide 15 demonstrate why the negative gradient guarantees movement toward the minimum:
+      </p>
+      <ul>
+        <li>
+          <strong>Right of Minimum:</strong> Here the tangent slope is positive (\(\frac{d}{d\theta_1} J(\theta_1) > 0\)). The update rule subtracts a positive number:
+          \[
+            \theta_1 := \theta_1 - \alpha \cdot (\text{positive}) \implies \theta_1 \text{ decreases (moves left toward minimum)}.
+          \]
+        </li>
+        <li>
+          <strong>Left of Minimum:</strong> Here the tangent slope is negative (\(\frac{d}{d\theta_1} J(\theta_1) < 0\)). The update rule subtracts a negative number:
+          \[
+            \theta_1 := \theta_1 - \alpha \cdot (\text{negative}) = \theta_1 + \alpha \cdot |\text{derivative}| \implies \theta_1 \text{ increases (moves right toward minimum)}.
+          \]
+        </li>
+      </ul>
+
+      <h3>B. Convex vs. Non-Convex Topologies (Slides 19–21)</h3>
+      <div class="note-callout">
+        <span class="box-label">Convexity of Ordinary Least Squares</span>
+        A defining property of the linear regression MSE cost function is that it is strictly <strong>convex</strong> (a single "bowl" shape with positive semi-definite Hessian). It has <em>no local minima</em>—only a single unique global minimum. Any local minimum is guaranteed to be the global minimum.
+        <br><br>
+        In contrast, complex models like Deep Neural Networks produce <strong>non-convex</strong> surfaces (Slides 20–21) riddled with multiple local minima, saddle points, and plateaus. On non-convex surfaces, the final converged parameters depend heavily on the random initialization point \(\theta^{(0)}\).
+      </div>
+
+      <h3>C. Sensitivity to the Learning Rate \(\alpha\) (Slide 18)</h3>
+      <p>
+        Slide 18 compares two learning rates on a two-dimensional quadratic valley with minimum at \((1, 1)\):
+      </p>
+      <ul>
+        <li>
+          <strong>(a) Learning Rate \(\alpha = 0.1\):</strong> The step size is conservative. The parameters advance smoothly down the valley walls and steadily migrate along the valley floor to the global optimum \((1, 1)\).
+        </li>
+        <li>
+          <strong>(b) Learning Rate \(\alpha = 0.6\):</strong> The step size is excessively large. It overshoots the valley floor, oscillating violently back and forth across the steep ridge walls, completely failing to converge to the optimum even on this purely convex problem!
+        </li>
+      </ul>
+
+      <!-- Section 7 -->
+      <h2 id="sec-multivariate-regression">7. Multivariate Linear Regression &amp; Matrix Formulation</h2>
+      <p>
+        In practical settings, houses have multiple attributes. Slides 31–34 generalize linear regression to \(n\) independent features:
+        \[
+          h_\theta(x) = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + \dots + \theta_n x_n
+        \]
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Dataset Example 7.1 (Multi-feature Portland Housing - Slide 32)</span>
+        Let \(n = 4\) features:
+        <ul>
+          <li>\(x_1\): Living area (\(\text{feet}^2\))</li>
+          <li>\(x_2\): Number of bedrooms</li>
+          <li>\(x_3\): Number of floors</li>
+          <li>\(x_4\): Age of the home (years)</li>
+          <li>\(y\): Selling price (\(\$1000\text{s}\))</li>
+        </ul>
+        <table style="width: 85%; margin: 1rem auto; border-collapse: collapse; text-align: center;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-subtle); background: rgba(0, 114, 206, 0.05);">
+              <th style="padding: 0.5rem;">\(x_1\) (Size \(\text{ft}^2\))</th>
+              <th style="padding: 0.5rem;">\(x_2\) (# Bedrooms)</th>
+              <th style="padding: 0.5rem;">\(x_3\) (# Floors)</th>
+              <th style="padding: 0.5rem;">\(x_4\) (Age yrs)</th>
+              <th style="padding: 0.5rem;">\(y\) (Price \(\$1000\))</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding: 0.35rem;">2104</td><td>5</td><td>1</td><td>45</td><td style="font-weight: 600;">460</td></tr>
+            <tr><td style="padding: 0.35rem;">1416</td><td>3</td><td>2</td><td>40</td><td style="font-weight: 600;">232</td></tr>
+            <tr><td style="padding: 0.35rem;">1534</td><td>3</td><td>2</td><td>30</td><td style="font-weight: 600;">315</td></tr>
+            <tr><td style="padding: 0.35rem;">852</td><td>2</td><td>1</td><td>36</td><td style="font-weight: 600;">178</td></tr>
+            <tr><td style="padding: 0.35rem;">&vellip;</td><td>&vellip;</td><td>&vellip;</td><td>&vellip;</td><td>&vellip;</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="def-box">
+        <span class="box-label">Vector &amp; Matrix Notation</span>
+        To express the hypothesis concisely, we define a dummy zeroth feature \(x_0 \equiv 1\). Then:
+        \[
+          x = \begin{bmatrix} x_0 \\ x_1 \\ x_2 \\ \vdots \\ x_n \end{bmatrix} \in \mathbb{R}^{n+1} \quad (x_0 = 1), \qquad
+          \theta = \begin{bmatrix} \theta_0 \\ \theta_1 \\ \theta_2 \\ \vdots \\ \theta_n \end{bmatrix} \in \mathbb{R}^{n+1}
+        \]
+        The hypothesis becomes an inner product:
+        \[
+          h_\theta(x) = \theta^T x = \theta_0 x_0 + \theta_1 x_1 + \dots + \theta_n x_n
+        \]
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Multivariate Gradient Descent Algorithm (Slide 34–35)</span>
+        The cost function remains:
+        \[
+          J(\theta) = \frac{1}{2m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right)^2
+        \]
+        For \(n \ge 1\), simultaneously update every parameter \(j \in \{0, 1, \dots, n\}\):
+        \[
+          \theta_j := \theta_j - \alpha \frac{\partial J(\theta)}{\partial \theta_j} = \theta_j - \frac{\alpha}{m} \sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right) x_j^{(i)}
+        \]
+        In compact vector notation:
+        \[
+          \theta := \theta - \alpha \nabla_\theta J(\theta)
+        \]
+      </div>
+
+      <!-- Section 8 -->
+      <h2 id="sec-feature-scaling">8. Practical Optimization: Feature Scaling &amp; Mean Normalization</h2>
+      <p>
+        In multi-feature problems, features frequently operate on drastically different numerical scales. Slides 36–38 explain why this impairs gradient descent and provide explicit normalization methods:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">The Geometry of Unscaled Features</span>
+        Suppose \(x_1 = \text{size} \in [0, 2000]\,\text{ft}^2\) and \(x_2 = \text{bedrooms} \in [1, 5]\).
+        <ul>
+          <li>
+            Because \(x_1\) is thousands of times larger than \(x_2\), a tiny modification in \(\theta_1\) changes the hypothesis dramatically, whereas \(\theta_2\) must change substantially to make any perceptible difference.
+          </li>
+          <li>
+            The contours of \(J(\theta)\) form extremely elongated, "skinny" elliptical canyons (Slide 36).
+          </li>
+          <li>
+            The gradient points perpendicular to contour lines—which does <em>not</em> point toward the center! Consequently, gradient descent oscillates wildly back and forth across the steep narrow walls, taking hundreds or thousands of redundant zigzag steps.
+          </li>
+          <li>
+            When features are scaled to comparable magnitudes (e.g., \(0 \le x_1, x_2 \le 1\)), the contours become nearly spherical circles. The negative gradient points directly toward the global minimum, achieving convergence in minimal iterations!
+          </li>
+        </ul>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Standard Normalization Formulas (Slide 37–38)</span>
+        <ol>
+          <li>
+            <strong>Min-Max Scaling:</strong>
+            \[
+              x'_j = \frac{x_j - \min(x_j)}{\max(x_j) - \min(x_j)} \implies 0 \le x'_j \le 1
+            \]
+          </li>
+          <li>
+            <strong>Mean Normalization:</strong>
+            Replace \(x_j\) with:
+            \[
+              x'_j = \frac{x_j - \mu_j}{s_j}
+            \]
+            where \(\mu_j\) is the sample mean of feature \(j\) in the training set: \(\mu_j = \frac{1}{m} \sum_{i=1}^m x_j^{(i)}\), and \(s_j\) is either the range \((\max(x_j) - \min(x_j))\) or the sample standard deviation \(\sigma_j\).
+          </li>
+        </ol>
+        <p>
+          <em>Concrete Slide Example:</em> If house sizes range from \(0\) to \(2000\) with average \(\mu_1 = 1000\), and bedrooms range from \(1\) to \(5\) with average \(\mu_2 = 2\):
+          \[
+            x_1 \leftarrow \frac{\text{size} - 1000}{2000} \implies -0.5 \le x_1 \le 0.5, \qquad
+            x_2 \leftarrow \frac{\#\text{bedrooms} - 2}{5} \implies -0.5 \le x_2 \le 0.5
+          \]
+          <strong>Rule:</strong> Do NOT normalize the bias feature \(x_0 \equiv 1\).
+        </p>
+      </div>
+
+      <!-- Section 9 -->
+      <h2 id="sec-convergence-tuning">9. Debugging Gradient Descent &amp; Hyperparameter Selection</h2>
+
+      <h3>A. Monitoring Convergence via Learning Curves (Slides 40–42)</h3>
+      <p>
+        The gold standard diagnostic is plotting \(J(\theta)\) as a function of the number of iterations:
+      </p>
+      <ul>
+        <li>
+          <strong>Healthy Convergence:</strong> \(J(\theta)\) should decrease monotonically after every iteration. As the trajectory approaches the minimum, the gradient \(\|\nabla J\|\) shrinks, and the curve asymptotically flattens out.
+        </li>
+        <li>
+          <strong>Automatic Convergence Criterion (Slide 40–41):</strong> Declare convergence if \(J(\theta)\) decreases by less than a tolerance threshold \(\epsilon\) (e.g., \(\epsilon = 10^{-3}\)) in a single iteration. However, in practice, visually inspecting the plot is safer than picking an arbitrary \(\epsilon\).
+        </li>
+        <li>
+          <strong>Divergence &amp; Oscillation (Slide 42):</strong> If the curve ascends over time or oscillates erratically, it indicates that \(\alpha\) is too large! Mathematics proves that for a sufficiently small \(\alpha\), \(J(\theta)\) must strictly decrease on every single iteration.
+        </li>
+      </ul>
+
+      <h3>B. Practical Recipe for Choosing \(\alpha\) (Slide 43)</h3>
+      <p>
+        To find an effective learning rate, test values spaced geometrically by a factor of roughly \(3\):
+        \[
+          \dots, 0.001, \; 0.003, \; 0.01, \; 0.03, \; 0.1, \; 0.3, \; 1, \; \dots
+        \]
+      </p>
+
+      <!-- Section 10 -->
+      <h2 id="sec-normal-equation">10. Closed-Form Analytical Solution: The Normal Equation</h2>
+      <p>
+        While gradient descent is an iterative algorithm, linear regression admits an exact, closed-form algebraic solution: <strong>The Normal Equation</strong>.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">1D Motivation (Slide 44)</span>
+        For a scalar quadratic function \(J(\theta) = a\theta^2 + b\theta + c\), setting the first derivative to zero yields:
+        \[
+          \frac{dJ}{d\theta} = 2a\theta + b = 0 \implies \theta = -\frac{b}{2a}
+        \]
+        In multi-dimensional space \(\theta \in \mathbb{R}^{n+1}\), the minimum requires setting all partial derivatives simultaneously to zero:
+        \[
+          \frac{\partial}{\partial \theta_j} J(\theta) = 0 \quad \text{for all } j = 0, 1, \dots, n \implies \nabla_\theta J(\theta) = \mathbf{0}
+        \]
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Matrix Formulation of Ordinary Least Squares (Slide 45)</span>
+        Construct the \(m \times (n+1)\) <strong>Design Matrix</strong> \(X\) and the \(m \times 1\) target vector \(y\):
+        \[
+          X = \begin{bmatrix} (x^{(1)})^T \\ (x^{(2)})^T \\ \vdots \\ (x^{(m)})^T \end{bmatrix} = \begin{bmatrix}
+            1 & x_1^{(1)} & x_2^{(1)} & \dots & x_n^{(1)} \\
+            1 & x_1^{(2)} & x_2^{(2)} & \dots & x_n^{(2)} \\
+            \vdots & \vdots & \vdots & \ddots & \vdots \\
+            1 & x_1^{(m)} & x_2^{(m)} & \dots & x_n^{(m)}
+          \end{bmatrix}, \qquad
+          y = \begin{bmatrix} y^{(1)} \\ y^{(2)} \\ \vdots \\ y^{(m)} \end{bmatrix}
+        \]
+        For the Portland dataset with \(n=4\) features (Slide 45):
+        \[
+          X = \begin{bmatrix}
+            1 & 2104 & 5 & 1 & 45 \\
+            1 & 1416 & 3 & 2 & 40 \\
+            1 & 1534 & 3 & 2 & 30 \\
+            1 & 852 & 2 & 1 & 36
+          \end{bmatrix}, \qquad
+          y = \begin{bmatrix} 460 \\ 232 \\ 315 \\ 178 \end{bmatrix}
+        \]
+      </div>
+
+      <div class="proof-box">
+        <span class="box-label">Matrix Derivation of the Normal Equation</span>
+        Express the total residual sum of squares in matrix notation:
+        \[
+          J(\theta) = \frac{1}{2m} (X\theta - y)^T (X\theta - y) = \frac{1}{2m} \left( \theta^T X^T X \theta - 2 y^T X \theta + y^T y \right)
+        \]
+        Taking the matrix gradient with respect to parameter vector \(\theta\):
+        \[
+          \nabla_\theta J(\theta) = \frac{1}{m} \left( X^T X \theta - X^T y \right)
+        \]
+        Setting the gradient to zero:
+        \[
+          \frac{1}{m} \left( X^T X \theta - X^T y \right) = \mathbf{0} \implies X^T X \theta = X^T y
+        \]
+        Multiplying on the left by the matrix inverse \((X^T X)^{-1}\) gives the analytic solution:
+        \[
+          \theta^* = (X^T X)^{-1} X^T y
+        \]
+      </div>
+
+      <!-- Section 11 -->
+      <h2 id="sec-comparison-invertibility">11. Comparative Trade-offs &amp; Singularity of \(X^T X\)</h2>
+
+      <h3>A. Gradient Descent vs. Normal Equation Trade-offs (Slide 46)</h3>
+      <table style="width: 100%; border-collapse: collapse; text-align: left; margin: 1rem 0;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border-subtle); background: rgba(0, 114, 206, 0.05);">
+            <th style="padding: 0.6rem; border: 1px solid var(--border-subtle);">Dimension</th>
+            <th style="padding: 0.6rem; border: 1px solid var(--border-subtle);">Gradient Descent</th>
+            <th style="padding: 0.6rem; border: 1px solid var(--border-subtle);">Normal Equation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle); font-weight: 600;">Hyperparameters</td>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle);">Must carefully select learning rate \(\alpha\)</td>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle); color: #2e7d32; font-weight: 600;">No learning rate \(\alpha\) needed</td>
+          </tr>
+          <tr>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle); font-weight: 600;">Iterations</td>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle);">Requires many iterative update steps</td>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle); color: #2e7d32; font-weight: 600;">No iterations; solved in a single step</td>
+          </tr>
+          <tr>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle); font-weight: 600;">Feature Scaling</td>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle); color: #c62828;">Essential (prevents oscillatory slowdown)</td>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle); color: #2e7d32; font-weight: 600;"><strong>Not required</strong></td>
+          </tr>
+          <tr>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle); font-weight: 600;">Computational Complexity</td>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle);">\(\mathcal{O}(k \cdot m \cdot n)\) per \(k\) iterations</td>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle);">\(\mathcal{O}(m n^2 + n^3)\) due to matrix inversion</td>
+          </tr>
+          <tr>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle); font-weight: 600;">Scalability in \(n\)</td>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle); color: #2e7d32; font-weight: 600;">Scales well even when \(n = 10^6\)</td>
+            <td style="padding: 0.6rem; border: 1px solid var(--border-subtle); color: #c62828;">Prohibitive for \(n > 10^4\); best for \(n \le 1000\)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>B. What If \(X^T X\) is Non-Invertible (Singular / Degenerate)? (Slide 47)</h3>
+      <div class="note-callout">
+        <span class="box-label">Pathologies Leading to Singularity</span>
+        The \((n+1) \times (n+1)\) matrix \(X^T X\) fails to be invertible (i.e., \(\det(X^T X) = 0\)) under two primary conditions:
+        <ol>
+          <li>
+            <strong>Redundant (Linearly Dependent) Features:</strong>
+            Two or more features are collinear.
+            <br>
+            <em>Example:</em> Including house size in square feet (\(x_1\)) and house size in square meters (\(x_2\)). Since \(1\,\text{m}^2 \approx 10.7639\,\text{ft}^2\), \(x_1 = 10.7639 x_2\), making the columns linearly dependent and \(\text{rank}(X) < n+1\).
+            <br>
+            <em>Remedy:</em> Delete redundant, highly correlated features.
+          </li>
+          <li>
+            <strong>Too Many Features (\(m \le n\)):</strong>
+            The number of training observations \(m\) is smaller than or equal to the number of feature parameters \(n\) (e.g., \(m = 10\) training samples, but \(n = 100\) features). The system is underdetermined with infinite exact solutions.
+            <br>
+            <em>Remedies:</em>
+            <ul>
+              <li>Perform feature selection or dimensionality reduction.</li>
+              <li>Apply <strong>Regularization</strong> (Ridge regression adds \(\lambda I\) to \(X^T X\), strictly ensuring positive definiteness and invertibility—covered in Lecture 17).</li>
+              <li>Use the <strong>Moore-Penrose Pseudoinverse</strong> (\(\text{pinv}\) in MATLAB/NumPy), which solves for the minimum-norm parameter vector even when \(X^T X\) is singular.</li>
+            </ul>
+          </li>
+        </ol>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-13.html">&larr; Lecture 13: Foundations of Artificial Intelligence</a>
+      <a href="./lecture-15.html">Lecture 15: Linear Regression &amp; Gradient Descent &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

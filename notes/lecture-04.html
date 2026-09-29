@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 04: Sampling Methods &amp; Survey Designs | Basics of Data Science</title>
+  <meta name="description" content="Detailed lecture notes on sampling foundations, population vs sample, parameter vs statistic, variables, the ABC College case study, SRS, stratified, cluster, and systematic sampling.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%234%20-%20sampling%20methods.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 4 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 04: Sampling Theory, Survey Designs &amp; Empirical Biases</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Instructor:</strong> Prof. Sayeh Mirzaee</div>
+        <div class="note-meta-item"><strong>Readings:</strong> FDS Ch. 3; SFDS Ch. 1–2</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-lexicon">1. Foundational Statistical Lexicon: Population, Sample, Parameter, Statistic &amp; Variable</a></li>
+        <li><a href="#sec-case-study">2. Concrete Case Study: School Supplies Spending at ABC College</a></li>
+        <li><a href="#sec-need-srs">3. Why Sample? Simple Random Sampling (SRS)</a></li>
+        <li><a href="#sec-stratified">4. Stratified Random Sampling: Proportional Strata</a></li>
+        <li><a href="#sec-cluster">5. Cluster Sampling vs. Stratified Sampling</a></li>
+        <li><a href="#sec-systematic">6. Systematic Sampling: Sampling Intervals &amp; Phone Survey Example</a></li>
+        <li><a href="#sec-replacement-bias">7. Sampling With/Without Replacement &amp; Sampling Bias</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-lexicon">1. Foundational Statistical Lexicon: Population, Sample, Parameter, Statistic &amp; Variable</h2>
+      <p>
+        Statistical inference bridges the gap between the entirety of a phenomenon and the limited subset we can realistically observe. 
+        The lecture establishes six precise foundational definitions:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 1.1 (Key Statistical Terms)</span>
+        <ul>
+          <li><strong>Population:</strong> The entire collection of persons, things, or objects under scientific study.</li>
+          <li><strong>Sample:</strong> A selected portion (subset) of the larger population chosen for empirical investigation.</li>
+          <li><strong>Parameter:</strong> A fixed numerical characteristic or property of the whole population (e.g., the true population mean \(\mu\) or population variance \(\sigma^2\)). Parameters are typically unobservable.</li>
+          <li><strong>Statistic:</strong> A numerical figure calculated directly from sample data that represents a property of that sample (e.g., the sample mean \(\bar{X}\)). A statistic is an estimator used to infer unknown population parameters.
+            <br>
+            <em>Slide Example:</em> If we consider one mathematics class to be a sample of the population of all math classes at a university, then the average points earned by students in that single class is a <strong>statistic</strong>, whereas the average points earned across all math classes is the <strong>parameter</strong>.
+          </li>
+          <li><strong>Variable:</strong> A characteristic or measurement (usually denoted by capital letters such as \(X\) and \(Y\)) that can be determined for each member of a population. Variables are categorized into:
+            <ul>
+              <li><strong>Numerical Variables:</strong> Take on numbers with equal, physical units (e.g., weight in pounds, time in hours, spending in dollars).</li>
+              <li><strong>Categorical Variables:</strong> Assign members into distinct qualitative categories (e.g., political party affiliation, academic major, blood type).</li>
+            </ul>
+          </li>
+          <li><strong>Data:</strong> The actual recorded numerical values or categorical labels observed for the variable across the sampled units.</li>
+        </ul>
+      </div>
+
+      <!-- Section 2 -->
+      <h2 id="sec-case-study">2. Concrete Case Study: School Supplies Spending at ABC College</h2>
+      <p>
+        The lecture presented a complete worked example to clarify the boundary between these key terms:
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Lecture Case Study (ABC College Survey)</span>
+        <p>
+          <em>Scenario:</em> An academic research committee wants to determine the average (mean) amount of money first-year college students 
+          spend at ABC College on school supplies (excluding textbooks). They conduct a survey of \(100\) randomly selected first-year students at the college. 
+          Three of those students report spending \(\$150\), \(\$200\), and \(\$225\), respectively.
+        </p>
+        <p><strong>Mapping to Statistical Terms:</strong></p>
+        <ol>
+          <li><strong>Population:</strong> All first-year college students enrolled at ABC College.</li>
+          <li><strong>Sample:</strong> The \(100\) first-year students randomly surveyed at ABC College.</li>
+          <li><strong>Parameter:</strong> The true average (mean) dollar amount spent on school supplies (excluding books) by <em>all</em> first-year students at ABC College (\(\mu\)).</li>
+          <li><strong>Statistic:</strong> The average dollar amount spent on school supplies by the \(100\) sampled first-year students (\(\bar{X}\)).</li>
+          <li><strong>Variable (\(X\)):</strong> The dollar amount spent on school supplies (excluding books) by an individual first-year student at ABC College. (This is a <em>numerical continuous/discrete</em> variable).</li>
+          <li><strong>Data:</strong> The specific recorded dollar amounts, such as \(\$150, \$200, \$225, \dots\).</li>
+        </ol>
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-need-srs">3. Why Sample? Simple Random Sampling (SRS)</h2>
+      <p>
+        Gathering data from an entire population (conducting a complete census) is virtually impossible in most scientific settings due to exorbitant monetary costs, 
+        time constraints, and physical limitations. A representative sample allows us to perform accurate inference at a fraction of the cost.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 3.1 (Simple Random Sampling - SRS)</span>
+        In a <strong>Simple Random Sample</strong> of size \(n\) from a population of size \(N\), every individual member has an equally likely chance of being chosen:
+        \[
+          P(\text{Unit } i \text{ is selected}) = \frac{n}{N}
+        \]
+        Moreover, every possible subset of \(n\) distinct units has the exact same probability of forming the sample:
+        \[
+          P(\mathcal{S}) = \frac{1}{\binom{N}{n}}
+        \]
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-stratified">4. Stratified Random Sampling: Proportional Strata</h2>
+      <p>
+        When the population consists of heterogeneous sub-populations that are internally homogeneous, purely random sampling can accidentally over- or under-represent key groups. 
+        <strong>Stratified Sampling</strong> ensures balanced representation.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 4.1 (Stratified Random Sampling)</span>
+        To select a stratified sample:
+        <ol>
+          <li>Divide the total population into mutually exclusive, exhaustive subgroups called <strong>strata</strong> based on a known characteristic.</li>
+          <li>Draw a proportionate simple random sample independently from <em>each</em> stratum.</li>
+        </ol>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Slide Example (College Department Stratification)</span>
+        <p>
+          Suppose an administrator wants to survey student satisfaction across an entire university college. 
+          They first stratify (group) the student population by <strong>academic department</strong> (Engineering, Science, Humanities, Business). 
+          They then take a proportionate simple random sample from each department. 
+          If Engineering comprises \(30\%\) of the university student body, then \(30\%\) of the final sample is randomly selected from Engineering.
+        </p>
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-cluster">5. Cluster Sampling vs. Stratified Sampling</h2>
+      <p>
+        While stratified sampling samples from <em>every</em> stratum, geographical or administrative realities often make visiting every subgroup impractical.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 5.1 (Cluster Sampling)</span>
+        To select a cluster sample:
+        <ol>
+          <li>Divide the population into groups called <strong>clusters</strong>.</li>
+          <li>Randomly select a subset of the clusters.</li>
+          <li>Include <strong>all members</strong> from the selected clusters in the final sample.</li>
+        </ol>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Slide Example (Department Cluster Sampling)</span>
+        <p>
+          In the same college setting, suppose researchers cannot travel across the entire campus. 
+          They randomly select <strong>four departments</strong> from the entire college population. 
+          Every single student enrolled in those four selected departments is surveyed.
+        </p>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Core Contrast: Stratified vs. Cluster Sampling</span>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 8px;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--ut-border, #e2e8f0); text-align: left;">
+              <th style="padding: 6px;">Feature</th>
+              <th style="padding: 6px;">Stratified Sampling</th>
+              <th style="padding: 6px;">Cluster Sampling</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--ut-border, #e2e8f0);">
+              <td style="padding: 6px;"><strong>Selection Process</strong></td>
+              <td style="padding: 6px;">Sample <em>some</em> members from <em>all</em> strata.</td>
+              <td style="padding: 6px;">Sample <em>all</em> members from <em>some</em> clusters.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--ut-border, #e2e8f0);">
+              <td style="padding: 6px;"><strong>Internal Structure</strong></td>
+              <td style="padding: 6px;">Strata are homogeneous within, heterogeneous between.</td>
+              <td style="padding: 6px;">Clusters should be heterogeneous within (mini-populations).</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px;"><strong>Primary Advantage</strong></td>
+              <td style="padding: 6px;">Maximizes estimation precision and eliminates between-strata variance.</td>
+              <td style="padding: 6px;">Minimizes operational data collection cost and logistics.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-systematic">6. Systematic Sampling: Sampling Intervals &amp; Phone Survey Example</h2>
+      <p>
+        When an ordered list of the population exists, <strong>Systematic Sampling</strong> provides a simple, highly effective alternative to drawing pure random numbers.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 6.1 (Systematic Sampling)</span>
+        To choose a systematic sample of size \(n\) from a list of \(N\) members:
+        <ol>
+          <li>Randomly choose a starting point \(r\) between \(1\) and the sampling step size \(k = \lfloor N/n \rfloor\).</li>
+          <li>Select every \(k\)-th item on the list: \(r, \, r + k, \, r + 2k, \, \dots, \, r + (n-1)k\).</li>
+        </ol>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Slide Example (Telephone Directory Survey)</span>
+        <p>
+          Suppose an investigator must conduct a telephone survey in a municipal district. 
+          The local phone directory contains \(N = 20,000\) residential listings, and the target sample size is \(n = 400\).
+        </p>
+        \[
+          k = \frac{N}{n} = \frac{20,000}{400} = 50
+        \]
+        <p>
+          The researcher picks a random starting number between \(1\) and \(50\) (say, \(17\)), and then selects every \(50\)-th name thereafter: 
+          the 17th, 67th, 117th, 167th, \dots, up to the 19,967th listing.
+        </p>
+      </div>
+
+      <!-- Section 7 -->
+      <h2 id="sec-replacement-bias">7. Sampling With/Without Replacement &amp; Sampling Bias</h2>
+
+      <h3>Sampling With vs. Without Replacement</h3>
+      <p>
+        In sampling <em>with replacement</em>, once a member is selected, they are returned to the pool and can be chosen again. 
+        In sampling <em>without replacement</em>, each member can be chosen at most once.
+      </p>
+      <div class="def-box">
+        <span class="box-label">Mathematical Note from Slides</span>
+        <p>
+          Sampling without replacement instead of with replacement becomes a mathematically meaningful issue 
+          <strong>only when the population size \(N\) is small</strong> relative to \(n\). 
+          When \(N\) is very large compared to \(n\) (e.g. \(n/N < 0.05\)), the probability of re-selecting the same individual is negligible, 
+          and the draws behave essentially as independent, identically distributed (i.i.d.) observations.
+        </p>
+      </div>
+
+      <h3>Sampling Bias &amp; Convenience Sampling</h3>
+      <div class="def-box">
+        <span class="box-label">Definition 7.1 (Sampling Bias)</span>
+        A <strong>sampling bias</strong> is created when a sample is collected in such a way that some members of the intended population 
+        are systematically less likely to be chosen than others.
+        <ul>
+          <li><strong>Convenience Sampling:</strong> A prominent source of sampling bias where data is collected from units that are easiest to reach (e.g. surveying friends, interviewing people walking past a campus cafe). Convenience samples are non-random and frequently yield heavily biased conclusions.</li>
+        </ul>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Summary Takeaway</span>
+        <p>
+          Proper sampling design is the prerequisite for all sound statistical inference. If a sample is collected with systematic bias, 
+          no amount of complex machine learning or neural network architecture can recover the true population parameters. 
+          In <strong>Lecture 05</strong>, assuming an unbiased random sample \(X_1, \dots, X_n\), we formalize 
+          <strong>Point Estimation</strong> and <strong>Maximum Likelihood Estimation (MLE)</strong>.
+        </p>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-03.html">&larr; Lecture 03: Review of Probability Theory (Part 2)</a>
+      <a href="./lecture-05.html">Lecture 05: Point Estimation &amp; Maximum Likelihood Estimation &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

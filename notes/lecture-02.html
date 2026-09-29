@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 02: Review of Probability Theory (Part 1) | Basics of Data Science</title>
+  <meta name="description" content="Detailed lecture notes on probability theory foundations, sample space, Kolmogorov axioms, conditional probability, Bayes rule, communication channel detection, PMF, CDF, and continuous PDFs.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%232%20-%20probability%20review.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 2 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 02: Review of Probability Theory (Part 1): Foundations &amp; Univariate Distributions</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Instructor:</strong> Prof. Sayeh Mirzaee</div>
+        <div class="note-meta-item"><strong>Reference:</strong> Sheldon Ross, <em>A First Course in Probability</em></div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-inference">1. Motivation: What is Statistical Inference?</a></li>
+        <li><a href="#sec-prob-space">2. Probability Foundations &amp; Kolmogorov's Axioms</a></li>
+        <li><a href="#sec-set-properties">3. Set Operations, Venn Diagrams &amp; Fundamental Bounds</a></li>
+        <li><a href="#sec-conditional-bayes">4. Conditional Probability &amp; Bayes' Theorem (Channel Detection Example)</a></li>
+        <li><a href="#sec-random-variables">5. Random Variables: Discrete vs. Continuous</a></li>
+        <li><a href="#sec-pmf-cdf">6. Probability Mass Function (PMF) &amp; Cumulative Distribution Function (CDF)</a></li>
+        <li><a href="#sec-pdf-warning">7. Probability Density Function (PDF) &amp; The \(f_X(x) \neq P(X=x)\) Caveat</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+      <!-- Section 1 -->
+      <h2 id="sec-inference">1. Motivation: What is Statistical Inference?</h2>
+      <p>
+        The overarching goal of Data Science and Machine Learning is to make rigorous assertions about complex phenomena from limited observations. 
+        <strong>Statistical inference</strong> is the formal mathematical process of learning about unknown characteristics of an entire 
+        <em>population</em> based solely on what is observed in a relatively small <em>sample</em> collected from that population.
+      </p>
+
+      <div class="ex-box">
+        <span class="box-label">Motivating Example (Sockeye Salmon in the Pacific Northwest)</span>
+        <p>
+          Suppose an ecological research team wants to determine the <strong>true average weight</strong> (\(\mu\)) of all adult Sockeye salmon inhabiting 
+          a specific river basin in the Pacific Northwest of the United States. 
+        </p>
+        <ul>
+          <li>We cannot capture and weigh millions of wild salmon in the entire population without destroying the ecosystem and incurring astronomical costs.</li>
+          <li>Instead, we collect a <strong>random sample</strong> of \(n\) salmon and compute their sample average:
+            \[
+              \bar{X} = \frac{1}{n}\sum_{i=1}^n X_i
+            \]
+          </li>
+          <li><em>Key Scientific Questions:</em> Assuming our sampling procedure is truly random and unbiased, will \(\bar{X}\) be close to the true population average \(\mu\)? How confident can we be? </li>
+          <li><em>Governing Factors:</em> The answer depends directly on the sample size \(n\) and the intrinsic variability (variance \(\sigma^2\)) of weights across the population.</li>
+        </ul>
+        <p>
+          While estimating a population mean using a sample average is intuitively obvious, many real-world parameters governing population mechanisms 
+          (such as scale parameters, truncation thresholds, or mixture proportions) are abstract and lack trivial sample counterparts. 
+          The theoretical toolkit of probability allows us to formalize what makes an estimator "good" (unbiased, consistent, efficient) and derive optimal estimators in non-obvious scenarios.
+        </p>
+      </div>
+
+      <!-- Section 2 -->
+      <h2 id="sec-prob-space">2. Probability Foundations &amp; Kolmogorov's Axioms</h2>
+      <p>
+        To model non-deterministic experiments systematically, we define three foundational building blocks:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 2.1 (Sample Space &amp; Events)</span>
+        <ul>
+          <li><strong>Sample Space (\(\Omega\)):</strong> The set of all possible fundamental outcomes of a random experiment.</li>
+          <li><strong>Event (\(A\)):</strong> Any subset of the sample space (\(A \subseteq \Omega\)). An event occurs if the realized experimental outcome \(\omega \in \Omega\) lies in \(A\).</li>
+          <li><strong>Event Space (\(\mathcal{F}\)):</strong> The family of all considered events \(\{A_1, A_2, \dots, A_n\}\) forming a \(\sigma\)-algebra over \(\Omega\).</li>
+        </ul>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Axioms 2.2 (Kolmogorov's Three Probability Axioms)</span>
+        A probability measure \(P: \mathcal{F} \to [0, 1]\) assigns a real-valued likelihood to each event satisfying:
+        <ol>
+          <li><strong>Non-negativity:</strong> For any event \(A \subseteq \Omega\):
+            \[
+              P(A) \ge 0
+            \]
+          </li>
+          <li><strong>Normalization:</strong> The probability of the certain event is unity:
+            \[
+              P(\Omega) = 1
+            \]
+          </li>
+          <li><strong>Countable Additivity (Disjoint Events):</strong> If a sequence of events \(\{A_i\}\) are pairwise disjoint (mutually exclusive, \(A_i \cap A_j = \emptyset\) for all \(i \neq j\)), then:
+            \[
+              P\left(\bigcup_{i=1}^n A_i\right) = \sum_{i=1}^n P(A_i)
+            \]
+            In particular, if \(\{A_1, \dots, A_n\}\) forms a complete partition of \(\Omega\), then \(\sum_{i=1}^n P(A_i) = P(\Omega) = 1\).
+          </li>
+        </ol>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Example 2.3 (Rolling a Fair Six-Sided Die &amp; Frequentist Interpretation)</span>
+        <p>
+          Consider the classical random experiment of rolling a balanced die:
+          \[
+            \Omega = \{1, 2, 3, 4, 5, 6\}
+          \]
+          The impossible event has zero probability: \(P(\emptyset) = 0\), while the sample space satisfies \(P(\Omega) = 1\).
+        </p>
+        <ul>
+          <li>Event \(A = \text{"roll an even number"} = \{2, 4, 6\}\):
+            \[
+              P(A) = \frac{|\{2, 4, 6\}|}{|\Omega|} = \frac{3}{6} = \frac{1}{2}
+            \]
+          </li>
+          <li>Event \(B = \{1, 2, 3\}\):
+            \[
+              P(B) = \frac{3}{6} = \frac{1}{2}
+            \]
+          </li>
+        </ul>
+        <p>
+          <strong>Frequentist Interpretation:</strong> If the physical experiment is repeated \(n\) independent times and event \(A\) is observed \(n_A\) times, 
+          the probability \(P(A)\) represents the limiting relative frequency as the number of trials tends to infinity:
+          \[
+            P(A) = \lim_{n \to \infty} \frac{n_A}{n} = \frac{1}{2}
+          \]
+        </p>
+      </div>
+
+      <!-- Section 3 -->
+      <h2 id="sec-set-properties">3. Set Operations, Venn Diagrams &amp; Fundamental Bounds</h2>
+      <p>
+        From Kolmogorov's axioms, several essential geometric set properties and probability inequalities follow directly:
+      </p>
+
+      <div class="thm-box">
+        <span class="box-label">Proposition 3.1 (Core Set Identities &amp; Probability Bounds)</span>
+        For any events \(A, B \subseteq \Omega\):
+        <ol>
+          <li><strong>Monotonicity:</strong> If \(A \subseteq B\), then the occurrence of \(A\) guarantees the occurrence of \(B\):
+            \[
+              A \subseteq B \implies P(A) \le P(B)
+            \]
+          </li>
+          <li><strong>Intersection Bound:</strong> Since \(A \cap B \subseteq A\) and \(A \cap B \subseteq B\):
+            \[
+              P(A \cap B) \le \min\big(P(A), P(B)\big)
+            \]
+          </li>
+          <li><strong>Union Bound (Boole's Inequality):</strong> For arbitrary overlapping events:
+            \[
+              P(A \cup B) \le P(A) + P(B)
+            \]
+            with equality holding if and only if \(A\) and \(B\) are mutually disjoint (\(A \cap B = \emptyset\)).
+          </li>
+          <li><strong>Complement Rule:</strong> The probability that event \(A\) does not occur (\(\Omega \setminus A = A^c\)) is:
+            \[
+              P(\Omega \setminus A) = 1 - P(A)
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 4 -->
+      <h2 id="sec-conditional-bayes">4. Conditional Probability &amp; Bayes' Theorem</h2>
+      <p>
+        In statistical modeling, we rarely observe phenomena in isolation; rather, we condition our beliefs on incoming evidence.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 4.1 (Conditional Probability &amp; Product Rule)</span>
+        The conditional probability of event \(A\) given that event \(B\) has occurred (with \(P(B) > 0\)) is defined as:
+        \[
+          P(A \mid B) \triangleq \frac{P(A \cap B)}{P(B)}
+        \]
+        Multiplying both sides by the denominator yields the symmetrical <strong>Product Rule</strong>:
+        \[
+          P(A \cap B) = P(A \mid B) P(B) = P(B \mid A) P(A)
+        \]
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Theorem 4.2 (Bayes' Theorem)</span>
+        Equating the two formulations of the joint probability \(P(A \cap B)\) yields <strong>Bayes' Rule</strong>:
+        \[
+          P(B \mid A) = \frac{P(A \mid B) P(B)}{P(A)}
+        \]
+        where:
+        <ul>
+          <li>\(P(B)\) is the <strong>Prior Probability</strong> of hypothesis \(B\) before observing evidence \(A\).</li>
+          <li>\(P(A \mid B)\) is the <strong>Likelihood</strong> of observing evidence \(A\) under hypothesis \(B\).</li>
+          <li>\(P(B \mid A)\) is the <strong>Posterior Probability</strong> of hypothesis \(B\) updated in light of evidence \(A\).</li>
+          <li>\(P(A)\) is the total marginal probability (evidence).</li>
+        </ul>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Lecture Example (Digital Communications Channel Symbol Detection)</span>
+        <p>
+          Consider a transmitter \(T\) sending one of \(n\) digital symbols \(\{\text{Symbol } 1, \text{Symbol } 2, \dots, \text{Symbol } n\}\) across a noisy physical channel 
+          to a receiver \(R\). Suppose the receiver observes an analogue voltage signal \(R_1\).
+        </p>
+        <p>
+          To perform optimal symbol detection, the receiver must calculate the <em>posterior decoding probability</em> that Symbol 1 was transmitted, conditioned on observing signal \(R_1\):
+          \[
+            P(\text{Symbol } 1 \mid R_1) = \frac{P(R_1 \mid \text{Symbol } 1) \, P(\text{Symbol } 1)}{P(R_1)}
+          \]
+          Here, \(P(\text{Symbol } 1)\) is the prior transmission frequency, \(P(R_1 \mid \text{Symbol } 1)\) describes the channel noise transition density, 
+          and \(P(\text{Symbol } 1 \mid R_1)\) allows the receiver to make a Minimum Error Rate decision rule.
+        </p>
+      </div>
+
+      <!-- Section 5 -->
+      <h2 id="sec-random-variables">5. Random Variables: Discrete vs. Continuous</h2>
+      <p>
+        Manipulating raw outcomes \(\omega\) in abstract sample spaces \(\Omega\) is cumbersome for mathematical computation. 
+        A <strong>random variable</strong> translates abstract experimental outcomes into real numbers.
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 5.1 (Random Variable)</span>
+        A random variable \(X\) is a real-valued function defined on the sample space:
+        \[
+          X: \Omega \to \mathbb{R}
+        \]
+        For each realized experimental outcome \(\omega \in \Omega\), \(X(\omega)\) assigns a deterministic real number.
+      </div>
+
+      <p>
+        As emphasized in the lecture, random variables fall into two fundamental classes based on the cardinality of their support:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Discrete vs. Continuous Distinction (Slide Examples)</span>
+        <ul>
+          <li><strong>Discrete Random Variable:</strong> Takes on values in a countable set \(\text{Val}(X) \subseteq \mathbb{R}\).
+            <br>
+            <em>Slide Example:</em> In \(10\) independent tosses of a coin, let \(X\) be the number of heads obtained:
+            \[
+              X(\omega) \in \{0, 1, 2, \dots, 10\}
+            \]
+            The probability of observing exactly \(k\) heads is the measure of the underlying pre-image:
+            \[
+              P(X = k) = P\big(\{\omega \in \Omega : X(\omega) = k\}\big)
+            \]
+          </li>
+          <li><strong>Continuous Random Variable:</strong> Takes on an uncountable continuum of possible values (such as an interval in \(\mathbb{R}\)).
+            <br>
+            <em>Slide Example:</em> Let \(X\) measure the exact duration of time elapsed until an unstable radioactive particle decays:
+            \[
+              X(\omega) \in [0, \infty)
+            \]
+            For continuous variables, probabilities are evaluated over intervals rather than isolated points:
+            \[
+              P(a \le X \le b) = P\big(\{\omega \in \Omega : a \le X(\omega) \le b\}\big)
+            \]
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 6 -->
+      <h2 id="sec-pmf-cdf">6. Probability Mass Function (PMF) &amp; Cumulative Distribution Function (CDF)</h2>
+
+      <h3>The Probability Mass Function (PMF)</h3>
+      <p>
+        For a discrete random variable \(X\), the distribution of probability is fully characterized by its 
+        <strong>Probability Mass Function</strong>, denoted \(p_X(x)\):
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 6.1 (PMF Properties)</span>
+        \[
+          p_X(x) \triangleq P(X = x)
+        \]
+        satisfying:
+        <ol>
+          <li>\(0 \le p_X(x) \le 1\) for all \(x \in \text{Val}(X)\).</li>
+          <li>Total probability normalization:
+            \[
+              \sum_{x \in \text{Val}(X)} p_X(x) = 1
+            \]
+          </li>
+          <li>For any subset of values \(A \subseteq \text{Val}(X)\):
+            \[
+              P(X \in A) = \sum_{x \in A} p_X(x)
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Slide Diagram (Discrete Probability Spikes)</span>
+        <p>
+          Consider a discrete random variable with support \(\text{Val}(X) = \{1, 2, 3, 4\}\) with corresponding mass values \(p_1, p_2, p_3, p_4\).
+          The normalization condition requires:
+          \[
+            p_1 + p_2 + p_3 + p_4 = 1
+          \]
+          To find the probability that \(X\) takes an even value, we simply sum the discrete spikes:
+          \[
+            P(X \text{ is even}) = P(X \in \{2, 4\}) = p_2 + p_4
+          \]
+        </p>
+      </div>
+
+      <h3>The Cumulative Distribution Function (CDF)</h3>
+      <p>
+        The <strong>Cumulative Distribution Function (CDF)</strong>, denoted \(F_X(x)\), provides a universal description valid for both discrete and continuous random variables:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 6.2 (Cumulative Distribution Function - CDF)</span>
+        \[
+          F_X(x) \triangleq P(X \le x)
+        \]
+        Properties of any valid CDF:
+        <ol>
+          <li><strong>Boundedness:</strong> \(0 \le F_X(x) \le 1\) for all \(x \in \mathbb{R}\).</li>
+          <li><strong>Asymptotic Limits:</strong>
+            \[
+              \lim_{x \to -\infty} F_X(x) = 0 \quad \text{and} \quad \lim_{x \to +\infty} F_X(x) = 1
+            \]
+          </li>
+          <li><strong>Monotonicity:</strong> The CDF is non-decreasing:
+            \[
+              x \le y \implies F_X(x) \le F_X(y)
+            \]
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 7 -->
+      <h2 id="sec-pdf-warning">7. Probability Density Function (PDF) &amp; The \(f_X(x) \neq P(X=x)\) Caveat</h2>
+      <p>
+        For a continuous random variable, the CDF \(F_X(x)\) is continuous and differentiable. 
+        Its derivative defines the <strong>Probability Density Function (PDF)</strong>:
+      </p>
+
+      <div class="def-box">
+        <span class="box-label">Definition 7.1 (Probability Density Function - PDF)</span>
+        \[
+          f_X(x) \triangleq \frac{d F_X(x)}{dx} = \lim_{\Delta x \to 0} \frac{F_X(x + \Delta x) - F_X(x)}{\Delta x}
+        \]
+        Rearranging this infinitesimal limit gives the standard physical interpretation of probability density:
+        \[
+          P(x \le X < x + \Delta x) \approx f_X(x) \, \Delta x
+        \]
+      </div>
+
+      <div class="thm-box" style="border-left: 4px solid var(--ut-crimson, #b91c1c); background: rgba(185, 28, 28, 0.05);">
+        <span class="box-label" style="color: #b91c1c; font-weight: 700;">Crucial Theoretical Warning (Circled in Red on Slides)</span>
+        \[
+          \mathbf{f_X(x) \neq P(X = x)}
+        \]
+        <p>
+          Students frequently conflate probability density with point probability. In continuous distributions:
+        </p>
+        <ul>
+          <li><strong>Point Probability is Zero:</strong> The probability of a continuous random variable taking on any single exact real number is precisely zero:
+            \[
+              P(X = x) = \int_x^x f_X(t) \, dt = 0
+            \]
+          </li>
+          <li><strong>Densities Can Exceed Unity:</strong> While probabilities are strictly capped at \(1\), the density \(f_X(x)\) represents probability <em>per unit length</em> and can take arbitrary non-negative values. For example, if \(X \sim \text{Uniform}(0, 0.1)\), then \(f_X(x) = 10\) for all \(x \in (0, 0.1)\).
+          </li>
+        </ul>
+      </div>
+
+      <div class="thm-box">
+        <span class="box-label">Proposition 7.2 (Integration Properties of the PDF)</span>
+        Every valid continuous PDF satisfies:
+        <ol>
+          <li><strong>Non-negativity:</strong> \(f_X(x) \ge 0\) for all \(x \in \mathbb{R}\).</li>
+          <li><strong>Normalization:</strong> The total area under the density curve equals \(1\):
+            \[
+              \int_{-\infty}^\infty f_X(x) \, dx = 1
+            \]
+          </li>
+          <li><strong>Recovery of the CDF:</strong>
+            \[
+              F_X(x) = \int_{-\infty}^x f_X(x') \, dx'
+            \]
+          </li>
+          <li><strong>Interval Probabilities:</strong> For any interval \([a, b]\):
+            \[
+              P(a \le X \le b) = \int_a^b f_X(x) \, dx
+            \]
+            <em>Slide Illustration:</em> For instance, \(P(1 \le X \le 2) = \int_1^2 f_X(x) \, dx\), representing the shaded area under the bell curve between \(x = 1\) and \(x = 2\).
+          </li>
+        </ol>
+      </div>
+
+      <div class="ex-box">
+        <span class="box-label">Looking Ahead: From Univariate to Multivariate</span>
+        <p>
+          Having established the foundations of probability spaces, Kolmogorov's axioms, conditional probability, and univariate random variables, 
+          <strong>Lecture 03</strong> expands our study to expectations, variances, canonical distribution families (Bernoulli, Binomial, Poisson, Normal), 
+          joint distributions of multiple variables, and the subtle distinction between uncorrelatedness and statistical independence.
+        </p>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-01.html">&larr; Lecture 01: Introduction &amp; Lifecycle</a>
+      <a href="./lecture-03.html">Lecture 03: Review of Probability Theory (Part 2) &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,258 @@
+/* ==========================================================================
+   MIT OCW Academic Lecture Notes Styling
+   Basics of Data Science — University of Tehran
+   ========================================================================== */
+
+:root {
+  --note-font-body: 'Charter', 'Bitstream Charter', 'Sitka Text', 'Cambria', 'Georgia', serif;
+  --note-font-heading: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --note-font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  --note-max-width: 800px;
+}
+
+body.academic-note-page {
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: var(--note-font-body);
+  font-size: 1.05rem;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+.note-wrapper {
+  max-width: var(--note-max-width);
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 6rem;
+}
+
+/* Header & Meta */
+.note-top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: var(--note-font-heading);
+}
+
+.note-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+.note-back-link:hover {
+  text-decoration: underline;
+}
+
+.note-slide-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.note-slide-link:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  color: var(--accent-primary);
+}
+
+.note-paper-header {
+  margin-bottom: 2.75rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--text-primary);
+}
+
+.note-institution {
+  font-family: var(--note-font-heading);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ut-blue);
+  margin-bottom: 0.35rem;
+}
+
+.note-paper-title {
+  font-family: var(--note-font-heading);
+  font-size: clamp(1.85rem, 3.2vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--text-primary);
+  margin: 0.4rem 0 1rem;
+}
+
+.note-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  font-family: var(--note-font-heading);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.note-meta-item strong {
+  color: var(--text-primary);
+}
+
+/* Table of Contents */
+.note-toc-box {
+  margin: 2rem 0 2.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-family: var(--note-font-heading);
+}
+
+.note-toc-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 0.65rem;
+}
+
+.note-toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.note-toc-list li a {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.92rem;
+}
+
+.note-toc-list li a:hover {
+  color: var(--accent-primary);
+  text-decoration: underline;
+}
+
+/* Academic Note Body Content */
+.note-body h2 {
+  font-family: var(--note-font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 2.75rem 0 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.note-body h3 {
+  font-family: var(--note-font-heading);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 2rem 0 0.75rem;
+}
+
+.note-body p {
+  margin-bottom: 1.25rem;
+  text-align: justify;
+}
+
+/* Formal Academic LaTeX Boxes */
+.thm-box, .def-box, .ex-box, .proof-box, .note-callout {
+  margin: 1.75rem 0;
+  padding: 1.15rem 1.4rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  border-left: 3.5px solid var(--border-strong);
+  font-size: 1rem;
+}
+
+.def-box {
+  border-left-color: var(--ut-blue);
+  background: rgba(0, 114, 206, 0.04);
+}
+
+.thm-box {
+  border-left-color: #9c27b0;
+  background: rgba(156, 39, 176, 0.04);
+}
+
+.ex-box {
+  border-left-color: #2e7d32;
+  background: rgba(46, 125, 50, 0.04);
+}
+
+.proof-box {
+  border-left-color: var(--text-tertiary);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-left-width: 3.5px;
+}
+
+.box-label {
+  font-family: var(--note-font-heading);
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.def-box .box-label { color: var(--ut-blue); }
+.thm-box .box-label { color: #9c27b0; }
+.ex-box .box-label { color: #2e7d32; }
+.proof-box .box-label { color: var(--text-secondary); font-style: italic; text-transform: none; }
+
+.qed-symbol {
+  float: right;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--text-secondary);
+}
+
+/* Math Display Styling */
+.katex-display {
+  margin: 1.5rem 0 !important;
+  padding: 0.5rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.note-footer-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-subtle);
+  font-family: var(--note-font-heading);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.note-footer-nav a {
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+.note-footer-nav a:hover {
+  text-decoration: underline;
+}

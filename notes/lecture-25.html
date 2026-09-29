@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 25: SVM Duality, Slack Variables, K-Means &amp; Intro to EM | Basics of Data Science</title>
+  <meta name="description" content="Stanford CS231n / MIT OCW style comprehensive lecture notes on SVM duality synthesis, soft margins, canonical kernels, multiclass extensions, unsupervised clustering, K-Means coordinate descent proof, local optima, and introduction to Gaussian Mixture Models and EM.">
+
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/notes.css">
+  <link rel="icon" type="image/png" href="../assets/images/ut-logo.png">
+
+  <!-- KaTeX for academic math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+</head>
+<body class="academic-note-page">
+
+  <div class="note-wrapper">
+    <!-- Top Nav -->
+    <nav class="note-top-nav" aria-label="Breadcrumb and quick navigation">
+      <a href="../index.html#lectures" class="note-back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+        <span>Back to Course Portal</span>
+      </a>
+      <a href="../lecture%20slides/lecture%2325%20-%20svm%20duality%20and%20k-means%20clustering.pdf" target="_blank" rel="noopener" class="note-slide-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+        <span>Slide 25 (PDF)</span>
+      </a>
+    </nav>
+
+    <!-- Paper Header -->
+    <header class="note-paper-header">
+      <div class="note-institution">University of Tehran &bull; Department of Engineering Science</div>
+      <h1 class="note-paper-title">Lecture 25: SVM Duality, Slack Variables, K-Means Clustering &amp; Foundations of EM</h1>
+      <div class="note-meta-row">
+        <div class="note-meta-item"><strong>Course:</strong> Basics of Data Science</div>
+        <div class="note-meta-item"><strong>Date:</strong> Fall Semester 2026</div>
+        <div class="note-meta-item"><strong>Primary Deck:</strong> Lecture #25 (60 slides)</div>
+        <div class="note-meta-item"><strong>Readings:</strong> PML-Intro Ch. 17 &amp; 21; ESL Ch. 12, 13 &amp; 14; Bishop PRML Ch. 7 &amp; 9</div>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="note-toc-box" aria-label="Table of Contents">
+      <div class="note-toc-title">Table of Contents</div>
+      <ol class="note-toc-list">
+        <li><a href="#sec-svm-synthesis">1. SVM Duality Synthesis &amp; Support Vector Sparsity</a></li>
+        <li><a href="#sec-slack-box">2. Regularization, Slack Variables &amp; The Box Constraint</a></li>
+        <li><a href="#sec-canonical-kernels">3. Canonical Kernels &amp; Non-Linear Decision Boundaries</a></li>
+        <li><a href="#sec-multiclass-svm">4. Multi-Class Classification: One-vs-All (OvA)</a></li>
+        <li><a href="#sec-guidelines">5. Practical Model Selection: Logistic Regression vs. SVM vs. Neural Networks</a></li>
+        <li><a href="#sec-unsupervised-paradigm">6. The Unsupervised Learning Paradigm &amp; Clustering</a></li>
+        <li><a href="#sec-kmeans-algorithm">7. The K-Means Clustering Algorithm &amp; Geometry</a></li>
+        <li><a href="#sec-nonseparated">8. Clustering Non-Separated Data: The T-Shirt Sizing Case Study</a></li>
+        <li><a href="#sec-distortion-convergence">9. The Distortion Objective &amp; Coordinate Descent Convergence Proof</a></li>
+        <li><a href="#sec-local-optima">10. Random Initialization, Local Optima &amp; Multiple Restarts</a></li>
+        <li><a href="#sec-choosing-k">11. Choosing the Number of Clusters \(K\): Elbow Method vs. Downstream Utility</a></li>
+        <li><a href="#sec-gmm-intro">12. Bridge to Probabilistic Clustering: Mixture of Gaussians &amp; EM Foundations</a></li>
+      </ol>
+    </nav>
+
+    <main class="note-body">
+
+      <!-- Section 1 -->
+      <section id="sec-svm-synthesis">
+        <h2>1. SVM Duality Synthesis &amp; Support Vector Sparsity</h2>
+        <p>
+          Lecture 25 opens with the synthesis and resolution of Support Vector Machines (continuing SVM theory). Having established the primal optimization problem and the Karush-Kuhn-Tucker (KKT) conditions in Lecture 24, we complete the dual representation of the optimal margin classifier.
+        </p>
+        <p>
+          Recall the Wolfe Dual optimization problem for the separable margin classifier:
+        </p>
+        \[
+          \max_{\alpha} \quad \mathcal{W}(\alpha) = \sum_{i=1}^m \alpha_i - \frac{1}{2} \sum_{i=1}^m \sum_{j=1}^m y^{(i)} y^{(j)} \alpha_i \alpha_j \langle x^{(i)}, x^{(j)} \rangle
+        \]
+        \[
+          \text{subject to} \quad \alpha_i \ge 0 \quad \forall i \in \{1, \dots, m\}, \quad \text{and} \quad \sum_{i=1}^m \alpha_i y^{(i)} = 0
+        \]
+
+        <div class="thm-box">
+          <span class="box-label">Theorem 1.1 (The Sparsity of Support Vectors)</span>
+          From the KKT complementary slackness condition:
+          \[
+            \alpha_i^* \left[ y^{(i)} \left( {w^*}^T x^{(i)} + b^* \right) - 1 \right] = 0, \quad \forall i = 1, \dots, m
+          \]
+          This implies an absolute dichotomy for every training example \(x^{(i)}\):
+          <ol>
+            <li><strong>Interior Points:</strong> If \(y^{(i)} \left( {w^*}^T x^{(i)} + b^* \right) > 1\) (the example lies strictly outside the canonical margin corridor), we must have \(\alpha_i^* = 0\).</li>
+            <li><strong>Boundary Points (Support Vectors):</strong> Only if \(y^{(i)} \left( {w^*}^T x^{(i)} + b^* \right) = 1\) (the point lies precisely on the canonical hyperplanes \(w^T x + b = \pm 1\)) can the Lagrange multiplier be strictly positive: \(\alpha_i^* > 0\).</li>
+          </ol>
+          <div class="note-callout">
+            <strong>Key Sparsity Result:</strong> The dual coefficients \(\alpha_i^*\) are strictly zero for all non-support points. Consequently, the optimal weight vector \(w^*\) is reconstructed as a sparse linear combination strictly of the support vectors (\(i \in \mathcal{S}\)):
+          </div>
+          \[
+            w^* = \sum_{i \in \mathcal{S}} \alpha_i^* y^{(i)} x^{(i)}
+          \]
+          where \(\mathcal{S} = \{i : \alpha_i^* > 0\}\) is the set of support vectors.
+        </div>
+
+        <p>
+          Consequently, to make a prediction on a novel test point \(x\), we evaluate:
+        </p>
+        \[
+          h_{\theta}(x) = g\left( {w^*}^T x + b^* \right) = g\left( \sum_{i \in \mathcal{S}} \alpha_i^* y^{(i)} \langle x^{(i)}, x \rangle + b^* \right)
+        \]
+        <p>
+          Notice the computational triumph: even if the dataset consists of millions of examples (\(m = 10^6\)), if only \(|\mathcal{S}| = 25\) points reside on the margin, prediction depends solely on inner products with those 25 support vectors!
+        </p>
+      </section>
+
+      <!-- Section 2 -->
+      <section id="sec-slack-box">
+        <h2>2. Regularization, Slack Variables &amp; The Box Constraint</h2>
+        <p>
+          When data is non-linearly separable or contains noisy outliers, the hard margin constraints \(y^{(i)}(w^T x^{(i)} + b) \ge 1\) cannot be satisfied simultaneously. We introduce non-negative slack variables \(\xi_i \ge 0\) (Slides 16–19):
+        </p>
+        \[
+          \min_{w, b, \xi} \quad \frac{1}{2} \|w\|^2 + C \sum_{i=1}^m \xi_i \quad \text{s.t.} \quad y^{(i)}(w^T x^{(i)} + b) \ge 1 - \xi_i, \quad \xi_i \ge 0
+        \]
+        <p>
+          The parameter \(C > 0\) governs the relative weighting between maximizing the geometric margin (\(\frac{1}{\|w\|}\)) and penalizing margin violations.
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Definition 2.1 (The Box Constraint in Wolfe Dual)</span>
+          Formulating the generalized Lagrangian with multipliers \(\alpha_i \ge 0\) and \(r_i \ge 0\):
+          \[
+            \mathcal{L}(w, b, \xi, \alpha, r) = \frac{1}{2}\|w\|^2 + C \sum_{i=1}^m \xi_i - \sum_{i=1}^m \alpha_i \left[ y^{(i)}(w^T x^{(i)} + b) - 1 + \xi_i \right] - \sum_{i=1}^m r_i \xi_i
+          \]
+          Setting the partial derivative with respect to the slack variables to zero:
+          \[
+            \frac{\partial \mathcal{L}}{\partial \xi_i} = C - \alpha_i - r_i = 0 \implies \alpha_i = C - r_i
+          \]
+          Since the Lagrange multiplier \(r_i \ge 0\), this forces \(\alpha_i \le C\). Combined with \(\alpha_i \ge 0\), we obtain the celebrated <strong>Box Constraint</strong>:
+          \[
+            0 \le \alpha_i \le C \quad \forall i \in \{1, \dots, m\}
+          \]
+          The dual objective function remains identical to the separable case, but the feasible domain for each dual multiplier is restricted to the closed interval \([0, C]\).
+        </div>
+
+        <div class="note-callout">
+          <strong>Parameter Correspondence: \(C \longleftrightarrow 1/\lambda\)</strong><br>
+          Comparing regularized Logistic Regression and soft-margin SVM reveals the reciprocal role of their tuning parameters:
+          \[
+            C \longleftrightarrow \frac{1}{\lambda}
+          \]
+          A large \(C\) corresponds to small \(\lambda\) (strict margin enforcement, minimal tolerance for slack, low bias, high variance, risk of overfitting). A small \(C\) corresponds to strong regularization large \(\lambda\) (broad margin, high tolerance for misclassifications, high bias, low variance).
+        </div>
+      </section>
+
+      <!-- Section 3 -->
+      <section id="sec-canonical-kernels">
+        <h2>3. Canonical Kernels &amp; Non-Linear Decision Boundaries</h2>
+        <p>
+          Replacing the inner product \(\langle x, z \rangle\) with an inner product in high-dimensional feature space \(\langle \phi(x), \phi(z) \rangle = K(x, z)\) allows SVMs to construct non-linear decision boundaries efficiently (Slides 20–22).
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">Definition 3.1 (Canonical Kernel Functions — Slide 22)</span>
+          Four primary kernels dominate modern machine learning implementations:
+          <ol>
+            <li><strong>Linear Kernel:</strong>
+              \[
+                K(x, x') = \langle x, x' \rangle = x^T x'
+              \]
+              Used when features are already very high-dimensional (\(n \gg m\)).
+            </li>
+            <li><strong>Polynomial Kernel:</strong>
+              \[
+                K(x, x') = (\gamma \langle x, x' \rangle + r)^d
+              \]
+              where \(d \in \mathbb{N}\) is the polynomial degree, \(\gamma > 0\) is a scaling coefficient, and \(r \ge 0\) is the inhomogeneous intercept term.
+            </li>
+            <li><strong>Gaussian Radial Basis Function (RBF) Kernel:</strong>
+              \[
+                K(x, x') = \exp\left( -\gamma \|x - x'\|^2 \right) = \exp\left( -\frac{\|x - x'\|^2}{2\sigma^2} \right) \quad (\gamma > 0)
+              \]
+              Projects data into an infinite-dimensional reproducing kernel Hilbert space \(\ell_2\). Bandwidth parameter \(\gamma = \frac{1}{2\sigma^2}\) controls localization: large \(\gamma\) (small \(\sigma\)) creates narrow peaks (high variance), while small \(\gamma\) creates smooth global boundaries (high bias).
+            </li>
+            <li><strong>Sigmoid (Hyperbolic Tangent) Kernel:</strong>
+              \[
+                K(x, x') = \tanh\left( \gamma \langle x, x' \rangle + r \right)
+              \]
+              Originating from neural network theory; satisfies Mercer's condition only for certain restricted ranges of \(\gamma\) and \(r\).
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Section 4 -->
+      <section id="sec-multiclass-svm">
+        <h2>4. Multi-Class Classification: One-vs-All (OvA)</h2>
+        <p>
+          SVM is intrinsically designed as a binary maximum-margin separator with \(y \in \{-1, +1\}\). In real-world applications (Slide 23), target labels span \(K > 2\) distinct categories: \(y \in \{1, 2, \dots, K\}\).
+        </p>
+        <p>
+          The standard approach presented in the slides is the <strong>One-vs-All (OvA)</strong> (also called One-vs-Rest):
+        </p>
+        <ol>
+          <li>For each class \(k \in \{1, \dots, K\}\), train an independent binary SVM where training examples with label \(y^{(i)} = k\) are treated as positive (\(+1\)) and all other examples \(y^{(i)} \ne k\) are treated as negative (\(-1\)).</li>
+          <li>This produces \(K\) parameter vectors and thresholds: \((\theta^{(1)}, b^{(1)}), \dots, (\theta^{(K)}, b^{(K)})\).</li>
+          <li>To classify an unseen test input \(x_{\text{test}}\), compute the decision confidence score for all \(K\) models and select the class with the maximal score:
+            \[
+              \hat{y}_{\text{test}} = \arg\max_{k \in \{1, \dots, K\}} h_\theta^{(k)}(x_{\text{test}}) = \arg\max_{k \in \{1, \dots, K\}} \left( (\theta^{(k)})^T x_{\text{test}} + b^{(k)} \right)
+            \]
+          </li>
+        </ol>
+      </section>
+
+      <!-- Section 5 -->
+      <section id="sec-guidelines">
+        <h2>5. Practical Model Selection: Logistic Regression vs. SVM vs. Neural Networks</h2>
+        <p>
+          Slide 24 provides an invaluable engineering guide for practitioners choosing between Logistic Regression, Support Vector Machines, and Neural Networks based on the number of features \(n\) and the sample size \(m\):
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Engineering Taxonomy (Slide 24)</span>
+          Let \(n\) be the number of features (\(x \in \mathbb{R}^{n+1}\)) and \(m\) be the number of training examples:
+          <table style="width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.95rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid #cbd5e1; text-align: left;">
+                <th style="padding: 8px;">Regime</th>
+                <th style="padding: 8px;">Typical Dimensions</th>
+                <th style="padding: 8px;">Recommended Model</th>
+                <th style="padding: 8px;">Core Rationale</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 8px;"><strong>Large \(n\), Small \(m\)</strong></td>
+                <td style="padding: 8px;">\(n \approx 10{,}000\), \(m \approx 10\dots 1{,}000\)</td>
+                <td style="padding: 8px;">Logistic Regression or Linear SVM (no kernel)</td>
+                <td style="padding: 8px;">With features far exceeding examples, linear decision boundaries are already expressive enough; complex non-linear kernels will severely overfit without additional signal.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 8px;"><strong>Small \(n\), Intermediate \(m\)</strong></td>
+                <td style="padding: 8px;">\(n \approx 1\dots 1{,}000\), \(m \approx 10\dots 10{,}000\)</td>
+                <td style="padding: 8px;">SVM with Gaussian (RBF) Kernel</td>
+                <td style="padding: 8px;">The feature space is low-dimensional, requiring non-linear feature expansion, but \(m\) is manageable enough for \(O(m^2)\) Gram matrix computation and quadratic programming.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 8px;"><strong>Small \(n\), Very Large \(m\)</strong></td>
+                <td style="padding: 8px;">\(n \approx 1\dots 1{,}000\), \(m \approx 50{,}000\dots 10^6+\)</td>
+                <td style="padding: 8px;">Manually engineer features + Logistic Regression / Linear SVM</td>
+                <td style="padding: 8px;">Gaussian SVM becomes computationally prohibitive (\(m \times m\) kernel matrix exceeds memory and quadratic programming slows down). Linear models on expanded features scale as \(O(m)\).</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 12px; margin-bottom: 0;">
+            <em>Note on Neural Networks:</em> A multi-layer neural network is likely to perform well across all these regimes, but requires substantial hyperparameter tuning and is significantly slower to train compared to convex SVM solvers.
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 6 -->
+      <section id="sec-unsupervised-paradigm">
+        <h2>6. The Unsupervised Learning Paradigm &amp; Clustering</h2>
+        <p>
+          Slide 25 marks the course's major conceptual pivot from <strong>Supervised Learning</strong> to <strong>Unsupervised Learning</strong>.
+        </p>
+        <p>
+          In supervised learning, every training instance arrives paired with a teacher signal: \(\{(x^{(1)}, y^{(1)}), \dots, (x^{(m)}, y^{(m)})\}\). In unsupervised learning (Slide 26–27), we are handed only an unlabelled collection of feature vectors:
+        </p>
+        \[
+          \mathcal{D} = \{x^{(1)}, x^{(2)}, \dots, x^{(m)}\}, \quad x^{(i)} \in \mathbb{R}^d
+        \]
+        <p>
+          There are no target labels \(y^{(i)}\), no positive/negative annotations, and no error signals against ground truth. The goal is to uncover intrinsic, latent structure embedded within the data distribution.
+        </p>
+
+        <div class="note-callout">
+          <strong>Prominent Real-World Applications of Clustering (Slide 28):</strong>
+          <ul>
+            <li><strong>Market Segmentation:</strong> Partitioning customer transaction databases into coherent behavioral cohorts for targeted marketing campaigns.</li>
+            <li><strong>Social Network Analysis:</strong> Detecting communities, interest clusters, and densely connected cliques in graph networks.</li>
+            <li><strong>Organizing Computing Clusters:</strong> Grouping server nodes and parallel processes to optimize data routing, load-balancing, and resource allocation.</li>
+            <li><strong>Astronomical Data Analysis:</strong> Aggregating telescope observations and spectral measurements to identify galaxies, star formations, and interstellar phenomena.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 7 -->
+      <section id="sec-kmeans-algorithm">
+        <h2>7. The K-Means Clustering Algorithm &amp; Geometry</h2>
+        <p>
+          The most foundational clustering technique is <strong>K-Means</strong> (Slides 29–40). Given an unlabelled dataset and an integer \(K\) specifying the desired number of clusters, K-Means seeks to position \(K\) cluster centers (centroids) \(\mu_1, \dots, \mu_K \in \mathbb{R}^d\) to minimize the total squared Euclidean distance from each sample to its nearest center.
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Algorithm 7.1 (K-Means Clustering)</span>
+          <ol>
+            <li><strong>Initialization:</strong> Initialize cluster centroids \(\mu_1, \mu_2, \dots, \mu_K \in \mathbb{R}^d\) randomly (typically by selecting \(K\) distinct training examples at random).</li>
+            <li><strong>Repeat until convergence:</strong>
+              <ol type="a">
+                <li>
+                  <strong>Cluster Assignment Step:</strong> For every sample \(i = 1, \dots, m\), compute its Euclidean distance to all \(K\) centroids and assign it to the closest centroid index \(c^{(i)}\):
+                  \[
+                    c^{(i)} := \arg\min_{j \in \{1, \dots, K\}} \|x^{(i)} - \mu_j\|^2
+                  \]
+                </li>
+                <li>
+                  <strong>Move Centroid Step:</strong> For every cluster index \(j = 1, \dots, K\), update \(\mu_j\) to be the arithmetic mean of all data points currently assigned to cluster \(j\):
+                  \[
+                    \mu_j := \frac{\sum_{i=1}^m 1\{c^{(i)} = j\} x^{(i)}}{\sum_{i=1}^m 1\{c^{(i)} = j\}}
+                  \]
+                  <em>Boundary condition:</em> If a cluster \(j\) has zero assigned points (\(\sum 1\{c^{(i)} = j\} = 0\)), standard implementations either remove the cluster or reinitialize \(\mu_j\) to a randomly selected data point.
+                </li>
+              </ol>
+            </li>
+          </ol>
+        </div>
+
+        <p>
+          Slides 29 to 40 step through this process visually:
+        </p>
+        <ul>
+          <li><strong>Step 0:</strong> Data points are initially unlabelled black dots in \(\mathbb{R}^2\). Two centroids (red \(\times\) and blue \(\times\)) are initialized arbitrarily.</li>
+          <li><strong>Iteration 1 (Assignment):</strong> Points closer to the red \(\times\) are painted red; points closer to the blue \(\times\) are painted blue. The boundary separating the two clusters is the orthogonal bisector hyperplane between the two centroids (Voronoi cell partitioning).</li>
+          <li><strong>Iteration 1 (Centroid Update):</strong> Red \(\times\) moves to the geometric center of all red dots; blue \(\times\) moves to the geometric center of all blue dots.</li>
+          <li><strong>Iteration 2+:</strong> Points near the boundary flip colors as centroids migrate. Centroids adjust again. Within a few iterations, no points change cluster membership, and the centroids become completely stationary.</li>
+        </ul>
+      </section>
+
+      <!-- Section 8 -->
+      <section id="sec-nonseparated">
+        <h2>8. Clustering Non-Separated Data: The T-Shirt Sizing Case Study</h2>
+        <p>
+          A common misconception is that clustering is only applicable when data forms clearly separated islands. Slide 41 and Slide 52 demonstrate that K-Means is equally powerful for partitioning continuous, non-separated distributions.
+        </p>
+
+        <div class="ex-box">
+          <span class="box-label">Example 8.1 (T-Shirt Sizing — Slides 41 &amp; 52)</span>
+          Consider a clothing manufacturer collecting physical measurements: <strong>Height</strong> vs. <strong>Weight</strong> across thousands of customers. The data forms a continuous bivariate cloud without isolated gaps.
+          <br><br>
+          The manufacturer wants to design standard apparel sizes:
+          <ul>
+            <li>If the business strategy produces \(K = 3\) sizes, K-Means segments the continuous distribution into <strong>Small (S)</strong>, <strong>Medium (M)</strong>, and <strong>Large (L)</strong>. The resulting centroids \(\mu_S, \mu_M, \mu_L\) define the exact target proportions for pattern design.</li>
+            <li>If the company expands to \(K = 5\) sizes, running K-Means with \(K=5\) seamlessly segments the same population into <strong>Extra Small (XS)</strong>, <strong>Small (S)</strong>, <strong>Medium (M)</strong>, <strong>Large (L)</strong>, and <strong>Extra Large (XL)</strong>.</li>
+          </ul>
+          Here, clustering serves not to discover pre-existing natural species, but to optimally quantize a continuous space for operational efficiency.
+        </div>
+      </section>
+
+      <!-- Section 9 -->
+      <section id="sec-distortion-convergence">
+        <h2>9. The Distortion Objective &amp; Coordinate Descent Convergence Proof</h2>
+        <p>
+          Does K-Means always converge, or can it cycle infinitely between different cluster configurations? Slides 42–43 formalize the algorithm as an exact coordinate descent on an objective function known as the <strong>Distortion Function</strong> (or inertia).
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Definition 9.1 (The Distortion Function \(J(c, \mu)\))</span>
+          Let \(c = (c^{(1)}, \dots, c^{(m)})\) be the vector of cluster assignments, and \(\mu = (\mu_1, \dots, \mu_K)\) be the set of centroid vectors. The distortion cost is:
+          \[
+            J(c, \mu) = \frac{1}{m} \sum_{i=1}^m \|x^{(i)} - \mu_{c^{(i)}}\|^2
+          \]
+          \(J(c, \mu)\) measures the average squared Euclidean distance between each sample \(x^{(i)}\) and its assigned centroid \(\mu_{c^{(i)}}\).
+        </div>
+
+        <div class="proof-box">
+          <span class="box-label">Theorem 9.2 (K-Means as Coordinate Descent &amp; Convergence Proof)</span>
+          The K-Means algorithm is exactly <strong>Coordinate Descent</strong> on \(J(c, \mu)\):
+          <ol>
+            <li>
+              <strong>Minimizing \(J\) with respect to \(c\) holding \(\mu\) fixed:</strong>
+              \[
+                \min_{c^{(1)}, \dots, c^{(m)}} J(c, \mu) = \frac{1}{m} \sum_{i=1}^m \min_{c^{(i)} \in \{1, \dots, K\}} \|x^{(i)} - \mu_{c^{(i)}}\|^2
+              \]
+              Because each term in the sum depends solely on a single assignment \(c^{(i)}\), the global minimum over \(c\) is obtained by minimizing each term independently:
+              \[
+                c^{(i)} := \arg\min_{j \in \{1, \dots, K\}} \|x^{(i)} - \mu_j\|^2
+              \]
+              This is precisely the <em>Cluster Assignment Step</em>!
+            </li>
+            <li>
+              <strong>Minimizing \(J\) with respect to \(\mu\) holding \(c\) fixed:</strong>
+              Holding cluster assignments fixed, we minimize the cost with respect to centroid \(\mu_j\). We group the terms belonging to cluster \(j\):
+              \[
+                J_j(\mu_j) = \sum_{i: c^{(i)} = j} \|x^{(i)} - \mu_j\|^2
+              \]
+              Taking the gradient with respect to \(\mu_j\) and setting it to zero:
+              \[
+                \nabla_{\mu_j} J_j = \sum_{i: c^{(i)} = j} -2(x^{(i)} - \mu_j) = 0
+              \]
+              \[
+                \sum_{i: c^{(i)} = j} x^{(i)} = \sum_{i: c^{(i)} = j} \mu_j = |S_j| \mu_j \implies \mu_j = \frac{\sum_{i: c^{(i)} = j} x^{(i)}}{|S_j|}
+              \]
+              where \(|S_j| = \sum_{i=1}^m 1\{c^{(i)} = j\}\). This is precisely the <em>Move Centroid Step</em>!
+            </li>
+          </ol>
+          <strong>Monotonic Convergence Guarantee:</strong>
+          Since each step strictly minimizes \(J\) along one set of coordinates, \(J(c, \mu)\) must monotonically decrease (or stay identical) at every iteration:
+          \[
+            J(c^{(t+1)}, \mu^{(t+1)}) \le J(c^{(t+1)}, \mu^{(t)}) \le J(c^{(t)}, \mu^{(t)})
+          \]
+          Because the number of distinct cluster assignments \(c \in \{1, \dots, K\}^m\) is finite (at most \(K^m\)), and each unique assignment uniquely defines the optimal centroids, K-Means cannot cycle infinitely. <strong>Therefore, K-Means is guaranteed to converge in a finite number of steps!</strong>
+        </div>
+      </section>
+
+      <!-- Section 10 -->
+      <section id="sec-local-optima">
+        <h2>10. Random Initialization, Local Optima &amp; Multiple Restarts</h2>
+        <p>
+          While coordinate descent guarantees convergence, the distortion surface \(J(c, \mu)\) is <strong>non-convex</strong>. Consequently, K-Means is susceptible to getting trapped in suboptimal local minima (Slides 44–48).
+        </p>
+
+        <div class="note-callout">
+          <strong>Pathologies of Bad Local Optima (Slide 47):</strong>
+          Slide 47 illustrates two common failure modes when initial centroids are placed poorly:
+          <ol>
+            <li><strong>Cluster Splitting:</strong> Two initial centroids happen to fall into the same dense true cluster, causing it to be unnaturally cut in half, while two other distant clusters are forced to share a single centroid.</li>
+            <li><strong>Outlier Trapping:</strong> A centroid is initialized far away near an outlier or an empty region, leaving it isolated with very few points while the rest of the dataset is poorly clustered.</li>
+          </ol>
+        </div>
+
+        <p>
+          To prevent the algorithm from terminating in an inferior local minimum, we employ <strong>Multiple Random Restarts</strong> (Slide 48):
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Algorithm 10.1 (Multiple Random Restarts K-Means — Slide 48)</span>
+          <pre style="background: #f8fafc; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 0.95rem;">
+For i = 1 to 100 {
+    1. Randomly initialize K-means: pick K distinct training examples {x^(r_1), ..., x^(r_K)} as initial centroids.
+    2. Run K-means to convergence to obtain final assignments c and centroids &mu;.
+    3. Compute distortion cost: J(c, &mu;) = (1/m) &sum; ||x^(i) - &mu;_{c^(i)}||^2.
+}
+Select the clustering configuration (c, &mu;) that achieved the lowest distortion cost J.</pre>
+          <p style="margin-top: 10px; margin-bottom: 0;">
+            <em>Rule of Thumb:</em> Running 50 to 1000 restarts is computationally inexpensive and virtually guarantees escaping bad local minima when \(K\) is modest (\(K \in [2, 10]\)). When \(K\) is very large (hundreds of clusters), each random initialization often achieves comparable overall distortion.
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 11 -->
+      <section id="sec-choosing-k">
+        <h2>11. Choosing the Number of Clusters \(K\): Elbow Method vs. Downstream Utility</h2>
+        <p>
+          How should an analyst choose the hyperparameter \(K\)? Unlike supervised learning, we cannot cross-validate on classification accuracy because there are no true labels (Slide 50).
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">Method 1: The Elbow Method (Slide 51)</span>
+          Compute the minimal distortion \(J\) across a range of cluster counts \(K \in \{1, 2, 3, \dots\}\) and plot \(J\) versus \(K\):
+          <ul>
+            <li>As \(K\) increases, \(J\) must monotonically decrease (at \(K = m\), every point is its own centroid and \(J = 0\)).</li>
+            <li>When the underlying data possesses genuine cluster structure, \(J\) drops sharply for small \(K\), and then levels off into a plateau.</li>
+            <li>The <strong>Elbow Point</strong> (the "kink" or inflection where the rate of decrease abruptly slows down) identifies the optimal \(K\). In Slide 51 (left graph), an unmistakable elbow appears at \(K = 3\).</li>
+          </ul>
+          <div class="note-callout" style="border-left: 4px solid #ef4444;">
+            <strong>Limitations of the Elbow Method:</strong> In many real-world datasets, the distortion curve decreases continuously and smoothly without any identifiable kink. In such settings, the elbow method is inconclusive, and \(K\) should be chosen based on downstream application metrics.
+          </div>
+        </div>
+
+        <div class="def-box">
+          <span class="box-label">Method 2: Downstream Task Evaluation (Slide 52)</span>
+          In practice, clustering is rarely an end in itself; it is an intermediate representation for a <strong>downstream task</strong>. Therefore, \(K\) should be evaluated based on the performance metric of that subsequent application:
+          <ul>
+            <li>In the T-shirt manufacturing problem, choosing between \(K = 3\) (S, M, L) and \(K = 5\) (XS, S, M, L, XL) is not a question of clustering purity, but of business economics: does the revenue from better customer fit outweigh the additional inventory and manufacturing costs of two extra garment sizes?</li>
+            <li>In image compression, \(K\) is selected based on the target bit-rate versus reconstruction distortion (PSNR).</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 12 -->
+      <section id="sec-gmm-intro">
+        <h2>12. Bridge to Probabilistic Clustering: Mixture of Gaussians &amp; EM Foundations</h2>
+        <p>
+          Slides 53–60 conclude Lecture 25 by introducing <strong>Mixture of Gaussians (GMM)</strong> and the <strong>Expectation-Maximization (EM) Algorithm</strong>, which form the direct bridge to Lecture 26.
+        </p>
+
+        <div class="def-box">
+          <span class="box-label">Definition 12.1 (The Gaussian Mixture Generative Model — Slide 54)</span>
+          Suppose data \(\{x^{(1)}, \dots, x^{(m)}\}\) is generated by a mixture of \(k\) Gaussian components. We introduce a <strong>latent (hidden/unobserved)</strong> random variable \(z^{(i)}\) for each sample:
+          \[
+            z^{(i)} \sim \text{Categorical}(\phi), \quad \text{where} \quad p(z^{(i)} = j) = \phi_j \quad \left(\phi_j \ge 0, \; \sum_{j=1}^k \phi_j = 1\right)
+          \]
+          \[
+            x^{(i)} \mid (z^{(i)} = j) \sim \mathcal{N}(\mu_j, \Sigma_j)
+          \]
+          The joint distribution of the observed feature \(x^{(i)}\) and latent component \(z^{(i)}\) is:
+          \[
+            p(x^{(i)}, z^{(i)}) = p(x^{(i)} \mid z^{(i)}) p(z^{(i)})
+          \]
+        </div>
+
+        <p>
+          The parameters of the model are \(\theta = \{\phi_1, \dots, \phi_k, \; \mu_1, \dots, \mu_k, \; \Sigma_1, \dots, \Sigma_k\}\). To estimate them, we formulate the log-likelihood of our observed data (Slide 55):
+        </p>
+        \[
+          \ell(\phi, \mu, \Sigma) = \sum_{i=1}^m \log p(x^{(i)}; \phi, \mu, \Sigma) = \sum_{i=1}^m \log \left( \sum_{z^{(i)}=1}^k p(x^{(i)} \mid z^{(i)}; \mu, \Sigma) p(z^{(i)}; \phi) \right)
+        \]
+
+        <div class="note-callout" style="border-left: 4px solid #3b82f6;">
+          <strong>Connection to Gaussian Discriminant Analysis (GDA):</strong><br>
+          If the latent variables \(z^{(i)}\) were directly observable, Gaussian Mixture modeling would reduce to standard supervised Gaussian Discriminant Analysis (GDA), yielding closed-form Maximum Likelihood estimates:
+          <div style="margin-top: 8px;">
+            \[
+              \phi_j = \frac{1}{m} \sum_{i=1}^m 1\{z^{(i)} = j\}
+            \]
+            \[
+              \mu_j = \frac{\sum_{i=1}^m 1\{z^{(i)} = j\} x^{(i)}}{\sum_{i=1}^m 1\{z^{(i)} = j\}}
+            \]
+            \[
+              \Sigma_j = \frac{\sum_{i=1}^m 1\{z^{(i)} = j\} (x^{(i)} - \mu_j)(x^{(i)} - \mu_j)^T}{\sum_{i=1}^m 1\{z^{(i)} = j\}}
+            \]
+          </div>
+        </div>
+
+        <p>
+          However, because the \(z^{(i)}\) are <strong>latent</strong> (unobserved), the sum resides inside the \(\log\), preventing standard closed-form derivatives. This motivates the <strong>Expectation-Maximization (EM) Algorithm</strong> (Slides 57–60):
+        </p>
+
+        <div class="thm-box">
+          <span class="box-label">Algorithm 12.2 (The EM Algorithm for Gaussian Mixtures — Slides 58–59)</span>
+          Initialize \(\mu_j, \Sigma_j, \phi_j\) randomly. Repeat until convergence:
+          <ol>
+            <li>
+              <strong>E-Step (Expectation / Guess the Latent Variables):</strong><br>
+              Using Bayes' theorem, compute the posterior probability (the <em>responsibility</em> or <em>soft assignment</em>) that sample \(x^{(i)}\) was generated by Gaussian component \(j\):
+              \[
+                w_j^{(i)} := p(z^{(i)} = j \mid x^{(i)}; \phi, \mu, \Sigma) = \frac{p(x^{(i)} \mid z^{(i)} = j; \mu, \Sigma) \, p(z^{(i)} = j; \phi)}{\sum_{l=1}^k p(x^{(i)} \mid z^{(i)} = l; \mu, \Sigma) \, p(z^{(i)} = l; \phi)}
+              \]
+              where \(p(x^{(i)} \mid z^{(i)} = j; \mu, \Sigma) = \frac{1}{(2\pi)^{d/2}|\Sigma_j|^{1/2}} \exp\left(-\frac{1}{2}(x^{(i)}-\mu_j)^T \Sigma_j^{-1}(x^{(i)}-\mu_j)\right)\).
+            </li>
+            <li>
+              <strong>M-Step (Maximization / Update Model Parameters):</strong><br>
+              Update parameters via weighted sample averages using the soft weights \(w_j^{(i)}\):
+              \[
+                \phi_j := \frac{1}{m} \sum_{i=1}^m w_j^{(i)}
+              \]
+              \[
+                \mu_j := \frac{\sum_{i=1}^m w_j^{(i)} x^{(i)}}{\sum_{i=1}^m w_j^{(i)}}
+              \]
+              \[
+                \Sigma_j := \frac{\sum_{i=1}^m w_j^{(i)} (x^{(i)} - \mu_j)(x^{(i)} - \mu_j)^T}{\sum_{i=1}^m w_j^{(i)}}
+              \]
+            </li>
+          </ol>
+        </div>
+
+        <div class="thm-box" style="background: #f0fdf4; border-color: #86efac;">
+          <span class="box-label" style="color: #166534;">Conceptual Unification: K-Means vs. EM (Slide 60)</span>
+          Slide 60 highlights the profound structural analogy between K-Means and EM:
+          <ul>
+            <li><strong>Hard vs. Soft Assignments:</strong> K-Means assigns each point deterministically to a single cluster (\(c^{(i)} \in \{1, \dots, K\}\) is hard). EM computes posterior probabilities (\(w_j^{(i)} \in [0, 1]\) is soft, expressing uncertainty in cluster boundaries).</li>
+            <li><strong>Parameter Updates:</strong> K-Means moves centroids to the unweighted arithmetic mean of assigned points. EM updates Gaussian means and covariances as softly weighted averages.</li>
+            <li><strong>Local Optima:</strong> Just like K-Means, EM converges monotonically to a local maximum of the incomplete log-likelihood, and is susceptible to initial placement. Multiple random restarts are standard practice.</li>
+          </ul>
+          In Lecture 26, we will prove that EM monotonically maximizes the Evidence Lower Bound (ELBO) via Jensen's Inequality, establishing the formal convergence theory for all latent variable models.
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <footer class="note-footer-nav">
+      <a href="./lecture-24.html">&larr; Lecture 24: Support Vector Machines</a>
+      <a href="./lecture-26.html">Lecture 26: Gaussian Mixtures &amp; The EM Algorithm &rarr;</a>
+    </footer>
+  </div>
+
+</body>
+</html>
