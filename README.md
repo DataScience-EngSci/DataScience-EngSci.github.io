@@ -1,6 +1,6 @@
 # Basics of Data Science — University of Tehran
 
-An academic course portal for **Basics of Data Science** at the **University of Tehran**. Instructor: **Sayeh Mirzaee** (`s.mirzaei@ut.ac.ir`), **Department of Engineering Science**.
+An academic course portal for **Basics of Data Science** at the **University of Tehran**. Instructor: **Sayeh Mirzaei** (`s.mirzaei@ut.ac.ir`), **Department of Engineering Science**.
 
 Hosted directly on GitHub Pages (`github.io`). Built with an open, non-boxy editorial layout following Apple Human Interface Guidelines (HIG) craft—refined SF system typography, University of Tehran insignia, frosted navigation, high-contrast accessibility tokens, a scrollable landscape schedule track, and dedicated HTML lecture notes with KaTeX math.
 
@@ -11,7 +11,7 @@ Hosted directly on GitHub Pages (`github.io`). Built with an open, non-boxy edit
 - **Institution**: University of Tehran
 - **Department**: Engineering Science
 - **Course**: Basics of Data Science
-- **Instructor**: Sayeh Mirzaee (`s.mirzaei[at]ut[dot]ac[dot]ir`)
+- **Instructor**: Sayeh Mirzaei (`s.mirzaei[at]ut[dot]ac[dot]ir`)
 - **Lectures**: Sundays & Tuesdays • 9:00 – 10:30 AM
 - **Location**: Class 8 of Engineering Science
 - **Prerequisites**: Probability & statistics, linear algebra, basic python
